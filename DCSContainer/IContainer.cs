@@ -5,7 +5,7 @@ namespace MMONET.DCS
 {
     public interface IContainer
     {
-        Sockets.Remote Remote { get; }
+        IRemote Remote { get; }
 
         Task<rpcResult> Send<rpcResult>(object testMessage);
     }

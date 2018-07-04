@@ -13,8 +13,6 @@ namespace TestClient
         {
             ///将协议类的程序集注册进查找表中
             MessagePackLUT.Regist(typeof(Login).Assembly);
-            ///添加查找表到网络层
-            Remote.AddFormatterLookUpTabal(MessagePackLUT.Instance);
 
             ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
             ///MainThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
@@ -37,7 +35,7 @@ namespace TestClient
         /// </summary>
         private static async void ConnectAsync()
         {
-            Remote remote = new Remote(RemoteChannal.TCP);
+            TCPRemote remote = new TCPRemote();
             var ex = await remote.ConnectAsync(IPAddress.IPv6Loopback,54321);
 
             if (ex == null)
@@ -46,7 +44,7 @@ namespace TestClient
                 
 
                 ///开始接收消息，此处 接收消息回调函数为空，不处理任何消息
-                remote.ReceiveAsync(null);
+                remote.Receive(null);
 
                 Console.WriteLine("连接成功");
 

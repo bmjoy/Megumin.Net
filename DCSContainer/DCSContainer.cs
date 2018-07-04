@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
+using MMONET.Sockets;
 
 namespace MMONET.DCS
 {
@@ -35,7 +36,7 @@ namespace MMONET.DCS
 
         public async Task Start()
         {
-            IPAddress my = Remote.HostIPv6IPAddress;
+            IPAddress my = Remote.Address;
             if (my == MainIP)
             {
                 //if (CheckSocketPort(MainPort))
@@ -83,7 +84,7 @@ namespace MMONET.DCS
 
         private DCSContainer() { }
 
-        public Sockets.Remote Remote { get; private set; } = new Sockets.Remote();
+        public Sockets.IRemote Remote { get; private set; } = new TCPRemote();
         /// <summary>
         /// 起始端口
         /// </summary>

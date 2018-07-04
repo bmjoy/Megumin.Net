@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MMONET.Sockets;
 using System.Diagnostics;
 using MMONET.Sockets.Test;
+using MMONET;
 
 namespace RemoteTestClient
 {
@@ -17,21 +18,23 @@ namespace RemoteTestClient
             Console.WriteLine("Hello World!");
             Console.ReadLine();
         }
-        static int MessageCount = 1;
-        static int RemoteCount = 1;
+
+        //峰值 每秒 12000 0000 字节，平均 4~7千万字节每秒
+        static int MessageCount = 10000;
+        static int RemoteCount = 100;
         private static async void ConAsync()
         {
-            Remote.AddFormatterLookUpTabal(new TestLut());
-            
-            //ThreadPool.QueueUserWorkItem((A) =>
-            //{
-            //    while (true)
-            //    {
-            //        Remote.Update(0);
-            //        //Thread.Sleep(0);
-            //    }
+            MessageLUT.AddFormatterLookUpTabal(new TestLut());
 
-            //});
+            ThreadPool.QueueUserWorkItem((A) =>
+            {
+                while (true)
+                {
+                    MainThreadScheduler.Update(0);
+                    //Thread.Yield();
+                }
+
+            });
 
             ///性能测试
             TestSpeed();
@@ -44,7 +47,9 @@ namespace RemoteTestClient
 
 
         /// <summary>
-        /// 
+        /// //峰值 12000 0000 字节每秒，平均 4~7千万字节每秒
+        /// int MessageCount = 10000;
+        /// int RemoteCount = 100;
         /// </summary>
         private static void TestSpeed()
         {
@@ -56,7 +61,7 @@ namespace RemoteTestClient
 
         private static async void NewRemote(int clientIndex)
         {
-            Remote remote = new Remote();
+            TCPRemote remote = new TCPRemote();
             var res = await remote.ConnectAsync(IPAddress.Loopback, 54321);
             if (res == null)
             {
@@ -67,7 +72,7 @@ namespace RemoteTestClient
                 throw res;
             }
 
-            remote.ReceiveAsync((new Receiver() { Index = clientIndex }).TestReceive);
+            remote.Receive((new Receiver() { Index = clientIndex }).TestReceive);
             Stopwatch look1 = new Stopwatch();
             var msg = new TestPacket1 { Value = 0 };
             look1.Start();
@@ -78,15 +83,17 @@ namespace RemoteTestClient
                 {
                     //Console.WriteLine($"Remote{clientIndex}:发送{nameof(Packet1)}=={i}");
                     msg.Value = i;
-                    remote.Send(msg);
+                    remote.SendAsync(msg);
+
                 }
             });
 
-
             look1.Stop();
 
-            Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount} ------ {look1.ElapsedMilliseconds}----- 每秒:{MessageCount * 1000 / (look1.ElapsedMilliseconds+1)}");
+            Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ------ 发送总时间: {look1.ElapsedMilliseconds}----- 平均每秒发送:{MessageCount * 1000 / (look1.ElapsedMilliseconds+1)}");
 
+            var res2 = await remote.SafeRpcSendAsync<TestPacket2>(new TestPacket2() { Value = 0.1f });
+            Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
             //Remote.BroadCastAsync(new Packet1 { Value = -99999 },remote);
 
             //var (Result, Excption) = await remote.SendAsync<Packet2>(new Packet1 { Value = 100 });
@@ -140,7 +147,7 @@ namespace RemoteTestClient
 
         private static async void Connect(int index)
         {
-            Remote remote = new Remote();
+            TCPRemote remote = new TCPRemote();
             var res = await remote.ConnectAsync(IPAddress.Loopback, 54321);
             if (res == null)
             {

@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\MessageInterface\RemoteInterface.csproj" />
+    <ProjectReference Include="..\MessageInterface\RemoteAPI.csproj" />
   </ItemGroup>
 
 </Project>

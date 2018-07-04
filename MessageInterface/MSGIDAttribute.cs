@@ -7,7 +7,7 @@ namespace MMONET.Sockets
     /// <summary>
     /// 使用MessageID来为每一个消息指定一个唯一ID
     /// </summary>
-    public class MSGID : Attribute
+    public sealed class MSGID : Attribute
     {
 
         /// <summary>

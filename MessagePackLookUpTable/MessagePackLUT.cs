@@ -9,21 +9,8 @@ namespace MMONET.Sockets
     /// <summary>
     /// 适用于MessagePack协议的查找表
     /// </summary>
-    public class MessagePackLUT:ILookUpTabal
+    public class MessagePackLUT: MessageLUT
     {
-        /// <summary>
-        ///
-        /// </summary>
-        public static readonly MessagePackLUT Instance = new MessagePackLUT();
-
-        IEnumerable<KeyValuePair<int, Deserilizer>> ILookUpTabal.DeserilizerKV => D;
-        IEnumerable<KeyValuePair<Type, (int MessageID, Delegate Seiralizer)>> ILookUpTabal.SeiralizerKV => S;
-
-        public static readonly Dictionary<int, Deserilizer> D = new Dictionary<int, Deserilizer>();
-
-        public static readonly Dictionary<Type, (int MessageID, Delegate Seiralizer)> S
-            = new Dictionary<Type, (int MessageID, Delegate Seiralizer)>();
-
         /// <summary>
         /// 注册程序集中所有MessagePack协议类
         /// </summary>
@@ -45,54 +32,14 @@ namespace MMONET.Sockets
         /// <param name="key"></param>
         public static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
-
             var attribute = type.GetFirstCustomAttribute<MessagePackObjectAttribute>();
             if (attribute != null)
             {
                 var MSGID = type.GetFirstCustomAttribute<MSGID>();
                 if (MSGID != null)
                 {
-                    if (S.ContainsKey(type))
-                    {
-                        switch (key)
-                        {
-                            case KeyAlreadyHave.Instead:
-                                S[type] = (MSGID.ID, MessagePackSerializerEx.MakeS(type));
-                                break;
-                            case KeyAlreadyHave.Skip:
-                                break;
-                            case KeyAlreadyHave.ThrowException:
-                                S.Add(type, (MSGID.ID, MessagePackSerializerEx.MakeS(type)));
-                                break;
-                            default:
-
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        S.Add(type, (MSGID.ID, MessagePackSerializerEx.MakeS(type)));
-                    }
-
-
-                    if (D.ContainsKey(MSGID.ID))
-                    {
-                        switch (key)
-                        {
-                            case KeyAlreadyHave.Instead:
-                                break;
-                            case KeyAlreadyHave.Skip:
-                                break;
-                            case KeyAlreadyHave.ThrowException:
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        D.Add(MSGID.ID, MessagePackSerializerEx.MakeD(type));
-                    }
+                    AddFormatter(type, MSGID.ID,
+                        MessagePackSerializerEx.MakeS(type), MessagePackSerializerEx.MakeD(type), key);
                 }
             }
         }

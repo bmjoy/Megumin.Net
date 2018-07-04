@@ -11,7 +11,7 @@ namespace ServerApp
     {
         public int GUID { get; set; }
 
-        Remote listener = new Remote();
+        TCPRemoteListener listener = new TCPRemoteListener(Config.MainPort);
 
         public void Start()
         {
@@ -20,10 +20,10 @@ namespace ServerApp
 
         public async void StartListenAsync()
         {
-            Remote remote = await listener.ListenAsync(Config.MainPort);
+            var remote = await listener.ListenAsync();
             Console.WriteLine($"建立连接");
             StartListenAsync();
-            remote.ReceiveAsync(OnReceiveAsync);
+            remote.Receive(OnReceiveAsync);
         }
 
         private async ValueTask<object> OnReceiveAsync(object message)
@@ -39,7 +39,7 @@ namespace ServerApp
                     return resp;
                 case TestPacket1 packet1:
                     Console.WriteLine($"客户端登陆请求：{packet1}");
-                    Remote.BroadCastAsync(packet1, new Remote(), new Remote());
+                    RemoteBase.BroadCastAsync(packet1, new TCPRemote(), new TCPRemote());
                     break;
                 case TestPacket2 packet2:
                     return null;

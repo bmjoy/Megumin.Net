@@ -19,7 +19,6 @@ namespace ServerApp
         private static async void InitServer()
         {
             MessagePackLUT.Regist(typeof(Login).Assembly);
-            Remote.AddFormatterLookUpTabal(MessagePackLUT.Instance);
 
             DCSContainer.Instance.Init();
             await DCSContainer.Instance.Start();

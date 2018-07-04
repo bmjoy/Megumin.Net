@@ -4,8 +4,6 @@ using System.Text;
 
 namespace MMONET.Sockets.Test
 {
-
-
     public class TestPacket1
     {
         public int Value { get; set; }

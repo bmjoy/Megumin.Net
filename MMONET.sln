@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Remote", "Remote\Remote.csproj", "{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteInterface", "MessageInterface\RemoteInterface.csproj", "{BFE44004-0D60-458B-9F0C-889EF37392D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteAPI", "MessageInterface\RemoteAPI.csproj", "{BFE44004-0D60-458B-9F0C-889EF37392D0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Remote", "Remote", "{11023560-B423-48FB-AFF2-844A97AB0EE0}"
 EndProject
