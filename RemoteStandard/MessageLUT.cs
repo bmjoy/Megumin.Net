@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using MMONET.Remote;
 
-namespace MMONET.Sockets
+namespace MMONET.Message
 {
     /// <summary>
     /// 消息查找表

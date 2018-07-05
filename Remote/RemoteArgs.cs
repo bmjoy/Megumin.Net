@@ -2,9 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using static MMONET.Sockets.MessageLUT;
 
-namespace MMONET.Sockets
+namespace MMONET.Remote
 {
     #region Common
 

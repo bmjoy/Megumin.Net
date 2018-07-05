@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using MMONET.Sockets;
+using MMONET.Remote;
 
 namespace MMONET.DCS
 {

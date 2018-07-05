@@ -2,8 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
+using MMONET.Remote;
 
-namespace MMONET.Sockets
+namespace MMONET.Message
 {
     /// <summary>
     /// 接收消息池

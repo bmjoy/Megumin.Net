@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MessagePackLookUpTable\MessagePackLookUpTable.csproj" />
+    <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
     <ProjectReference Include="..\Message\Message.csproj" />
     <ProjectReference Include="..\Remote\Remote.csproj" />
   </ItemGroup>

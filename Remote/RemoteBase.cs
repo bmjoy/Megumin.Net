@@ -7,8 +7,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using MMONET.Message;
 
-namespace MMONET.Sockets
+namespace MMONET.Remote
 {
     /// <summary>
     /// <para></para>

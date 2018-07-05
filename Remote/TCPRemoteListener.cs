@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MMONET.Sockets
+namespace MMONET.Remote
 {
     public class TCPRemoteListener : IRemoteListener<TCPRemote>
     {

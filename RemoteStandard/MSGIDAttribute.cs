@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MMONET.Sockets
+namespace MMONET.Message
 {
     /// <summary>
     /// 使用MessageID来为每一个消息指定一个唯一ID

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MMONET.Sockets
+namespace MMONET.Message
 {
     ///// <summary>
     ///// 消息类查找表

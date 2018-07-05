@@ -4,9 +4,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using static MMONET.Sockets.MessageLUT;
+using MMONET.Message;
+using static MMONET.Message.MessageLUT;
 
-namespace MMONET.Sockets
+namespace MMONET.Remote
 {
     /// <summary>
     /// <para>TcpChannel内存开销 整体采用内存池优化</para>

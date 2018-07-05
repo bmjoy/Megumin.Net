@@ -3,7 +3,8 @@ using System.Net;
 using System.Threading;
 using Message;
 using MMONET;
-using MMONET.Sockets;
+using MMONET.Message;
+using MMONET.Remote;
 
 namespace TestClient
 {

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using MMONET.Sockets;
+using MMONET.Remote;
 
 namespace MMONET.DCS
 {
@@ -84,7 +84,7 @@ namespace MMONET.DCS
 
         private DCSContainer() { }
 
-        public Sockets.IRemote Remote { get; private set; } = new TCPRemote();
+        public Remote.IRemote Remote { get; private set; } = new TCPRemote();
         /// <summary>
         /// 起始端口
         /// </summary>

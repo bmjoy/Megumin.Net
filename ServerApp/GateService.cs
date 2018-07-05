@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Message;
 using MMONET.DCS;
-using MMONET.Sockets;
+using MMONET.Remote;
 
 namespace ServerApp
 {

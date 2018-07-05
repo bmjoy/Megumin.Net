@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using MessagePack;
+using MMONET.Remote;
 
-namespace MMONET.Sockets
+namespace MMONET.Message
 {
     /// <summary>
     /// 适用于MessagePack协议的查找表

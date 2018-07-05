@@ -5,8 +5,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using MMONET;
-using MMONET.Sockets;
-using MMONET.Sockets.Test;
+using MMONET.Message;
+using MMONET.Remote;
+using MMONET.Remote.Test;
 
 namespace RemoteTest
 {

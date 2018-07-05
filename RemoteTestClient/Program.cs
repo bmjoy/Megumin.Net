@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using MMONET.Sockets;
+using MMONET.Remote;
 using System.Diagnostics;
-using MMONET.Sockets.Test;
+using MMONET.Remote.Test;
 using MMONET;
+using MMONET.Message;
 
 namespace RemoteTestClient
 {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MMONET.Sockets.Test
+namespace MMONET.Remote.Test
 {
     public class TestPacket1
     {

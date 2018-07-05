@@ -2,18 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MMONET.Remote.MessagePack</AssemblyName>
+    <AssemblyName>MMONET.MessagePackLUT</AssemblyName>
     <RootNamespace>MMONET.Remote</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\MMONET.Remote.MessagePack.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\MMONET.MessagePackLUT.xml</DocumentationFile>
     <LangVersion>7.1</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>7.1</LangVersion>
-    <DocumentationFile>bin\Release\netstandard2.0\MMONET.Remote.MessagePack.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\MMONET.MessagePackLUT.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

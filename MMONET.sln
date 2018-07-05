@@ -33,7 +33,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClientApp", "ClientApp\Clie
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServerApp", "ServerApp\ServerApp.csproj", "{642387AF-3D41-4390-8AB6-E99E44B3527A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessagePackLookUpTable", "MessagePackLookUpTable\MessagePackLookUpTable.csproj", "{995E3302-E28F-4D70-BD75-5943C94B6796}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessagePackLUT", "MessagePackLUT\MessagePackLUT.csproj", "{995E3302-E28F-4D70-BD75-5943C94B6796}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtobufLUT", "ProtobufLUT\ProtobufLUT.csproj", "{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +87,10 @@ Global
 		{995E3302-E28F-4D70-BD75-5943C94B6796}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{995E3302-E28F-4D70-BD75-5943C94B6796}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{995E3302-E28F-4D70-BD75-5943C94B6796}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,6 +107,7 @@ Global
 		{0DB7681B-25B5-4794-910A-DBE6A4A208CF} = {30CF4F0F-F9AB-45D9-B450-27E1C3BAB6C7}
 		{642387AF-3D41-4390-8AB6-E99E44B3527A} = {30CF4F0F-F9AB-45D9-B450-27E1C3BAB6C7}
 		{995E3302-E28F-4D70-BD75-5943C94B6796} = {11023560-B423-48FB-AFF2-844A97AB0EE0}
+		{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342} = {11023560-B423-48FB-AFF2-844A97AB0EE0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B793D369-B577-4DEE-89F7-9222CA0B98CD}
