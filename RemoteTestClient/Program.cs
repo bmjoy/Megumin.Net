@@ -20,7 +20,6 @@ namespace RemoteTestClient
             Console.ReadLine();
         }
 
-        //峰值 每秒 12000 0000 字节，平均 4~7千万字节每秒
         static int MessageCount = 10000;
         static int RemoteCount = 100;
         private static async void ConAsync()
@@ -94,7 +93,7 @@ namespace RemoteTestClient
 
             Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ------ 发送总时间: {look1.ElapsedMilliseconds}----- 平均每秒发送:{MessageCount * 1000 / (look1.ElapsedMilliseconds+1)}");
 
-            var res2 = await remote.SafeRpcSendAsync<TestPacket2>(new TestPacket2() { Value = 0.1f });
+            var res2 = await remote.SafeRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex });
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
             //Remote.BroadCastAsync(new Packet1 { Value = -99999 },remote);
 
