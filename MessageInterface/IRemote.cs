@@ -49,6 +49,7 @@ namespace MMONET.Sockets
     /// <see cref="SendAsync{T}(T)"/>不会自动开始Receive，RpcSend会自动开始Receive。
     /// <para></para>
     /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
+    /// <para>dynamic导致值类型装箱是可以妥协的。</para>
     /// </summary>
     public interface ISendMessage
     {
@@ -73,8 +74,7 @@ namespace MMONET.Sockets
         /// <para>只要你调用了接收函数，即使回调函数为空，RPC过程的消息仍能正确处理。</para>
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
-        /// <param name="message">发送消息的类型需要序列化 查找表<see cref="ILookUpTabal"/> 中指定ID和序列化函数</param>
-        /// <param name="type"></param>
+        /// <param name="message">发送消息的类型需要序列化 查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
         /// <returns>需要检测空值</returns>
         Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message);
 

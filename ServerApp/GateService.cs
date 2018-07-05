@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Message;
 using MMONET.DCS;
 using MMONET.Sockets;
-using MMONET.Sockets.Test;
 
 namespace ServerApp
 {
@@ -37,12 +36,6 @@ namespace ServerApp
                     Login2GateResult resp = new Login2GateResult();
                     resp.IsSuccess = true;
                     return resp;
-                case TestPacket1 packet1:
-                    Console.WriteLine($"客户端登陆请求：{packet1}");
-                    RemoteBase.BroadCastAsync(packet1, new TCPRemote(), new TCPRemote());
-                    break;
-                case TestPacket2 packet2:
-                    return null;
                 default:
                     break;
             }

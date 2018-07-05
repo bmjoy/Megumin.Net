@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 namespace MMONET.Sockets
 {
-    /// <summary>
-    /// 消息类查找表
-    /// </summary>
-    public interface ILookUpTabal
-    {
-        /// <summary>
-        /// 反序列化器查找表
-        /// </summary>
-        IEnumerable<KeyValuePair<int, Deserilizer>> DeserilizerKV { get; }
-        /// <summary>
-        /// 序列化器查找表 Delegate Seiralizer必须是
-        /// <see cref="MMONET.Sockets.Seiralizer{T}"/>
-        /// </summary>
-        IEnumerable<KeyValuePair<Type, (int MessageID, Delegate Seiralizer)>> SeiralizerKV { get; }
-    }
+    ///// <summary>
+    ///// 消息类查找表
+    ///// </summary>
+    //public interface ILookUpTabal
+    //{
+    //    /// <summary>
+    //    /// 反序列化器查找表
+    //    /// </summary>
+    //    IEnumerable<KeyValuePair<int, Deserilizer>> DeserilizerKV { get; }
+    //    /// <summary>
+    //    /// 序列化器查找表 Delegate Seiralizer必须是
+    //    /// <see cref="MMONET.Sockets.Seiralizer{T}"/>
+    //    /// </summary>
+    //    IEnumerable<KeyValuePair<Type, (int MessageID, Delegate Seiralizer)>> SeiralizerKV { get; }
+    //}
 
     /// <summary>
     /// 

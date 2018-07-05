@@ -44,24 +44,6 @@ namespace MMONET.Sockets
         ///序列化方法第二个参数必须为 ref byte[]
         static Type args2type = typeof(byte[]).MakeByRefType();
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="lut"></param>
-        /// <exception cref="ArgumentException">反序列化messageID冲突，或者序列化类型冲突</exception>
-        public static void AddFormatterLookUpTabal(ILookUpTabal lut)
-        {
-            foreach (var item in lut.DeserilizerKV)
-            {
-                AddDFormatter(item.Key,item.Value);
-            }
-
-            foreach (var item in lut.SeiralizerKV)
-            {
-                AddSFormatter(item.Key,item.Value.MessageID,item.Value.Seiralizer);
-            }
-        }
-
         protected static void AddSFormatter(Type type, int messageID, Delegate seiralizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             if (type == null || seiralizer == null)
@@ -139,7 +121,7 @@ namespace MMONET.Sockets
             }
         }
 
-        protected static void AddFormatter(Type type, int messageID, Delegate seiralizer, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        public static void AddFormatter(Type type, int messageID, Delegate seiralizer, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             AddSFormatter(type, messageID, seiralizer, key);
             AddDFormatter(messageID, deserilizer, key);

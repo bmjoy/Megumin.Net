@@ -32,7 +32,9 @@ namespace RemoteTest
 
         private static async void ListenAsync()
         {
-            MessageLUT.AddFormatterLookUpTabal(new TestLut());
+            MessageLUT.AddFormatter(typeof(TestPacket1), 1000, (Seiralizer<TestPacket1>)TestPacket1.S, TestPacket1.D);
+            MessageLUT.AddFormatter(typeof(TestPacket2), 1001, (Seiralizer<TestPacket2>)TestPacket2.S, TestPacket2.D);
+
             ThreadPool.QueueUserWorkItem((A) =>
             {
                 while (true)
@@ -101,10 +103,5 @@ namespace RemoteTest
             }
             return null;
         }
-    }
-
-    public struct Struct111111111111
-    {
-
     }
 }
