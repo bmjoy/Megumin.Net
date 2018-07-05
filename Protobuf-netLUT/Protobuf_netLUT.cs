@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
-using System.Text;
-using MessagePack;
-using MMONET.Remote;
+using ProtoBuf;
 
 namespace MMONET.Message
 {
     /// <summary>
-    /// 适用于MessagePack协议的查找表
+    /// 适用于Protobuf-net协议的查找表    没有测试
     /// </summary>
-    public class MessagePackLUT: MessageLUT
+    public class Protobuf_netLUT: MessageLUT
     {
         /// <summary>
         /// 注册程序集中所有协议类
@@ -33,33 +31,34 @@ namespace MMONET.Message
         /// <param name="key"></param>
         public static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
-            var attribute = type.GetFirstCustomAttribute<MessagePackObjectAttribute>();
+            var attribute = type.GetFirstCustomAttribute<ProtoContractAttribute>();
             if (attribute != null)
             {
                 var MSGID = type.GetFirstCustomAttribute<MSGID>();
                 if (MSGID != null)
                 {
                     AddFormatter(type, MSGID.ID,
-                        MessagePackSerializerEx.MakeS(type), MessagePackSerializerEx.MakeD(type), key);
+                        Protobuf_netSerializerEx.MakeS(type), Protobuf_netSerializerEx.MakeD(type), key);
                 }
             }
         }
     }
 
-    static class MessagePackSerializerEx
+    static class Protobuf_netSerializerEx
     {
         public static ushort Serialize<T>(T obj, ref byte[] buffer)
         {
-            var formatter = MessagePackSerializer.DefaultResolver.GetFormatterWithVerify<T>();
-
-            var len = formatter.Serialize(ref buffer, 0, obj, MessagePackSerializer.DefaultResolver);
-
-            return (ushort)len;
+            using (Stream s = new MemoryStream())
+            {
+                Serializer.Serialize(s, obj);
+                int lenght = s.Read(buffer, 0, 65536);
+                return (ushort)lenght;
+            }
         }
 
         public static Delegate MakeS(Type type)
         {
-            var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(Serialize),
+            var methodInfo = typeof(Protobuf_netSerializerEx).GetMethod(nameof(Serialize),
                 BindingFlags.Static | BindingFlags.Public);
 
             var method = methodInfo.MakeGenericMethod(type);
@@ -69,12 +68,13 @@ namespace MMONET.Message
 
         public static Deserilizer MakeD(Type type)
         {
-            var methodInfo = typeof(MessagePackSerializer).GetMethod(nameof(MessagePackSerializer.Deserialize),
-                new Type[] { typeof(ArraySegment<byte>) });
-
-            var method = methodInfo.MakeGenericMethod(type);
-
-            return method.CreateDelegate(typeof(Deserilizer)) as Deserilizer;
+            return (buffer) =>
+            {
+                using (Stream st = new MemoryStream(buffer.Array,buffer.Offset,buffer.Count))
+                {
+                    return Serializer.Deserialize(type, st);
+                }
+            };
         }
     }
 }

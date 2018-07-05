@@ -2,19 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MMONET.ProtobufLUT</AssemblyName>
+    <AssemblyName>MMONET.Protobuf-netLUT</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\MMONET.ProtobufLUT.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\MMONET.Protobuf-netLUT.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard2.0\MMONET.ProtobufLUT.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\MMONET.Protobuf-netLUT.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.6.0" />
+    <PackageReference Include="protobuf-net" Version="2.3.13" />
   </ItemGroup>
 
   <ItemGroup>
