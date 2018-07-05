@@ -46,7 +46,7 @@ namespace MMONET.Sockets
     }
 
     /// <summary>
-    /// 注意，你必须明确调用Remote的接收函数才能收到RPC结果
+    /// <see cref="SendAsync{T}(T)"/>不会自动开始Receive，RpcSend会自动开始Receive。
     /// <para></para>
     /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
     /// </summary>

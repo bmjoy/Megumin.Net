@@ -262,6 +262,11 @@ namespace MMONET.Sockets
 
         public virtual Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message)
         {
+            if (!IsReceiving)
+            {
+                Receive();
+            }
+
             short rpcID = GetRpcID();
 
             SendAsync(rpcID, message);
@@ -320,6 +325,11 @@ namespace MMONET.Sockets
         /// <seealso cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         public virtual Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
+            if (!IsReceiving)
+            {
+                Receive();
+            }
+
             short rpcID = GetRpcID();
 
             SendAsync(rpcID, message);
