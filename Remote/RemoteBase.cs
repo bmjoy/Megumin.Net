@@ -321,8 +321,14 @@ namespace MMONET.Sockets
             return source.Task;
         }
 
-        
-        /// <seealso cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
+
+        /// <summary>
+        /// <see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <param name="message"></param>
+        /// <param name="OnException"></param>
+        /// <returns></returns>
         public virtual Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
             if (!IsReceiving)

@@ -13,6 +13,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>7.1</LangVersion>
+    <DocumentationFile>bin\Release\netstandard2.0\MMONET.Remote.MessagePack.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\MessageInterface\RemoteAPI.csproj" />
+    <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj" />
   </ItemGroup>
 
 </Project>

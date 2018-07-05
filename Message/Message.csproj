@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\MessageInterface\RemoteAPI.csproj" />
+    <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj" />
   </ItemGroup>
 
 </Project>

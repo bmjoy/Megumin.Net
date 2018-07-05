@@ -41,31 +41,22 @@ namespace TestClient
             if (ex == null)
             {
                 ///没有异常，连接成功
-                
-
-                ///开始接收消息，此处 接收消息回调函数为空，不处理任何消息
-                remote.Receive(null);
-
                 Console.WriteLine("连接成功");
 
                 ///创建一个登陆消息
-                Login2Gate login = new Login2Gate
+                var login = new Login2Gate
                 {
                     Account = $"TestClient",
                     Password = "123456"
                 };
 
                 ///有返回值，这个是一个RPC过程，Exception在网络中传递
-                ///只要你调用了接收函数，即使回调函数为空，RPC过程的消息仍能正确处理。
-                var (result, excp) = await remote.RpcSendAsync<Login2GateResult>(login);
-                if (excp == null)
+                var resp = await remote.SafeRpcSendAsync<Login2GateResult>(login);
+                if (resp.IsSuccess)
                 {
-                    if (result.IsSuccess)
-                    {
-                        Console.WriteLine("登陆成功");
-                    }
+                    Console.WriteLine("登陆成功");
                 }
-
+                
                 ///没有返回值，不是RPC过程
             }
             else
