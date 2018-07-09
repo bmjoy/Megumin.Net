@@ -1,7 +1,6 @@
 ﻿using System;
 using MessagePack;
 using MMONET.Message;
-using MMONET.Remote;
 
 namespace Message
 {

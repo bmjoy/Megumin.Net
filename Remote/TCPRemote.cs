@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using MMONET.Message;
+using Network.Remote;
 using static MMONET.Message.MessageLUT;
 
 namespace MMONET.Remote

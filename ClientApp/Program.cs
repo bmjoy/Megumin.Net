@@ -5,6 +5,7 @@ using Message;
 using MMONET;
 using MMONET.Message;
 using MMONET.Remote;
+using Network.Remote;
 
 namespace TestClient
 {

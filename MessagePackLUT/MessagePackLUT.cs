@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using MessagePack;
-using MMONET.Remote;
 
 namespace MMONET.Message
 {

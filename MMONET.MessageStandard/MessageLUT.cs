@@ -1,10 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using MMONET.Remote;
 
 namespace MMONET.Message
 {
+    /// <summary>
+    /// Key冲突改怎么做
+    /// </summary>
+    public enum KeyAlreadyHave
+    {
+        /// <summary>
+        /// 替换
+        /// </summary>
+        Replace,
+        /// <summary>
+        /// 跳过
+        /// </summary>
+        Skip,
+        /// <summary>
+        /// 抛出异常
+        /// </summary>
+        ThrowException,
+    }
+
     /// <summary>
     /// 消息查找表
     /// <seealso cref="Seiralizer{T}"/><seealso cref="Deserilizer"/>

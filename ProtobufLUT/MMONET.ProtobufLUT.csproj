@@ -2,20 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MMONET.Message</AssemblyName>
+    <AssemblyName>MMONET.ProtobufLUT</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\Message.xml</DocumentationFile>
-    <LangVersion>7.3</LangVersion>
+    <DocumentationFile>bin\Debug\netstandard2.0\MMONET.ProtobufLUT.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
+    <DocumentationFile>bin\Release\netstandard2.0\MMONET.ProtobufLUT.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MessagePack" Version="1.7.3.4" />
+    <PackageReference Include="Google.Protobuf" Version="3.6.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -24,24 +24,7 @@ namespace System
     }
 
 
-    /// <summary>
-    /// Key冲突改怎么做
-    /// </summary>
-    public enum KeyAlreadyHave
-    {
-        /// <summary>
-        /// 替换
-        /// </summary>
-        Replace,
-        /// <summary>
-        /// 跳过
-        /// </summary>
-        Skip,
-        /// <summary>
-        /// 抛出异常
-        /// </summary>
-        ThrowException,
-    }
+    
 }
 
 namespace System.Collections.Generic

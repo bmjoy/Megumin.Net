@@ -8,6 +8,7 @@ using MMONET;
 using MMONET.Message;
 using MMONET.Remote;
 using MMONET.Remote.Test;
+using Network.Remote;
 
 namespace RemoteTest
 {

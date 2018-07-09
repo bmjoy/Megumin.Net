@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
-using MMONET.Remote;
+using Network.Remote;
 
 namespace MMONET.Message
 {

@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace MMONET.Remote
+namespace Network.Remote
 {
     /// <summary>
     /// 末端
@@ -166,6 +166,17 @@ namespace MMONET.Remote
         /// </summary>
         /// <returns></returns>
         Task<T> ListenAsync();
+    }
+
+    /// <summary>
+    /// 池元素
+    /// </summary>
+    public interface IPoolElement
+    {
+        /// <summary>
+        /// 返回对象池中
+        /// </summary>
+        void Push2Pool();
     }
 
     /// <summary>

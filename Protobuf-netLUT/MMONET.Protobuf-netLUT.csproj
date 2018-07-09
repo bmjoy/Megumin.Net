@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj" />
+    <ProjectReference Include="..\MMONET.MessageStandard\MMONET.MessageStandard.csproj" />
   </ItemGroup>
 
 </Project>

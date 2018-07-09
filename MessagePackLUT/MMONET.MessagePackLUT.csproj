@@ -22,8 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj" />
+    <ProjectReference Include="..\MMONET.MessageStandard\MMONET.MessageStandard.csproj" />
   </ItemGroup>
 
 </Project>

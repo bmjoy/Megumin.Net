@@ -4,7 +4,6 @@ using Message;
 using MMONET;
 using MMONET.DCS;
 using MMONET.Message;
-using MMONET.Remote;
 
 namespace ServerApp
 {
