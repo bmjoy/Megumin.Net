@@ -68,10 +68,10 @@ namespace Network.Remote
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="message"></param>
+        /// <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
         void SendAsync<T>(T message);
         /// <summary>
-        /// 异步发送消息，封装Rpc过程
-        /// <para>只要你调用了接收函数，即使回调函数为空，RPC过程的消息仍能正确处理。</para>
+        /// 异步发送消息，封装Rpc过程,大多数情况你应该使用<see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
@@ -119,13 +119,6 @@ namespace Network.Remote
 
         /// <summary>
         /// 异步接受消息包
-        /// <para>1.remote收到消息大包（拼合的小包组）</para>
-        /// <para>2.remote 调用 <see cref="MessagePool.PushReceivePacket(IReceivedPacket, INetRemote)"/></para>
-        /// <para>消息大包和remote一起放入接收消息池<see cref="MessagePool.receivePool"/>（这一环节为了切换执行异步方法后续的线程）</para>
-        /// <para>3.（主线程）<see cref="MainThreadScheduler.Update(double)"/>时统一从池中取出消息，反序列化。
-        ///          每个小包是一个消息，由remote <see cref="INetRemote.ReceiveCallback"/>>处理</para>
-        /// <para>5.1 检查RpcID(内置不可见) 如果是Rpc结果，触发异步方法后续。如果rpc已经超时，消息被直接丢弃</para>
-        /// <para>5.2 不是Rpc结果 则remote调用<paramref name="onReceive"/>回调函数(当前方法参数)处理消息</para>
         /// </summary>
         /// <param name="onReceive">处理消息方法，如果远端为RPC调用，那么应该返回一个合适的结果，否则返回null</param>
         void Receive(OnReceiveMessage onReceive);

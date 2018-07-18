@@ -43,6 +43,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Message", "Message", "{653C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MMONET.MessageStandard", "MMONET.MessageStandard\MMONET.MessageStandard.csproj", "{9AC83E99-E45B-4966-A7B5-866DC8E83D8B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitFunc", "UnitFunc\UnitFunc.csproj", "{CF6D5894-4C97-4918-AC07-017B159AB97F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,6 +107,10 @@ Global
 		{9AC83E99-E45B-4966-A7B5-866DC8E83D8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AC83E99-E45B-4966-A7B5-866DC8E83D8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AC83E99-E45B-4966-A7B5-866DC8E83D8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF6D5894-4C97-4918-AC07-017B159AB97F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF6D5894-4C97-4918-AC07-017B159AB97F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF6D5894-4C97-4918-AC07-017B159AB97F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF6D5894-4C97-4918-AC07-017B159AB97F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -124,6 +130,7 @@ Global
 		{02202D3A-EA4B-4669-8D3E-8DEC8B2C7342} = {653C9B30-C2B8-4F3D-B47F-52A92C179C81}
 		{89F3A08C-19C0-4747-90F7-B5CC295C8E51} = {653C9B30-C2B8-4F3D-B47F-52A92C179C81}
 		{9AC83E99-E45B-4966-A7B5-866DC8E83D8B} = {653C9B30-C2B8-4F3D-B47F-52A92C179C81}
+		{CF6D5894-4C97-4918-AC07-017B159AB97F} = {2A6DEB76-A580-4336-866D-176E7E928071}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B793D369-B577-4DEE-89F7-9222CA0B98CD}

@@ -419,15 +419,16 @@ namespace MMONET.Remote
         protected OnReceiveMessage onReceive;
 
         /// <summary>
-        /// 开始接收消息并将消息放入消息池
-        /// <para></para>
-        /// 轮询调用<see cref="MainThreadScheduler.Update(double)"/>处理消息池中的消息。
-        /// <para></para>
-        /// <seealso cref="IReceiveMessage.Receive(OnReceiveMessage)"/>
-        /// <para></para>
-        /// <seealso cref="MessagePool"/>
+        /// 异步接受消息包
+        /// <para>1.remote收到消息大包（拼合的小包组）</para>
+        /// <para>2.remote 调用 <see cref="MessagePool.PushReceivePacket(IReceivedPacket, INetRemote)"/></para>
+        /// <para>消息大包和remote一起放入接收消息池<see cref="MessagePool"/>（这一环节为了切换执行异步方法后续的线程）</para>
+        /// <para>3.（主线程）<see cref="MainThreadScheduler.Update(double)"/>时统一从池中取出消息，反序列化。
+        ///          每个小包是一个消息，由remote <see cref="INetRemote.ReceiveCallback"/>>处理</para>
+        /// <para>4.1 检查RpcID(内置不可见) 如果是Rpc结果，触发异步方法后续。如果rpc已经超时，消息被直接丢弃</para>
+        /// <para>4.2 不是Rpc结果 则remote调用<paramref name="onReceive"/>回调函数(当前方法参数)处理消息</para>
         /// </summary>
-        /// <param name="onReceive"></param>
+        /// <param name="onReceive">处理消息方法，如果远端为RPC调用，那么应该返回一个合适的结果，否则返回null</param>
         public void Receive(OnReceiveMessage onReceive)
         {
             this.onReceive = onReceive;

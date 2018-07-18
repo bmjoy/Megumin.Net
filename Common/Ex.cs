@@ -138,5 +138,37 @@ namespace System.Collections.Generic
                 ListPool<K>.Push(klist);
             }
         }
+
+
+        public static void RemoveAll<V>(this IDictionary<int, V> source, Func<KeyValuePair<int, V>, bool> predicate)
+        {
+            if (predicate == null || source == null)
+            {
+                return;
+            }
+
+            unsafe
+            {
+                var rList = stackalloc int[source.Count];
+                int index = 0;
+
+                lock (source)
+                {
+                    foreach (var item in source)
+                    {
+                        if (predicate(item))
+                        {
+                            rList[index] = item.Key;
+                            index++;
+                        }
+                    }
+
+                    for (int i = 0; i < index; i++)
+                    {
+                        source.Remove(rList[i]);
+                    }
+                }
+            }
+        }
     }
 }

@@ -13,3 +13,4 @@ Assets/AssetStoreTools*
 ExportedObj/
 .consulo/
 Remote/Properties/PublishProfiles/
+packages/
