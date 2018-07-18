@@ -6,7 +6,7 @@ using MMONET;
 
 namespace System
 {
-    public static class Extention
+    public static class Extention_7AE0B2E4B4124A53AE87CE8D95431431
     {
         /// <summary>
         /// 尝试取得第一个指定属性
@@ -29,7 +29,7 @@ namespace System
 
 namespace System.Collections.Generic
 {
-    public static class DicEx991308D5D27E43A98301E51BEF820AB3
+    public static class DicEx_991308D5D27E43A98301E51BEF820AB3
     {
         public static void RemoveAll<K, V>(this IDictionary<K, V> source, Func<KeyValuePair<K, V>, bool> predicate)
         {
