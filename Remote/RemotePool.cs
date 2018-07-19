@@ -9,6 +9,9 @@ using IRemoteDic = MMONET.IDictionary<int, System.Net.IPEndPoint, Network.Remote
 
 namespace MMONET.Remote
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public static class RemotePool
     {
         static RemotePool()
@@ -71,11 +74,19 @@ namespace MMONET.Remote
             }
         }
 
+        /// <summary>
+        /// 使用 <see cref="InterlockedID{IRemote}.NewID"/> 初始化你的<see cref="IRemote.Guid"/>，防止和框架底层ID冲突。
+        /// </summary>
+        /// <param name="remote"></param>
         public static void Add(IRemote remote)
         {
             tempAddQ.Enqueue(remote);
         }
 
+        /// <summary>
+        /// 使用 <see cref="InterlockedID{IRemote}.NewID"/> 初始化你的<see cref="IRemote.Guid"/>，防止和框架底层ID冲突。
+        /// </summary>
+        /// <param name="remote"></param>
         public static void AddToPool(this IRemote remote)
         {
             Add(remote);

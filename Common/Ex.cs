@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using MMONET;
 
 namespace System
@@ -22,9 +21,23 @@ namespace System
 
         
     }
+}
 
+namespace System.Threading.Tasks
+{
+    public static class Task_49A548505C7242BEBD1AD43D876BC1B0
+    {
+        public async static Task<(T Result, bool Complete)> WaitAsync<T>(this Task<T> task, int millisecondsTimeout)
+        {
+            var Complete = await Task.Run(() => task.Wait(millisecondsTimeout));
+            return (Complete ? task.Result : default, Complete);
+        }
 
-    
+        public async static Task<bool> WaitAsync(this Task task, int millisecondsTimeout)
+        {
+            return await Task.Run(() => task.Wait(millisecondsTimeout));
+        }
+    }
 }
 
 namespace System.Collections.Generic

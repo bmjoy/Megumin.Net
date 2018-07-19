@@ -11,12 +11,12 @@ using static MMONET.Remote.FrameworkConst;
 namespace MMONET.Remote
 {
     /// <summary>
-    /// 
+    /// 不支持多播地址
     /// </summary>
     public partial class UDPRemote : UdpClient, IRemote, INetRemote
     {
         public int InstanceID { get; set; }
-        public bool Connected { get; }
+        public bool Connected { get; private set; }
         public Socket Socket => this.Client;
         public bool IsVaild { get; }
         public bool IsSending { get; }
@@ -57,11 +57,30 @@ namespace MMONET.Remote
             throw new NotImplementedException();
         }
 
-        public int Guid { get; }
+        public int Guid { get; } = InterlockedID<IRemote>.NewID();
 
-        public ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        bool isConnecting = false;
+        public async ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
-            throw new NotImplementedException();
+            if (isConnecting)
+            {
+                return new Exception("连接正在进行中");
+            }
+            isConnecting = true;
+            this.IPEndPoint = endPoint;
+            while (retryCount >= 0)
+            {
+                var res = await this.Connect();
+                if (res)
+                {
+                    isConnecting = false;
+                    return null;
+                }
+                retryCount--;
+            }
+
+            isConnecting = false;
+            return new SocketException((int)SocketError.AccessDenied);
         }
 
         public IPEndPoint IPEndPoint { get; set; }
@@ -69,22 +88,28 @@ namespace MMONET.Remote
 
     partial class UDPRemote
     {
-        public async void Connect()
+        async Task<bool> Connect()
         {
             lastseq = new Random().Next(0, 10000);
             this.WriteConnectMessage(1, 0, lastseq, lastack);
-            connectState = UDPConnectState.SYN_SENT;
+
+            ///SYN_SENT
             var rec = await this.ReceiveAsync();
             var (SYN, ACK, seq, ack) = ReadConnectMessage(rec.Buffer);
             if (SYN == 1 && ACK == 1 && lastseq +1 == ack)
             {
-                connectState = UDPConnectState.ESTABLISHED;
+                ///ESTABLISHED
                 lastseq += 1;
+                ///重定向到新的远端，并忽略所有其他远端消息。
+                IPEndPoint = rec.RemoteEndPoint;
                 this.WriteConnectMessage(1, 1, lastseq, ack + 1);
+                Connect(IPEndPoint);
+                Connected = true;
+                return true;
             }
             else
             {
-                connectState = UDPConnectState.INVALID;
+                return false;
             }
         }
 
@@ -92,62 +117,45 @@ namespace MMONET.Remote
         int lastseq;
         int lastack;
 
-        internal void TryAccept(UdpReceiveResult udpReceive)
+        internal async Task<bool> TryAccept(UdpReceiveResult udpReceive)
         {
-            if (connectState == UDPConnectState.ESTABLISHED)
+            if (Connected)
             {
                 ///已经成功连接，忽略连接请求
-                return;
+                return true;
             }
-
-            if (connectState == UDPConnectState.CLOSED)
-            {
-                connectState = UDPConnectState.LISTEN;
-            }
-
-            var (Size, MessageID, RpcID) = ParsePacketHeader(udpReceive.Buffer, udpReceive.Buffer.Length);
-
-            if (MessageID != UdpConnectMessageID)
-            {
-                connectState = UDPConnectState.INVALID;
-                return;
-            }
+            
+            ///LISTEN;
 
             var (SYN, ACK, seq, ack) = ReadConnectMessage(udpReceive.Buffer);
 
-            switch (connectState)
+            if (SYN == 1 && ACK == 0)
             {
-                case UDPConnectState.LISTEN:
-                    if (SYN == 1 && ACK == 0)
-                    {
-                        connectState = UDPConnectState.SYN_RCVD;
-                        lastack = new Random().Next(0, 10000);
-                        lastseq = seq;
-                        this.WriteConnectMessage(1, 1, lastack, seq + 1);
-                    }
-                    else
-                    {
-                        connectState = UDPConnectState.INVALID;
-                    }
-                    break;
-                case UDPConnectState.SYN_RCVD:
-                    if (ACK == 1 && lastseq +1 == seq && lastack +1 == ack)
-                    {
-                        connectState = UDPConnectState.ESTABLISHED;
-                    }
-                    else
-                    {
-                        connectState = UDPConnectState.INVALID;
-                    }
-                    break;
-                case UDPConnectState.ESTABLISHED:
-                    break;
-                case UDPConnectState.INVALID:
-                    break;
-                default:
-                    break;
-            }
+                ///SYN_RCVD;
+                lastack = new Random().Next(0, 10000);
+                lastseq = seq;
 
+                IPEndPoint = udpReceive.RemoteEndPoint;
+                this.WriteConnectMessage(1, 1, lastack, seq + 1);
+
+                var res = await ReceiveAsync();
+
+                if (ACK == 1 && lastseq + 1 == seq && lastack + 1 == ack)
+                {
+                    Connected = true;
+                    return true;
+                }
+                else
+                {
+                    ///INVALID;
+                    return false;
+                }
+            }
+            else
+            {
+                ///INVALID;
+                return false;
+            }
         }
 
         static (int SYN,int ACK,int seq,int ack) ReadConnectMessage(byte[] buffer)
@@ -162,7 +170,7 @@ namespace MMONET.Remote
 
     static class ConnectEX
     {
-        public static async void WriteConnectMessage(this UdpClient client, int SYN, int ACT, int seq, int ack)
+        public static async Task WriteConnectMessage(this UDPRemote client, int SYN, int ACT, int seq, int ack)
         {
             var bf = BufferPool.Pop(32);
             MakePacket(16, UdpConnectMessageID, 0, bf);
@@ -170,7 +178,7 @@ namespace MMONET.Remote
             BitConverter.GetBytes(ACT).CopyTo(bf, TotalHeaderByteCount + 4);
             BitConverter.GetBytes(seq).CopyTo(bf, TotalHeaderByteCount + 8);
             BitConverter.GetBytes(ack).CopyTo(bf, TotalHeaderByteCount + 12);
-            var offset = await client.SendAsync(bf, bf.Length);
+            var offset = await client.SendAsync(bf, bf.Length,client.IPEndPoint);
             BufferPool.Push(bf);
         }
     }

@@ -161,6 +161,10 @@ namespace Network.Remote
         /// 
         /// </summary>
         bool IsVaild { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         int Guid { get; }
     }
 

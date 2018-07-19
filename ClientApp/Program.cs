@@ -38,7 +38,7 @@ namespace TestClient
         private static async void ConnectAsync()
         {
             IRemote remote = new TCPRemote();
-            var ex = await remote.ConnectAsync(IPAddress.IPv6Loopback,54321);
+            var ex = await remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback,54321));
 
             if (ex == null)
             {

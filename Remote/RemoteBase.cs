@@ -438,10 +438,13 @@ namespace MMONET.Remote
             {
                 ///这个消息是rpc返回（回复的RpcID为-1~-32767）
                 ///rpc响应
-                if (rpcCallbackPool.ContainsKey(rpcID))
+                if (rpcCallbackPool.TryGetValue(rpcID,out var rpc))
                 {
-                    rpcCallbackPool[rpcID].RpcCallback?.Invoke(msg,null);
-                    rpcCallbackPool.Remove(rpcID);
+                    lock (rpcCallbackPool)
+                    {
+                        rpcCallbackPool.Remove(rpcID);
+                    }
+                    rpc.RpcCallback?.Invoke(msg, null);
                 }
 
                 ///无返回

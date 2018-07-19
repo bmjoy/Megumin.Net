@@ -64,7 +64,7 @@ namespace RemoteTestClient
         private static async void NewRemote(int clientIndex)
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.ConnectAsync(IPAddress.Loopback, 54321);
+            var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
             {
                 Console.WriteLine($"Remote{clientIndex}:Success");
@@ -150,7 +150,7 @@ namespace RemoteTestClient
         private static async void Connect(int index)
         {
             IRemote remote = new TCPRemote();
-            var res = await remote.ConnectAsync(IPAddress.Loopback, 54321);
+            var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
             {
                 Console.WriteLine($"Remote{index}:Success");
