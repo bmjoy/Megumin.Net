@@ -19,67 +19,6 @@ namespace MMONET.Remote
     public abstract partial class RemoteBase : ISendMessage, IReceiveMessage, IConnect, 
         INetRemote,IRemote
     {
-        static RemoteBase()
-        {
-            MainThreadScheduler.Add(StaticUpdate);
-        }
-        /// <summary>
-        /// remote 在构造函数中自动添加到RemoteDic 中,需要手动移除 或者调用<see cref="Disconnect(bool)"/> + <see cref="MainThreadScheduler.Update(double)"/>移除。
-        /// </summary>
-        static readonly Dictionary<int, RemoteBase> remoteDic = new Dictionary<int, RemoteBase>();
-        /// <summary>
-        /// 添加队列，防止多线程阻塞
-        /// </summary>
-        static readonly ConcurrentQueue<RemoteBase> tempAddQ = new ConcurrentQueue<RemoteBase>();
-
-        public static void Add(RemoteBase remote)
-        {
-            tempAddQ.Enqueue(remote);
-        }
-
-        public static bool TryGet(int Guid,out RemoteBase remote)
-        {
-            return remoteDic.TryGetValue(Guid, out remote);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public static readonly CoolDownTime UpdateDelta = new CoolDownTime();
-
-        static void StaticUpdate(double delta)
-        {
-            if (UpdateDelta.CoolDown)
-            {
-                lock (remoteDic)
-                {
-                    foreach (var item in remoteDic)
-                    {
-                        item.Value.Update(delta);
-                    }
-                }
-
-                while (tempAddQ.Count > 0)
-                {
-                    if (tempAddQ.TryDequeue(out var remote))
-                    {
-                        if (remote != null)
-                        {
-                            if (remoteDic.ContainsKey(remote.Guid))
-                            {
-                                ///理论上不会冲突
-                                Console.WriteLine($"remoteDic 键值冲突");
-                            }
-                            remoteDic[remote.Guid] = remote;
-                        }
-                    }
-                }
-
-                ///移除释放的连接
-                remoteDic.RemoveAll(r => !r.Value.IsVaild);
-            }
-        }
-
         public Socket Socket { get; }
 
         /// <summary>
@@ -91,7 +30,7 @@ namespace MMONET.Remote
             this.Socket = socket;
             ///断开连接将remote设置为无效
             onDisConnect += (er) => { IsVaild = false; };
-            Add(this);
+            this.AddToPool();
         }
 
         public bool Connected
@@ -105,12 +44,10 @@ namespace MMONET.Remote
         /// <summary>
         /// RemoteBase类型中的唯一ID。
         /// </summary>
-        public int Guid { get; } = InterlockedID<RemoteBase>.NewID();
+        public int Guid { get; } = InterlockedID<IRemote>.NewID();
         public int InstanceID { get; set; }
-        public IPAddress Address { get; set; }
-        public int Port { get; set; }
         /// <summary>
-        /// 如果为false <see cref="MainThreadScheduler.Update(double)"/>会检测从<see cref="RemoteDic"/>中移除
+        /// 如果为false <see cref="MainThreadScheduler.Update(double)"/>会检测从<see cref="RemotePool"/>中移除
         /// </summary>
         public bool IsVaild { get; protected set; } = true;
 
@@ -174,6 +111,8 @@ namespace MMONET.Remote
 
         #region Connect
 
+        public IPEndPoint IPEndPoint { get; set; }
+
         protected Action<SocketError> onDisConnect;
         public event Action<SocketError> OnDisConnect
         {
@@ -217,7 +156,7 @@ namespace MMONET.Remote
             {
                 try
                 {
-                    Socket.Connect(Address, Port);
+                    Socket.Connect(IPEndPoint);
                 }
                 catch (Exception e)
                 {
@@ -229,10 +168,9 @@ namespace MMONET.Remote
             return exception;
         }
 
-        public async ValueTask<Exception> ConnectAsync(IPAddress address, int port, int retryCount = 0)
+        public async ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
-            this.Address = address;
-            this.Port = port;
+            this.IPEndPoint = endPoint;
             while (retryCount >= 0)
             {
                 var ex = await ConnectAsync();

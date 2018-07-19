@@ -5,7 +5,7 @@ using System.Text;
 namespace MMONET.Message
 {
     /// <summary>
-    /// 使用MessageID来为每一个消息指定一个唯一ID
+    /// 使用MessageID来为每一个消息指定一个唯一ID(-999~999 被框架占用)
     /// </summary>
     public sealed class MSGID : Attribute
     {

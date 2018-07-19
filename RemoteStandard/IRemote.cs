@@ -14,11 +14,7 @@ namespace Network.Remote
         /// <summary>
         /// 
         /// </summary>
-        IPAddress Address { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        int Port { get; set; }
+        IPEndPoint IPEndPoint { get; set; }
     }
 
     /// <summary>
@@ -33,11 +29,10 @@ namespace Network.Remote
         /// <summary>
         /// <para>异常在底层Task过程中捕获，返回值null表示成功，调用者不必写try catch</para>
         /// </summary>
-        /// <param name="address"></param>
-        /// <param name="port"></param>
+        /// <param name="endPoint"></param>
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
         /// <returns></returns>
-        ValueTask<Exception> ConnectAsync(IPAddress address, int port, int retryCount = 0);
+        ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
         /// <summary>
         /// 主动断开连接
         /// <param name="triggerOnDisConnectEvent">选则是否触发事件</param>
@@ -46,10 +41,7 @@ namespace Network.Remote
     }
 
     /// <summary>
-    /// <see cref="SendAsync{T}(T)"/>不会自动开始Receive，RpcSend会自动开始Receive。
-    /// <para></para>
-    /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
-    /// <para>dynamic导致值类型装箱是可以妥协的。</para>
+    /// <see cref="SendAsync{T}(T)"/>不会自动开始Receive。
     /// </summary>
     public interface ISendMessage
     {
@@ -57,10 +49,6 @@ namespace Network.Remote
         /// remote 是否在发送数据
         /// </summary>
         bool IsSending { get; }
-        /// <summary>
-        /// Rpc超时时间秒数
-        /// </summary>
-        double RpcTimeOut { get; set; }
         /// <summary>
         /// 发送消息，无阻塞立刻返回
         /// <para>调用方 无法了解发送情况</para>
@@ -70,6 +58,33 @@ namespace Network.Remote
         /// <param name="message"></param>
         /// <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
         void SendAsync<T>(T message);
+        
+    }
+
+    /// <summary>
+    /// 更新Rpc结果，框架调用
+    /// </summary>
+    public interface IUpdateRpcResult
+    {
+        /// <summary>
+        /// 检测Rpc是否收到结果,是否超时，方法由框架注册到 MainThreadScheduler.
+        /// </summary>
+        /// <param name="delta"></param>
+        void UpdateRpcResult(double delta);
+    }
+
+    /// <summary>
+    /// RpcSend会自动开始Receive。
+    /// <para></para>
+    /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
+    /// <para>dynamic导致值类型装箱是可以妥协的。</para>
+    /// </summary>
+    public interface IRpcSendMessage:ISendMessage
+    {
+        /// <summary>
+        /// Rpc超时时间秒数
+        /// </summary>
+        double RpcTimeOut { get; set; }
         /// <summary>
         /// 异步发送消息，封装Rpc过程,大多数情况你应该使用<see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         /// </summary>
@@ -87,6 +102,7 @@ namespace Network.Remote
         /// <param name="OnException">发生异常时的回调函数</param>
         /// <returns></returns>
         Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
+
     }
 
     /// <summary>
@@ -127,7 +143,7 @@ namespace Network.Remote
     /// <summary>
     /// Socket封装
     /// </summary>
-    public interface IRemote : IEndPoint,ISendMessage,IReceiveMessage,IConnect
+    public interface IRemote : IEndPoint,ISendMessage,IReceiveMessage,IConnect,IRpcSendMessage
     {
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
@@ -145,6 +161,7 @@ namespace Network.Remote
         /// 
         /// </summary>
         bool IsVaild { get; }
+        int Guid { get; }
     }
 
     /// <summary>

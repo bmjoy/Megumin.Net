@@ -50,7 +50,7 @@ namespace MMONET.Message
         public const int RpcIDByteCount = sizeof(ushort);
 
         /// <summary>
-        /// 报头总长度
+        /// 报头总长度 8
         /// </summary>
         public const int TotalHeaderByteCount =
             MessageLengthByteCount + MessageIDByteCount + RpcIDByteCount;

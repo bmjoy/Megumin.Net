@@ -8,6 +8,7 @@ using System.Diagnostics;
 using MMONET.Remote.Test;
 using MMONET;
 using MMONET.Message;
+using Network.Remote;
 
 namespace RemoteTestClient
 {
@@ -38,9 +39,9 @@ namespace RemoteTestClient
             });
 
             ///性能测试
-            TestSpeed();
+            //TestSpeed();
             ///连接测试
-            //TestConnect();
+            TestConnect();
         }
 
 
@@ -148,7 +149,7 @@ namespace RemoteTestClient
 
         private static async void Connect(int index)
         {
-            TCPRemote remote = new TCPRemote();
+            IRemote remote = new TCPRemote();
             var res = await remote.ConnectAsync(IPAddress.Loopback, 54321);
             if (res == null)
             {

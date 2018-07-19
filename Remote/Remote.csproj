@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>MMONET.Remote</AssemblyName>
-    <RootNamespace>MMONET.Sockets</RootNamespace>
+    <RootNamespace>MMONET.Remote</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
