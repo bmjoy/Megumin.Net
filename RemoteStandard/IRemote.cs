@@ -32,7 +32,7 @@ namespace Network.Remote
         /// <param name="endPoint"></param>
         /// <param name="retryCount">重试次数，失败会返回最后一次的异常</param>
         /// <returns></returns>
-        ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
+        Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
         /// <summary>
         /// 主动断开连接
         /// <param name="triggerOnDisConnectEvent">选则是否触发事件</param>

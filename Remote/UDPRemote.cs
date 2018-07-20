@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Network.Remote;
 using static MMONET.Message.MessageLUT;
-using static MMONET.Remote.FrameworkConst;
 
 namespace MMONET.Remote
 {
@@ -60,7 +59,7 @@ namespace MMONET.Remote
         public int Guid { get; } = InterlockedID<IRemote>.NewID();
 
         bool isConnecting = false;
-        public async ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             if (isConnecting)
             {
@@ -94,15 +93,26 @@ namespace MMONET.Remote
             this.WriteConnectMessage(1, 0, lastseq, lastack);
 
             ///SYN_SENT
-            var rec = await this.ReceiveAsync();
-            var (SYN, ACK, seq, ack) = ReadConnectMessage(rec.Buffer);
+            var res = await this.ReceiveAsync();
+
+            var (Size, MessageID, RpcID) = ParsePacketHeader(res.Buffer, 0);
+            if (MessageID != FrameworkConst.UdpConnectMessageID)
+            {
+                return false;
+            }
+
+            var (SYN, ACK, seq, ack) = ReadConnectMessage(res.Buffer);
             if (SYN == 1 && ACK == 1 && lastseq +1 == ack)
             {
                 ///ESTABLISHED
                 lastseq += 1;
                 ///重定向到新的远端，并忽略所有其他远端消息。
-                IPEndPoint = rec.RemoteEndPoint;
-                this.WriteConnectMessage(1, 1, lastseq, ack + 1);
+                IPEndPoint = res.RemoteEndPoint;
+
+                ///测试超时
+                System.Threading.Thread.Sleep(6000);
+
+                this.WriteConnectMessage(1, 1, lastseq, seq + 1);
                 Connect(IPEndPoint);
                 Connected = true;
                 return true;
@@ -140,6 +150,14 @@ namespace MMONET.Remote
 
                 var res = await ReceiveAsync();
 
+                var (Size, MessageID, RpcID) = ParsePacketHeader(res.Buffer, 0);
+                if (MessageID != FrameworkConst.UdpConnectMessageID)
+                {
+                    return false;
+                }
+
+                (SYN, ACK, seq, ack) = ReadConnectMessage(res.Buffer);
+
                 if (ACK == 1 && lastseq + 1 == seq && lastack + 1 == ack)
                 {
                     Connected = true;
@@ -173,12 +191,12 @@ namespace MMONET.Remote
         public static async Task WriteConnectMessage(this UDPRemote client, int SYN, int ACT, int seq, int ack)
         {
             var bf = BufferPool.Pop(32);
-            MakePacket(16, UdpConnectMessageID, 0, bf);
+            MakePacket(16, FrameworkConst.UdpConnectMessageID, 0, bf);
             BitConverter.GetBytes(SYN).CopyTo(bf, TotalHeaderByteCount);
             BitConverter.GetBytes(ACT).CopyTo(bf, TotalHeaderByteCount + 4);
             BitConverter.GetBytes(seq).CopyTo(bf, TotalHeaderByteCount + 8);
             BitConverter.GetBytes(ack).CopyTo(bf, TotalHeaderByteCount + 12);
-            var offset = await client.SendAsync(bf, bf.Length,client.IPEndPoint);
+            var offset = await client.SendAsync(bf, bf.Length, client.IPEndPoint);
             BufferPool.Push(bf);
         }
     }

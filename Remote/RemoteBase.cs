@@ -168,7 +168,7 @@ namespace MMONET.Remote
             return exception;
         }
 
-        public async ValueTask<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
+        public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             this.IPEndPoint = endPoint;
             while (retryCount >= 0)
