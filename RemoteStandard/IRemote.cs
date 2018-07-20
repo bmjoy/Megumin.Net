@@ -61,6 +61,8 @@ namespace Network.Remote
         
     }
 
+    public delegate void RpcCallback(dynamic message, Exception exception);
+
     /// <summary>
     /// 更新Rpc结果，框架调用
     /// </summary>
@@ -71,6 +73,20 @@ namespace Network.Remote
         /// </summary>
         /// <param name="delta"></param>
         void UpdateRpcResult(double delta);
+    }
+
+    /// <summary>
+    /// 更新Rpc结果，框架调用，协助处理Rpc封装
+    /// 每个session大约每秒30个包，超时时间默认为30秒；
+    /// </summary>
+    public interface IRpcCallbackPool : IUpdateRpcResult
+    {
+        double RpcTimeOut { get; set; }
+
+        (short rpcID, Task<(RpcResult Result, Exception Excption)> source) Regist<RpcResult>();
+        (short rpcID, Task<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
+        bool TryGetValue(short rpcID, out (DateTime StartTime, RpcCallback RpcCallback) rpc);
+        void Remove(short rpcID);
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using MMONET.Message;
 using Network.Remote;
 using static MMONET.Message.MessageLUT;
 
@@ -18,31 +19,143 @@ namespace MMONET.Remote
         public bool Connected { get; private set; }
         public Socket Socket => this.Client;
         public bool IsVaild { get; }
-        public bool IsSending { get; }
-        public double RpcTimeOut { get; set; }
 
-        public new void SendAsync<T>(T message)
+        #region RPC
+
+        public double RpcTimeOut
         {
-            throw new NotImplementedException();
+            get => rpcCallbackPool.RpcTimeOut;
+            set => rpcCallbackPool.RpcTimeOut = value;
         }
 
-        public Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message)
+        readonly IRpcCallbackPool rpcCallbackPool = new RpcCallbackPool(31);
+
+        public void UpdateRpcResult(double delta) => rpcCallbackPool.UpdateRpcResult(delta);
+
+        #endregion
+
+        #region Send
+
+        public bool IsSending { get; protected set; }
+
+        public virtual Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message)
         {
-            throw new NotImplementedException();
+            if (!IsReceiving)
+            {
+                Receive(null);
+            }
+
+            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>();
+
+            SendAsync(rpcID, message);
+
+            return source;
         }
 
-        public Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+
+        /// <summary>
+        /// <see cref="IRpcSendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <param name="message"></param>
+        /// <param name="OnException"></param>
+        /// <returns></returns>
+        public virtual Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
-            throw new NotImplementedException();
+            if (!IsReceiving)
+            {
+                Receive(null);
+            }
+
+            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>(OnException);
+
+            SendAsync(rpcID, message);
+
+            return source;
         }
+
+        public virtual void SendAsync<T>(T message)
+        {
+            SendAsync(0, message);
+        }
+
+        /// <summary>
+        /// 异步发送
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        void SendAsync<T>(short rpcID, T message)
+        {
+            if (!Connected)
+            {
+                return;
+            }
+
+            var bufferMsg = MessageLUT.Serialize(rpcID, message);
+
+            var s = SendAsync(bufferMsg.Array, bufferMsg.Count);
+
+            BufferPool.Push(bufferMsg.Array);
+        }
+
+        #endregion
+
+        #region Receive
 
         public int ReceiveBufferSize { get; }
-        public bool IsReceiving { get; }
+        public bool IsReceiving { get; private set; }
 
+        /// <summary>
+        /// 接受消息的回调函数
+        /// </summary>
+        protected OnReceiveMessage onReceive;
         public void Receive(OnReceiveMessage onReceive)
         {
-            throw new NotImplementedException();
+            this.onReceive = onReceive;
+
+            if (!IsReceiving)
+            {
+                MyReceiveAsync();
+            }
         }
+
+        async void MyReceiveAsync()
+        {
+            if (!IsReceiving)
+            {
+                ///绑定远端，防止UDP流量攻击
+                Connect(IPEndPoint);
+            }
+
+            IsReceiving = true;
+
+            var res = await ReceiveAsync();
+            if (IsVaild)
+            {
+                MyReceiveAsync();
+            }
+
+            ParseBuffer(res);
+        }
+
+        private void ParseBuffer(UdpReceiveResult result)
+        {
+            var (Size, MessageID, RpcID) = ParsePacketHeader(result.Buffer, 0);
+            if (MessageID == FrameworkConst.HeartbeatsMessageID)
+            {
+                ///拦截框架心跳包
+                //todo
+            }
+            else
+            {
+                ///推入消息池
+                MessagePool.PushReceivePacket(MessageID, RpcID,
+                    new ArraySegment<byte>(result.Buffer, TotalHeaderByteCount, Size), this);
+            }
+        }
+
+        #endregion
 
         public event Action<SocketError> OnDisConnect;
 
@@ -148,7 +261,7 @@ namespace MMONET.Remote
                 IPEndPoint = udpReceive.RemoteEndPoint;
                 this.WriteConnectMessage(1, 1, lastack, seq + 1);
 
-                var res = await ReceiveAsync();
+                var res = await base.ReceiveAsync();
 
                 var (Size, MessageID, RpcID) = ParsePacketHeader(res.Buffer, 0);
                 if (MessageID != FrameworkConst.UdpConnectMessageID)

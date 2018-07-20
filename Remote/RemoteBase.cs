@@ -17,7 +17,7 @@ namespace MMONET.Remote
     /// <para>数据在网络上传输的时候，是以“帧”为单位的，帧最大为1518个字节，最小为64字节。</para>
     /// </summary>
     public abstract partial class RemoteBase : ISendMessage, IReceiveMessage, IConnect, 
-        INetRemote,IRemote
+        INetRemote,IRemote,IUpdateRpcResult
     {
         public Socket Socket { get; }
 
@@ -51,62 +51,20 @@ namespace MMONET.Remote
         /// </summary>
         public bool IsVaild { get; protected set; } = true;
 
-        protected virtual void Update(double delta)
-        {
-            lock (rpcCallbackPool)
-            {
-                ///检查Rpc超时
-                rpcCallbackPool.RemoveAll(kv =>
-                {
-                    var es = DateTime.Now - kv.Value.StartTime;
-                    var istimeout = es.TotalSeconds > RpcTimeOut;
-                    if (istimeout)
-                    {
-                        kv.Value.RpcCallback?.Invoke(null, new TimeoutException());
-                    }
-                    return istimeout;
-                });
-            }
-        }
+
 
         #region RPC
 
-        short rpcCursor = 0;
-        readonly object rpcCursorLock = new object();
-        /// <summary>
-        /// 默认30s
-        /// </summary>
-        public double RpcTimeOut { get; set; } = 30;
-        delegate void RpcCallback(dynamic message, Exception exception);
-        /// <summary>
-        /// 每个session大约每秒30个包，超时时间为30秒；
-        /// </summary>
-        readonly Dictionary<short, (DateTime StartTime, RpcCallback RpcCallback)> rpcCallbackPool
-            = new Dictionary<short, (DateTime StartTime, RpcCallback RpcCallback)>(31);
-
-        /// <summary>
-        /// 原子操作 取得RpcId,发送方的的RpcID为1~32767，回复的RpcID为-1~-32767，正负一一对应
-        /// <para>0,-32768 为无效值</para>
-        /// 最多同时维持32767个Rpc调用
-        /// </summary>
-        /// <returns></returns>
-        short GetRpcID()
+        public double RpcTimeOut
         {
-            lock (rpcCursorLock)
-            {
-                if (rpcCursor <= 0 || rpcCursor == short.MaxValue)
-                {
-                    rpcCursor = 1;
-                }
-                else
-                {
-                    rpcCursor++;
-                }
+            get => rpcCallbackPool.RpcTimeOut;
+            set => rpcCallbackPool.RpcTimeOut = value;
+        } 
+        
+        readonly IRpcCallbackPool rpcCallbackPool = new RpcCallbackPool(31);
 
-                return rpcCursor;
-            }
-        }
-
+        public void UpdateRpcResult(double delta) => rpcCallbackPool.UpdateRpcResult(delta);
+        
         #endregion
 
         #region Connect
@@ -206,64 +164,16 @@ namespace MMONET.Remote
             {
                 Receive();
             }
-
-            short rpcID = GetRpcID();
+            var (rpcID,source) = rpcCallbackPool.Regist<RpcResult>();
 
             SendAsync(rpcID, message);
 
-            TaskCompletionSource<(RpcResult Result, Exception Excption)> source
-                = new TaskCompletionSource<(RpcResult Result, Exception Excption)>();
-            lock (rpcCallbackPool)
-            {
-                short key = (short)(rpcID * -1);
-                if (rpcCallbackPool.ContainsKey(key))
-                {
-                    ///如果出现RpcID冲突，认为前一个已经超时。
-                    var callback = rpcCallbackPool[key];
-                    rpcCallbackPool.Remove(key);
-                    callback.RpcCallback?.Invoke(null, new TimeoutException());
-                }
-
-                rpcCallbackPool[key] = (DateTime.Now,
-                    (resp, ex) =>
-                    {
-                        if (ex == null)
-                        {
-                            if (resp is RpcResult result)
-                            {
-                                source.SetResult((result,null));
-                            }
-                            else
-                            {
-                                if (resp == null)
-                                {
-                                    source.SetResult((resp, new NullReferenceException()));
-                                }
-                                else
-                                {
-                                    ///返回类型错误
-                                    source.SetResult((resp, new ArgumentException($"返回类型错误，无法识别")));
-                                }
-
-                            }
-                        }
-                        else
-                        {
-                            source.SetResult((resp, ex));
-                        }
-
-                        //todo
-                        //source 回收
-                    }
-                );
-            }
-
-            return source.Task;
+            return source;
         }
 
 
         /// <summary>
-        /// <see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
+        /// <see cref="IRpcSendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="message"></param>
@@ -276,59 +186,11 @@ namespace MMONET.Remote
                 Receive();
             }
 
-            short rpcID = GetRpcID();
+            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>(OnException);
 
             SendAsync(rpcID, message);
 
-            TaskCompletionSource<RpcResult> source = new TaskCompletionSource<RpcResult>();
-
-            lock (rpcCallbackPool)
-            {
-                short key = (short)(rpcID * -1);
-                if (rpcCallbackPool.ContainsKey(key))
-                {
-                    ///如果出现RpcID冲突，认为前一个已经超时。
-                    var callback = rpcCallbackPool[key];
-                    rpcCallbackPool.Remove(key);
-                    callback.RpcCallback?.Invoke(null, new TimeoutException());
-                }
-
-                rpcCallbackPool[key] = (DateTime.Now,
-                    (resp, ex) =>
-                    {
-                        if (ex == null)
-                        {
-                            if (resp is RpcResult result)
-                            {
-                                source.SetResult(result);
-                            }
-                            else
-                            {
-                                if (resp == null)
-                                {
-                                    OnException?.Invoke(new NullReferenceException());
-                                }
-                                else
-                                {
-                                    ///返回类型错误
-                                    OnException?.Invoke(new ArgumentException($"返回类型错误，无法识别"));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            OnException?.Invoke(ex);
-                        }
-
-                        //todo
-                        //source 回收
-                    }
-                );
-            }
-
-            
-
-            return source.Task;
+            return source;
         }
 
         public virtual void SendAsync<T>(T message)
@@ -450,7 +312,6 @@ namespace MMONET.Remote
                 ///无返回
             }
         }
-
 
         #region BroadCast
 
