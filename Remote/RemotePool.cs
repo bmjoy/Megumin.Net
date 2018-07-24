@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
+using MMONET.Message;
 using Network.Remote;
 using IRemoteDic = MMONET.IDictionary<int, System.Net.IPEndPoint, Network.Remote.IRemote>;
 
@@ -20,7 +22,7 @@ namespace MMONET.Remote
         }
 
         /// <summary>
-        /// remote 在构造函数中自动添加到RemoteDic 中,需要手动移除 或者调用<see cref="IConnect.Disconnect(bool)"/> + <see cref="MainThreadScheduler.Update(double)"/>移除。
+        /// remote 在构造函数中自动添加到RemoteDic 中,需要手动移除 或者调用<see cref="IConnectable.Disconnect(bool)"/> + <see cref="MainThreadScheduler.Update(double)"/>移除。
         /// </summary>
         static IRemoteDic remoteDic = new K2Dictionary<int, IPEndPoint, IRemote>();
         /// <summary>
@@ -101,5 +103,43 @@ namespace MMONET.Remote
         {
             return remoteDic.TryGetValue(ep, out remote);
         }
+
+        #region BroadCast
+
+        /// <summary>
+        /// 广播
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="remotes"></param>
+        public static void BroadCastAsync<T>(T message, params IBroadCastSend[] remotes)
+        {
+            BroadCastAsync(message, remotes as IEnumerable<IBroadCastSend>);
+        }
+
+        public static void BroadCastAsync<T>(T message, IEnumerable<IBroadCastSend> remotes)
+        {
+
+            var msgBuffer = MessageLUT.Serialize(0, message);
+
+            ///这里需要测试
+            Task.Run(() =>
+            {
+                Parallel.ForEach(remotes,
+                async (item) =>
+                {
+                    //(Action<INetRemote>)
+                    await item?.BroadCastSendAsync(msgBuffer);
+                });
+            }).ContinueWith((t) =>
+            {
+                ///这里需要测试
+                BufferPool.Push(msgBuffer.Array);
+            });
+        }
+
+
+        #endregion
+
+
     }
 }

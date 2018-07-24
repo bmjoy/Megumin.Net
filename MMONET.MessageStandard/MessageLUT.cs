@@ -145,6 +145,13 @@ namespace MMONET.Message
             AddDFormatter(messageID, deserilizer, key);
         }
 
+        public static void AddFormatter<T>(int messageID, Seiralizer<T> seiralizer, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        {
+            AddSFormatter(typeof(T), messageID, seiralizer, key);
+            AddDFormatter(messageID, deserilizer, key);
+        }
+
+
         public static ArraySegment<byte> Serialize<T>(short rpcID, T message)
         {
             ///序列化消息

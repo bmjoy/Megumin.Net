@@ -27,10 +27,10 @@ namespace System.Threading.Tasks
 {
     public static class Task_49A548505C7242BEBD1AD43D876BC1B0
     {
-        public async static Task<(T Result, bool Complete)> WaitAsync<T>(this Task<T> task, int millisecondsTimeout)
+        public async static Task<(T result, bool complete)> WaitAsync<T>(this Task<T> task, int millisecondsTimeout)
         {
-            var Complete = await Task.Run(() => task.Wait(millisecondsTimeout));
-            return (Complete ? task.Result : default, Complete);
+            var complete = await Task.Run(() => task.Wait(millisecondsTimeout));
+            return (complete ? task.Result : default, complete);
         }
 
         public async static Task<bool> WaitAsync(this Task task, int millisecondsTimeout)

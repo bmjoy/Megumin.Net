@@ -10,6 +10,17 @@ namespace AsyncTest
 
         static void Main(string[] args)
         {
+            //NewMethod1();
+
+            Test3 test3 = new Test3();
+            test3.Test2();
+            test3.source.TrySetCanceled();
+
+            Console.ReadLine();
+        }
+
+        private static void NewMethod1()
+        {
             Console.WriteLine("Hello World!");
             //NewMethod();
             Console.WriteLine($"5------当前线程{Thread.CurrentThread.ManagedThreadId}");
@@ -21,8 +32,6 @@ namespace AsyncTest
             Console.WriteLine($"6------当前线程{Thread.CurrentThread.ManagedThreadId}");
             Thread.Sleep(10000);
             Console.WriteLine($"7------当前线程{Thread.CurrentThread.ManagedThreadId}");
-
-            Console.ReadLine();
         }
 
         private static void NewMethod()
@@ -82,6 +91,28 @@ namespace AsyncTest
         {
             source = new TaskCompletionSource<int>();
             return source.Task;
+        }
+    }
+
+    public class Test3
+    {
+        public TaskCompletionSource<int> source;
+
+        public Task<int> Test1Async()
+        {
+            source = new TaskCompletionSource<int>();
+            ThreadPool.QueueUserWorkItem(state =>
+            {
+                Thread.Sleep(10000);
+                source.SetResult(1);
+            });
+            return source.Task;
+        }
+
+        public async void Test2()
+        {
+            int v = await Test1Async();
+            Console.WriteLine(v);
         }
     }
 

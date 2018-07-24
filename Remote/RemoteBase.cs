@@ -16,7 +16,7 @@ namespace MMONET.Remote
     /// <para></para>
     /// <para>数据在网络上传输的时候，是以“帧”为单位的，帧最大为1518个字节，最小为64字节。</para>
     /// </summary>
-    public abstract partial class RemoteBase : ISendMessage, IReceiveMessage, IConnect, 
+    public abstract partial class RemoteBase : ISendMessage, IReceiveMessage, IConnectable, 
         INetRemote,IRemote,IUpdateRpcResult
     {
         public Socket Socket { get; }
@@ -158,7 +158,7 @@ namespace MMONET.Remote
 
         public bool IsSending { get; protected set; }
 
-        public virtual Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message)
+        public virtual Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message)
         {
             if (!IsReceiving)
             {
@@ -213,6 +213,7 @@ namespace MMONET.Remote
         public abstract int ReceiveBufferSize { get; }
         public bool IsReceiving { get; protected set; }
 
+        public DateTime LastReceiveTime { get; protected set; }
         /// <summary>
         /// 接受消息的回调函数
         /// </summary>
@@ -306,7 +307,7 @@ namespace MMONET.Remote
                     {
                         rpcCallbackPool.Remove(rpcID);
                     }
-                    rpc.RpcCallback?.Invoke(msg, null);
+                    rpc.rpcCallback?.Invoke(msg, null);
                 }
 
                 ///无返回
@@ -314,6 +315,18 @@ namespace MMONET.Remote
         }
 
         #region BroadCast
+
+
+        Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
+        {
+            return Task.Run(() =>
+            {
+                if (Connected)
+                {
+                    Socket.Send(msgBuffer.Array, msgBuffer.Offset, msgBuffer.Count, SocketFlags.None);
+                }
+            });
+        }
 
         /// <summary>
         /// 广播

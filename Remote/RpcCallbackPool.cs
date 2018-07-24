@@ -11,7 +11,7 @@ namespace MMONET.Remote
     /// <summary>
     /// Rpc回调注册池
     /// </summary>
-    public class RpcCallbackPool : Dictionary<short, (DateTime StartTime, RpcCallback RpcCallback)>, IRpcCallbackPool
+    public class RpcCallbackPool : Dictionary<short, (DateTime startTime, RpcCallback rpcCallback)>, IRpcCallbackPool
     {
         short rpcCursor = 0;
         readonly object rpcCursorLock = new object();
@@ -53,7 +53,7 @@ namespace MMONET.Remote
             }
         }
 
-        public (short rpcID, Task<(RpcResult Result, Exception Excption)> source) Regist<RpcResult>()
+        public (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>()
         {
             short rpcID = GetRpcID();
 
@@ -67,7 +67,7 @@ namespace MMONET.Remote
                     ///如果出现RpcID冲突，认为前一个已经超时。
                     var callback = this[key];
                     Remove(key);
-                    callback.RpcCallback?.Invoke(null, new TimeoutException());
+                    callback.rpcCallback?.Invoke(null, new TimeoutException());
                 }
 
                 this[key] = (DateTime.Now,
@@ -121,7 +121,7 @@ namespace MMONET.Remote
                     ///如果出现RpcID冲突，认为前一个已经超时。
                     var callback = this[key];
                     this.Remove(key);
-                    callback.RpcCallback?.Invoke(null, new TimeoutException());
+                    callback.rpcCallback?.Invoke(null, new TimeoutException());
                 }
 
                 this[key] = (DateTime.Now,
@@ -167,11 +167,11 @@ namespace MMONET.Remote
                 ///检查Rpc超时
                 this.RemoveAll(kv =>
                 {
-                    var es = DateTime.Now - kv.Value.StartTime;
+                    var es = DateTime.Now - kv.Value.startTime;
                     var istimeout = es.TotalSeconds > RpcTimeOut;
                     if (istimeout)
                     {
-                        kv.Value.RpcCallback?.Invoke(null, new TimeoutException());
+                        kv.Value.rpcCallback?.Invoke(null, new TimeoutException());
                     }
                     return istimeout;
                 });

@@ -18,9 +18,9 @@ namespace Network.Remote
     }
 
     /// <summary>
-    /// 连接
+    /// 可连接的
     /// </summary>
-    public interface IConnect : IEndPoint
+    public interface IConnectable : IEndPoint
     {
         /// <summary>
         /// 断开连接事件
@@ -82,10 +82,9 @@ namespace Network.Remote
     public interface IRpcCallbackPool : IUpdateRpcResult
     {
         double RpcTimeOut { get; set; }
-
-        (short rpcID, Task<(RpcResult Result, Exception Excption)> source) Regist<RpcResult>();
+        (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
         (short rpcID, Task<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
-        bool TryGetValue(short rpcID, out (DateTime StartTime, RpcCallback RpcCallback) rpc);
+        bool TryGetValue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         void Remove(short rpcID);
     }
 
@@ -107,7 +106,7 @@ namespace Network.Remote
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
         /// <returns>需要检测空值</returns>
-        Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message);
+        Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -119,6 +118,44 @@ namespace Network.Remote
         /// <returns></returns>
         Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
 
+    }
+
+    /// <summary>
+    /// 可以广播发送
+    /// </summary>
+    public interface IBroadCastSend
+    {
+        /// <summary>
+        /// 用于广播方式的发送
+        /// </summary>
+        /// <param name="msgBuffer"></param>
+        /// <returns></returns>
+        Task BroadCastSendAsync(ArraySegment<byte> msgBuffer);
+    }
+
+    /// <summary>
+    /// 可以断线重连的
+    /// </summary>
+    public interface IReConnectable
+    {
+        /// <summary>
+        /// 打开关闭断线重连
+        /// </summary>
+        bool IsReConnect { get; set; }
+
+        /// <summary>
+        /// 尝试重连的最大时间，超过时间触发断开连接(毫秒)
+        /// </summary>
+        int ReConnectTime { get; set; }
+
+        /// <summary>
+        /// 触发断线重连
+        /// </summary>
+        event Action<IReConnectable> PreReConnect;
+        /// <summary>
+        /// 断线重连成功。重连失败触发断开连接<see cref="IConnectable.OnDisConnect"/>
+        /// </summary>
+        event Action<IReConnectable> ReConnectSuccess;
     }
 
     /// <summary>
@@ -150,6 +187,10 @@ namespace Network.Remote
         bool IsReceiving { get; }
 
         /// <summary>
+        /// 最后一次收到消息的时间
+        /// </summary>
+        DateTime LastReceiveTime { get; }
+        /// <summary>
         /// 异步接受消息包
         /// </summary>
         /// <param name="onReceive">处理消息方法，如果远端为RPC调用，那么应该返回一个合适的结果，否则返回null</param>
@@ -159,7 +200,8 @@ namespace Network.Remote
     /// <summary>
     /// Socket封装
     /// </summary>
-    public interface IRemote : IEndPoint,ISendMessage,IReceiveMessage,IConnect,IRpcSendMessage
+    public interface IRemote : IEndPoint,ISendMessage,IReceiveMessage,
+        IConnectable,IRpcSendMessage, IBroadCastSend
     {
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）

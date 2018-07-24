@@ -38,7 +38,7 @@ namespace MMONET.Remote
 
         public bool IsSending { get; protected set; }
 
-        public virtual Task<(RpcResult Result, Exception Excption)> RpcSendAsync<RpcResult>(dynamic message)
+        public virtual Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message)
         {
             if (!IsReceiving)
             {
@@ -131,6 +131,7 @@ namespace MMONET.Remote
             IsReceiving = true;
 
             var res = await ReceiveAsync();
+            LastReceiveTime = DateTime.Now;
             if (IsVaild)
             {
                 MyReceiveAsync();
@@ -196,6 +197,7 @@ namespace MMONET.Remote
         }
 
         public IPEndPoint IPEndPoint { get; set; }
+        public DateTime LastReceiveTime { get; private set; }
     }
 
     partial class UDPRemote
