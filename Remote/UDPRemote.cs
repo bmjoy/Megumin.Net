@@ -22,10 +22,10 @@ namespace MMONET.Remote
 
         #region RPC
 
-        public double RpcTimeOut
+        public double RpcTimeOutMilliseconds
         {
-            get => rpcCallbackPool.RpcTimeOut;
-            set => rpcCallbackPool.RpcTimeOut = value;
+            get => rpcCallbackPool.RpcTimeOutMilliseconds;
+            set => rpcCallbackPool.RpcTimeOutMilliseconds = value;
         }
 
         readonly IRpcCallbackPool rpcCallbackPool = new RpcCallbackPool(31);

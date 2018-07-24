@@ -63,7 +63,7 @@ namespace RemoteTestClient
 
         private static async void NewRemote(int clientIndex)
         {
-            TCPRemote remote = new TCPRemote();
+            IRemote remote = new TCPRemote();
             var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
             {

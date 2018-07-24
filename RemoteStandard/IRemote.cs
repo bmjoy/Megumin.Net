@@ -63,29 +63,33 @@ namespace Network.Remote
 
     public delegate void RpcCallback(dynamic message, Exception exception);
 
-    /// <summary>
-    /// 更新Rpc结果，框架调用
-    /// </summary>
-    public interface IUpdateRpcResult
-    {
-        /// <summary>
-        /// 检测Rpc是否收到结果,是否超时，方法由框架注册到 MainThreadScheduler.
-        /// </summary>
-        /// <param name="delta"></param>
-        void UpdateRpcResult(double delta);
-    }
+    ///// <summary>
+    ///// 更新Rpc结果，框架调用
+    ///// </summary>
+    //public interface IUpdateRpcResult
+    //{
+    //    /// <summary>
+    //    /// 检测Rpc是否收到结果,是否超时，方法由框架注册到 MainThreadScheduler.
+    //    /// </summary>
+    //    /// <param name="delta"></param>
+    //    void UpdateRpcResult(double delta);
+    //}
 
     /// <summary>
     /// 更新Rpc结果，框架调用，协助处理Rpc封装
     /// 每个session大约每秒30个包，超时时间默认为30秒；
     /// </summary>
-    public interface IRpcCallbackPool : IUpdateRpcResult
+    public interface IRpcCallbackPool
     {
-        double RpcTimeOut { get; set; }
+        /// <summary>
+        /// Rpc超时毫秒数
+        /// </summary>
+        int RpcTimeOutMilliseconds { get; set; }
         (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
-        (short rpcID, Task<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
+        (short rpcID, ICanAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
         bool TryGetValue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         void Remove(short rpcID);
+        void Call(short rpcID, dynamic msg);
     }
 
     /// <summary>
@@ -99,7 +103,7 @@ namespace Network.Remote
         /// <summary>
         /// Rpc超时时间秒数
         /// </summary>
-        double RpcTimeOut { get; set; }
+        int RpcTimeOutMilliseconds { get; set; }
         /// <summary>
         /// 异步发送消息，封装Rpc过程,大多数情况你应该使用<see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         /// </summary>
@@ -116,8 +120,7 @@ namespace Network.Remote
         /// <param name="message"></param>
         /// <param name="OnException">发生异常时的回调函数</param>
         /// <returns></returns>
-        Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
-
+        ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
     }
 
     /// <summary>

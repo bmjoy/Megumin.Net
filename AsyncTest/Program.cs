@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace AsyncTest
 {
@@ -14,7 +15,15 @@ namespace AsyncTest
 
             Test3 test3 = new Test3();
             test3.Test2();
-            test3.source.TrySetCanceled();
+            ThreadPool.QueueUserWorkItem(state =>
+            {
+                test3.source.Task.GetAwaiter().OnCompleted(()=> 
+                {
+                    test3.ToString();
+                });
+                test3.source.SetResult(1);
+            });
+
 
             Console.ReadLine();
         }
@@ -97,15 +106,10 @@ namespace AsyncTest
     public class Test3
     {
         public TaskCompletionSource<int> source;
-
+        public FastAwaiter<int> fastAwaiter = new FastAwaiter<int>();
         public Task<int> Test1Async()
         {
             source = new TaskCompletionSource<int>();
-            ThreadPool.QueueUserWorkItem(state =>
-            {
-                Thread.Sleep(10000);
-                source.SetResult(1);
-            });
             return source.Task;
         }
 
@@ -124,4 +128,95 @@ namespace AsyncTest
 
         }
     }
+
+    public interface IGetAwaiter
+    {
+        IAwaiterResult GetAwaiter();
+    }
+
+    public interface IAwaiterResult : ICriticalNotifyCompletion
+    {
+        bool IsCompleted { get; }
+        void GetResult();
+    }
+
+    public interface IGetAwaiter<T>
+    {
+        IAwaiterResult<T> GetAwaiter();
+    }
+
+    public interface IAwaiterResult<T> : ICriticalNotifyCompletion
+    {
+        bool IsCompleted { get; }
+        T GetResult();
+    }
+
+    public class FastAwaiter : IGetAwaiter
+    {
+        public IAwaiterResult GetAwaiter()
+        {
+            throw new NotImplementedException();
+        }
+
+
+    }
+
+    public class FastAwaiter<T>
+    {
+        private Action UC;
+        private Action C;
+
+        public bool IsCompleted { get; internal set; }
+        public T Result { get; internal set; }
+
+        public void GetAwaiter()
+        {
+            //return default;
+        }
+
+        internal void SetUC(Action continuation)
+        {
+            this.UC = continuation;
+        }
+
+        internal void SetC(Action continuation)
+        {
+            this.C = continuation;
+        }
+
+        public void SetResult(T r)
+        {
+            this.Result = r;
+            this.UC();
+        }
+    }
+
+    public struct Result<T> : IAwaiterResult<T>
+    {
+        private FastAwaiter<T> fastAwaiter;
+
+        public Result(FastAwaiter<T> fastAwaiter)
+        {
+            this.fastAwaiter = fastAwaiter;
+        }
+
+        public bool IsCompleted => fastAwaiter.IsCompleted;
+
+        public T GetResult()
+        {
+            return fastAwaiter.Result;
+        }
+
+        public void UnsafeOnCompleted(Action continuation)
+        {
+            fastAwaiter.SetUC(continuation);
+        }
+
+        public void OnCompleted(Action continuation)
+        {
+            fastAwaiter.SetC(continuation);
+        }
+    }
+
+    
 }

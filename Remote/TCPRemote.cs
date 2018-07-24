@@ -79,10 +79,10 @@ namespace MMONET.Remote
 
         #region RPC
 
-        public double RpcTimeOut
+        public double RpcTimeOutMilliseconds
         {
-            get => rpcCallbackPool.RpcTimeOut;
-            set => rpcCallbackPool.RpcTimeOut = value;
+            get => rpcCallbackPool.RpcTimeOutMilliseconds;
+            set => rpcCallbackPool.RpcTimeOutMilliseconds = value;
         }
 
         readonly IRpcCallbackPool rpcCallbackPool = new RpcCallbackPool(31);
@@ -177,24 +177,18 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        public Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+        public ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
             CheckReceive();
 
             var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>(OnException);
 
             var ex = tcpHelper.SendAsync(rpcID, message);
-            if (ex != null)
-            {
-                rpcCallbackPool.Remove(rpcID);
-                OnException?.Invoke(ex);
-                source.IsCanceled
-            }
 
             return source;
         }
 
-        public void SendAsync<T>(T message) => sender?.SendAsync(0, message);
+        public void SendAsync<T>(T message) => tcpHelper?.SendAsync(0, message);
 
 
         #endregion
@@ -288,17 +282,7 @@ namespace MMONET.Remote
             else
             {
                 ///这个消息是rpc返回（回复的RpcID为-1~-32767）
-                ///rpc响应
-                if (rpcCallbackPool.TryGetValue(rpcID, out var rpc))
-                {
-                    lock (rpcCallbackPool)
-                    {
-                        rpcCallbackPool.Remove(rpcID);
-                    }
-                    rpc.rpcCallback?.Invoke(msg, null);
-                }
-
-                ///无返回
+                rpcCallbackPool.Call(rpcID, msg);
             }
         }
 

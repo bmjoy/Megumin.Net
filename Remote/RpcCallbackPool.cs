@@ -26,9 +26,9 @@ namespace MMONET.Remote
         }
 
         /// <summary>
-        /// 默认30s
+        /// 默认30000ms
         /// </summary>
-        public double RpcTimeOut { get; set; } = 30;
+        public int RpcTimeOutMilliseconds { get; set; } = 30000;
         delegate void RpcCallback(dynamic message, Exception exception);
         /// <summary>
         /// 原子操作 取得RpcId,发送方的的RpcID为1~32767，回复的RpcID为-1~-32767，正负一一对应
@@ -104,14 +104,15 @@ namespace MMONET.Remote
                 );
             }
 
+            CreateCheckTimeout(rpcID);
+
             return (rpcID, source.Task);
         }
 
-        public (short rpcID, Task<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
+        public (short rpcID, ICanAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
         {
             short rpcID = GetRpcID();
-
-            TaskCompletionSource<RpcResult> source = new TaskCompletionSource<RpcResult>();
+            ICanAwaitable<RpcResult> source = UglyTask<RpcResult>.Pop();
 
             lock (this)
             {
@@ -135,6 +136,7 @@ namespace MMONET.Remote
                             }
                             else
                             {
+                                source.CancelWithNotExceptionAndContinuation();
                                 if (resp == null)
                                 {
                                     OnException?.Invoke(new NullReferenceException());
@@ -148,36 +150,82 @@ namespace MMONET.Remote
                         }
                         else
                         {
+                            source.CancelWithNotExceptionAndContinuation();
                             OnException?.Invoke(ex);
                         }
-
-                        //todo
-                        //source 回收
                     }
                 );
             }
 
-            return (rpcID, source.Task);
+            CreateCheckTimeout(rpcID);
+
+            return (rpcID, source);
         }
 
-        public void UpdateRpcResult(double delta)
+        /// <summary>
+        /// 创建超时检查
+        /// </summary>
+        /// <param name="rpcID"></param>
+        void CreateCheckTimeout(short rpcID)
+        {
+            ///超时检查
+            Task.Run(async () =>
+            {
+                if (RpcTimeOutMilliseconds >= 0)
+                {
+                    await Task.Delay(RpcTimeOutMilliseconds);
+                    if (TryDequeue(rpcID, out var rpc))
+                    {
+                        rpc.rpcCallback?.Invoke(null, new TimeoutException());
+                    }
+                }
+            });
+        }
+
+        public bool TryDequeue(short rpcID, out (DateTime startTime, Network.Remote.RpcCallback rpcCallback) rpc)
         {
             lock (this)
             {
-                ///检查Rpc超时
-                this.RemoveAll(kv =>
+                if (TryGetValue(rpcID, out rpc))
                 {
-                    var es = DateTime.Now - kv.Value.startTime;
-                    var istimeout = es.TotalSeconds > RpcTimeOut;
-                    if (istimeout)
-                    {
-                        kv.Value.rpcCallback?.Invoke(null, new TimeoutException());
-                    }
-                    return istimeout;
-                });
+                    Remove(rpcID);
+                    return true;
+                }
             }
+
+            return false;
         }
 
+        //[Obsolete]
+        //public void UpdateRpcResult(double delta)
+        //{
+        //    lock (this)
+        //    {
+        //        ///检查Rpc超时
+        //        this.RemoveAll(kv =>
+        //        {
+        //            var es = DateTime.Now - kv.Value.startTime;
+        //            var istimeout = es.TotalSeconds > RpcTimeOut;
+        //            if (istimeout)
+        //            {
+        //                kv.Value.rpcCallback?.Invoke(null, new TimeoutException());
+        //            }
+        //            return istimeout;
+        //        });
+        //    }
+        //}
+
         void IRpcCallbackPool.Remove(short rpcID) => Remove(rpcID);
+
+        public void Call(short rpcID, dynamic msg)
+        {
+            ///rpc响应
+            if (TryDequeue(rpcID, out var rpc))
+            {
+                rpc.rpcCallback?.Invoke(msg, null);
+            }
+
+            ///无返回
+        }
     }
 }
