@@ -37,7 +37,6 @@ namespace MMONET.Remote
 
             ///断开连接将remote设置为无效
             OnDisConnect += (er) => { IsVaild = false; };
-            this.AddToPool();
         }
 
         /// <summary>
@@ -57,6 +56,7 @@ namespace MMONET.Remote
                 MessagePool.PushReceivePacket(args, this);
             };
             tcpHelper.OnDisConnect += this.OnDisConnect;
+            IPEndPoint = tcpHelper.Socket.RemoteEndPoint as IPEndPoint;
         }
 
         public bool Connected
@@ -86,6 +86,7 @@ namespace MMONET.Remote
         #region Connect
 
         public IPEndPoint IPEndPoint { get; set; }
+        public EndPoint OverrideEndPoint => tcpHelper.Socket.RemoteEndPoint;
 
         public event Action<SocketError> OnDisConnect;
 
@@ -224,7 +225,6 @@ namespace MMONET.Remote
                 Socket.Send(msgBuffer.Array, msgBuffer.Offset, msgBuffer.Count, SocketFlags.None);
             });
         }
-
     }
 
     /// <summary>
@@ -267,7 +267,7 @@ namespace MMONET.Remote
                     exception = e;
                 }
             });
-
+         
             isConnecting = false;
             return exception;
         }

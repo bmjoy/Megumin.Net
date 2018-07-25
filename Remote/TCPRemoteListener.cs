@@ -12,6 +12,7 @@ namespace MMONET.Remote
     {
         private TcpListener tcpListener;
         public IPEndPoint IPEndPoint { get; set; }
+        EndPoint IEndPoint.OverrideEndPoint { get; }
 
         public TCPRemoteListener(int port)
         {
@@ -43,6 +44,7 @@ namespace MMONET.Remote
                 ListenAsync();
             }
             TCPRemote remote = new TCPRemote(new TCPHelper(remoteSocket));
+            RemotePool.Add(remote);
             return remote;
         }
 

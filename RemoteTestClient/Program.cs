@@ -21,8 +21,8 @@ namespace RemoteTestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 10000;
-        static int RemoteCount = 100;
+        static int MessageCount = 2;
+        static int RemoteCount = 2;
         private static async void ConAsync()
         {
             MessageLUT.AddFormatter(typeof(TestPacket1), 1000, (Seiralizer<TestPacket1>)TestPacket1.S, TestPacket1.D);
@@ -39,9 +39,9 @@ namespace RemoteTestClient
             });
 
             ///性能测试
-            //TestSpeed();
+            TestSpeed();
             ///连接测试
-            TestConnect();
+            //TestConnect();
         }
 
 

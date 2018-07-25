@@ -12,9 +12,13 @@ namespace Network.Remote
     public interface IEndPoint
     {
         /// <summary>
-        /// 
+        /// 连接的目标地址
         /// </summary>
         IPEndPoint IPEndPoint { get; set; }
+        /// <summary>
+        /// 连接后重映射的地址
+        /// </summary>
+        EndPoint OverrideEndPoint { get; }
     }
 
     /// <summary>

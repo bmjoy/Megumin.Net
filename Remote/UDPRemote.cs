@@ -193,6 +193,7 @@ namespace MMONET.Remote
         }
 
         public IPEndPoint IPEndPoint { get; set; }
+        public EndPoint OverrideEndPoint => Socket.RemoteEndPoint;
         public DateTime LastReceiveTime { get; private set; }
 
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)

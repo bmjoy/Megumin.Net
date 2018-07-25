@@ -13,6 +13,8 @@ namespace MMONET.Remote
     public class UDPRemoteListener : UdpClient, IRemoteListener<UDPRemote>
     {
         public IPEndPoint IPEndPoint { get; set; }
+        EndPoint IEndPoint.OverrideEndPoint { get; }
+
         public UDPRemoteListener(int port):base(port)
         {
             this.IPEndPoint = new IPEndPoint(IPAddress.None,port);
@@ -45,7 +47,7 @@ namespace MMONET.Remote
             if (Result && Complete)
             {
                 ///连接成功
-                remoteNew.AddToPool();
+                RemotePool.Add(remoteNew);
                 if (TaskCompletionSource == null)
                 {
                     connected.Enqueue(remoteNew);

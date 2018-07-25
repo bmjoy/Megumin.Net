@@ -7,12 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using MMONET.Message;
 using Network.Remote;
-using IRemoteDic = MMONET.IDictionary<int, System.Net.IPEndPoint, Network.Remote.IRemote>;
+using IRemoteDic = MMONET.IDictionary<int, System.Net.EndPoint, Network.Remote.IRemote>;
 
 namespace MMONET.Remote
 {
     /// <summary>
-    /// 
+    /// 客户端不使用这个类，会发生Key冲突
     /// </summary>
     public static class RemotePool
     {
@@ -24,7 +24,7 @@ namespace MMONET.Remote
         /// <summary>
         /// remote 在构造函数中自动添加到RemoteDic 中,需要手动移除 或者调用<see cref="IConnectable.Disconnect(bool)"/> + <see cref="MainThreadScheduler.Update(double)"/>移除。
         /// </summary>
-        static IRemoteDic remoteDic = new K2Dictionary<int, IPEndPoint, IRemote>();
+        static IRemoteDic remoteDic = new K2Dictionary<int, EndPoint, IRemote>();
         /// <summary>
         /// 添加队列，防止多线程阻塞
         /// </summary>
@@ -42,12 +42,12 @@ namespace MMONET.Remote
                     {
                         if (remote != null)
                         {
-                            if (remoteDic.ContainsKey(remote.Guid) || remoteDic.ContainsKey(remote.IPEndPoint))
+                            if (remoteDic.ContainsKey(remote.Guid) || remoteDic.ContainsKey(remote.OverrideEndPoint))
                             {
                                 ///理论上不会冲突
                                 Console.WriteLine($"remoteDic 键值冲突");
                             }
-                            remoteDic[remote.Guid,remote.IPEndPoint] = remote;
+                            remoteDic[remote.Guid,remote.OverrideEndPoint] = remote;
                         }
                     }
                 }
@@ -69,21 +69,21 @@ namespace MMONET.Remote
             tempAddQ.Enqueue(remote);
         }
 
-        /// <summary>
-        /// 使用 <see cref="InterlockedID{IRemote}.NewID"/> 初始化你的<see cref="IRemote.Guid"/>，防止和框架底层ID冲突。
-        /// </summary>
-        /// <param name="remote"></param>
-        public static void AddToPool(this IRemote remote)
-        {
-            Add(remote);
-        }
+        ///// <summary>
+        ///// 使用 <see cref="InterlockedID{IRemote}.NewID"/> 初始化你的<see cref="IRemote.Guid"/>，防止和框架底层ID冲突。
+        ///// </summary>
+        ///// <param name="remote"></param>
+        //public static void AddToPool(this IRemote remote)
+        //{
+        //    Add(remote);
+        //}
 
         public static bool TryGet(int Guid, out IRemote remote)
         {
             return remoteDic.TryGetValue(Guid, out remote);
         }
 
-        public static bool TryGet(IPEndPoint ep, out IRemote remote)
+        public static bool TryGet(EndPoint ep, out IRemote remote)
         {
             return remoteDic.TryGetValue(ep, out remote);
         }
