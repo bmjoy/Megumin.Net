@@ -134,12 +134,16 @@ namespace MMONET.Message
 
         static async void ReceiveCallback(INetRemote2 remote, int messageID, short rpcID, dynamic msg)
         {
-            if (remote == null || remote.OnReceive == null)
+            if (remote == null)
             {
                 return;
             }
             if (rpcID == 0 || rpcID == short.MinValue)
             {
+                if (remote.OnReceive == null)
+                {
+                    return;
+                }
                 ///这个消息是非Rpc请求
                 ///普通响应onRely
                 var response = await remote.OnReceive(msg);
@@ -163,6 +167,10 @@ namespace MMONET.Message
             }
             else if (rpcID > 0)
             {
+                if (remote.OnReceive == null)
+                {
+                    return;
+                }
                 ///这个消息rpc的请求 
                 ///普通响应onRely
                 var response = await remote.OnReceive(msg);
