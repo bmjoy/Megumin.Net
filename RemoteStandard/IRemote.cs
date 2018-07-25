@@ -58,7 +58,6 @@ namespace Network.Remote
         /// <param name="message"></param>
         /// <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
         void SendAsync<T>(T message);
-        
     }
 
     public delegate void RpcCallback(dynamic message, Exception exception);
@@ -100,10 +99,6 @@ namespace Network.Remote
     /// </summary>
     public interface IRpcSendMessage:ISendMessage
     {
-        /// <summary>
-        /// Rpc超时时间秒数
-        /// </summary>
-        int RpcTimeOutMilliseconds { get; set; }
         /// <summary>
         /// 异步发送消息，封装Rpc过程,大多数情况你应该使用<see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         /// </summary>
@@ -161,18 +156,11 @@ namespace Network.Remote
         event Action<IReConnectable> ReConnectSuccess;
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public interface INetRemote
+    public interface INetRemote2 : ISendMessage
     {
-        /// <summary>
-        /// 切换线程使用的回调
-        /// </summary>
-        /// <param name="messageID"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="msg"></param>
-        void ReceiveCallback(int messageID, short rpcID, dynamic msg);
+        OnReceiveMessage OnReceive { get; }
+        IRpcCallbackPool RpcCallbackPool { get; }
+        Exception SendAsync<T>(short rpcID, T message);
     }
 
     /// <summary>

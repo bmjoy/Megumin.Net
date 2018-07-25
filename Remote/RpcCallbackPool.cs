@@ -176,7 +176,10 @@ namespace MMONET.Remote
                     await Task.Delay(RpcTimeOutMilliseconds);
                     if (TryDequeue(rpcID, out var rpc))
                     {
-                        rpc.rpcCallback?.Invoke(null, new TimeoutException());
+                        MainThreadScheduler.Invoke(() =>
+                        {
+                            rpc.rpcCallback?.Invoke(null, new TimeoutException());
+                        });
                     }
                 }
             });
@@ -205,7 +208,7 @@ namespace MMONET.Remote
         //        this.RemoveAll(kv =>
         //        {
         //            var es = DateTime.Now - kv.Value.startTime;
-        //            var istimeout = es.TotalSeconds > RpcTimeOut;
+        //            var istimeout = es.TotalMilliseconds > RpcTimeOutMilliseconds;
         //            if (istimeout)
         //            {
         //                kv.Value.rpcCallback?.Invoke(null, new TimeoutException());

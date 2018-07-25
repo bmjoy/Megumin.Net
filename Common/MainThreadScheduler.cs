@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Collections.Concurrent;
 
 namespace MMONET
 {
@@ -20,6 +21,8 @@ namespace MMONET
         static readonly List<Update> updates = new List<Update>();
 
         static readonly List<(bool addOrRemove, Update Update)> ar = new List<(bool addOrRemove, Update Update)>();
+
+        static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
 
         /// <summary>
         /// 
@@ -77,6 +80,23 @@ namespace MMONET
             {
                 item?.Invoke(delta);
             }
+
+            while (actions.Count > 0)
+            {
+                if (actions.TryDequeue(out var callback))
+                {
+                    callback?.Invoke();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 切换执行线程
+        /// </summary>
+        /// <param name="action"></param>
+        public static void Invoke(Action action)
+        {
+            actions.Enqueue(action);
         }
     }
 }

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks;
 using Network.Remote;
-using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(int MessageID, short RpcID, System.ArraySegment<byte> messageBody, Network.Remote.INetRemote Remote)>;
+using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(int messageID, short rpcID, System.ArraySegment<byte> messageBody, Network.Remote.INetRemote2 remote)>;
 
 namespace MMONET.Message
 {
@@ -16,17 +17,17 @@ namespace MMONET.Message
             MainThreadScheduler.Add(Update);
         }
 
-        static ConcurrentQueue<(IReceivedPacket Packet, INetRemote Remote)> receivePool
-            = new ConcurrentQueue<(IReceivedPacket, INetRemote)>();
-        static ConcurrentQueue<(IReceivedPacket Packet, INetRemote Remote)> dealPoop
-            = new ConcurrentQueue<(IReceivedPacket, INetRemote)>();
+        static ConcurrentQueue<(IReceivedPacket Packet, INetRemote2 Remote)> receivePool
+            = new ConcurrentQueue<(IReceivedPacket, INetRemote2)>();
+        static ConcurrentQueue<(IReceivedPacket Packet, INetRemote2 Remote)> dealPoop
+            = new ConcurrentQueue<(IReceivedPacket, INetRemote2)>();
 
         /// <summary>
         /// 消息大包和remote一起放入接收消息池
         /// </summary>
         /// <param name="packet"></param>
         /// <param name="remote"></param>
-        public static void PushReceivePacket(IReceivedPacket packet, INetRemote remote)
+        public static void PushReceivePacket(IReceivedPacket packet, INetRemote2 remote)
         {
             receivePool.Enqueue((packet, remote));
         }
@@ -40,7 +41,7 @@ namespace MMONET.Message
         /// <param name="rpcID"></param>
         /// <param name="body"></param>
         /// <param name="remote"></param>
-        public static void PushReceivePacket(int messageID, short rpcID, ArraySegment<byte> body, INetRemote remote)
+        public static void PushReceivePacket(int messageID, short rpcID, ArraySegment<byte> body, INetRemote2 remote)
         {
             receivePool2.Enqueue((messageID, rpcID, body, remote));
         }
@@ -85,7 +86,7 @@ namespace MMONET.Message
 
                     var msg = MessageLUT.Deserialize(messageID, body);
 
-                    Remote.ReceiveCallback(messageID, RpcID, msg);
+                    ReceiveCallback(Remote, messageID, RpcID, msg);
                 }
             }
         }
@@ -122,12 +123,70 @@ namespace MMONET.Message
                         var (messageID, rpcID, body) = Packet.MessagePacket.Dequeue();
                         var msg = MessageLUT.Deserialize(messageID, body);
 
-                        Remote.ReceiveCallback(messageID, rpcID, msg);
+                        ReceiveCallback(Remote, messageID, rpcID, msg);
 
                     }
 
                     Packet?.Push2Pool();
                 }
+            }
+        }
+
+        static async void ReceiveCallback(INetRemote2 remote, int messageID, short rpcID, dynamic msg)
+        {
+            if (remote == null || remote.OnReceive == null)
+            {
+                return;
+            }
+            if (rpcID == 0 || rpcID == short.MinValue)
+            {
+                ///这个消息是非Rpc请求
+                ///普通响应onRely
+                var response = await remote.OnReceive(msg);
+
+                if (response is Task<dynamic> task)
+                {
+                    response = await task ?? null;
+                }
+
+                if (response is ValueTask<dynamic> vtask)
+                {
+                    response = await vtask ?? null;
+                }
+
+                if (response == null)
+                {
+                    return;
+                }
+                /// 普通返回
+                remote.SendAsync(response);
+            }
+            else if (rpcID > 0)
+            {
+                ///这个消息rpc的请求 
+                ///普通响应onRely
+                var response = await remote.OnReceive(msg);
+                if (response is Task<object> task)
+                {
+                    response = await task ?? null;
+                }
+
+                if (response is ValueTask<object> vtask)
+                {
+                    response = await vtask ?? null;
+                }
+
+                if (response == null)
+                {
+                    return;
+                }
+                ///rpc的返回 
+                remote.SendAsync((short)(rpcID * -1), response);
+            }
+            else
+            {
+                ///这个消息是rpc返回（回复的RpcID为-1~-32767）
+                remote.RpcCallbackPool.Call(rpcID, msg);
             }
         }
     }

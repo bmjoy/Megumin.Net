@@ -13,7 +13,7 @@ namespace MMONET.Remote
     /// <summary>
     /// 不支持多播地址
     /// </summary>
-    public partial class UDPRemote : UdpClient, IRemote, INetRemote
+    public partial class UDPRemote : UdpClient, IRemote,INetRemote2
     {
         public int InstanceID { get; set; }
         public bool Connected { get; private set; }
@@ -22,15 +22,7 @@ namespace MMONET.Remote
 
         #region RPC
 
-        public double RpcTimeOutMilliseconds
-        {
-            get => rpcCallbackPool.RpcTimeOutMilliseconds;
-            set => rpcCallbackPool.RpcTimeOutMilliseconds = value;
-        }
-
-        readonly IRpcCallbackPool rpcCallbackPool = new RpcCallbackPool(31);
-
-        public void UpdateRpcResult(double delta) => rpcCallbackPool.UpdateRpcResult(delta);
+        public IRpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
 
         #endregion
 
@@ -45,7 +37,7 @@ namespace MMONET.Remote
                 Receive(null);
             }
 
-            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>();
+            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>();
 
             SendAsync(rpcID, message);
 
@@ -60,14 +52,14 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        public virtual Task<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+        public virtual ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
             if (!IsReceiving)
             {
                 Receive(null);
             }
 
-            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>(OnException);
+            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException);
 
             SendAsync(rpcID, message);
 
@@ -85,11 +77,11 @@ namespace MMONET.Remote
         /// <typeparam name="T"></typeparam>
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
-        void SendAsync<T>(short rpcID, T message)
+        Exception SendAsync<T>(short rpcID, T message)
         {
             if (!Connected)
             {
-                return;
+                return null;
             }
 
             var bufferMsg = MessageLUT.Serialize(rpcID, message);
@@ -97,8 +89,10 @@ namespace MMONET.Remote
             var s = SendAsync(bufferMsg.Array, bufferMsg.Count);
 
             BufferPool.Push(bufferMsg.Array);
+            return null;
         }
 
+        Exception INetRemote2.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
         #endregion
 
         #region Receive
@@ -110,6 +104,8 @@ namespace MMONET.Remote
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
+        OnReceiveMessage INetRemote2.OnReceive => onReceive;
+
         public void Receive(OnReceiveMessage onReceive)
         {
             this.onReceive = onReceive;
@@ -198,6 +194,11 @@ namespace MMONET.Remote
 
         public IPEndPoint IPEndPoint { get; set; }
         public DateTime LastReceiveTime { get; private set; }
+
+        public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
+        {
+            return this.SendAsync(msgBuffer.Array, msgBuffer.Count);
+        }
     }
 
     partial class UDPRemote

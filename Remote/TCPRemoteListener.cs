@@ -42,7 +42,7 @@ namespace MMONET.Remote
                 tcpListener = null;
                 ListenAsync();
             }
-            TCPRemote remote = new TCPRemote(remoteSocket);
+            TCPRemote remote = new TCPRemote(new TCPHelper(remoteSocket));
             return remote;
         }
 

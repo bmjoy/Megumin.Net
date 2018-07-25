@@ -15,8 +15,8 @@ namespace MMONET.Remote
     /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>
     /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
     /// </summary>
-    public class TCPRemote : IRemote, ISendMessage, IReceiveMessage, IConnectable,
-        INetRemote, IUpdateRpcResult
+    public class TCPRemote : IRemote, ISendMessage, IReceiveMessage,
+        IConnectable,INetRemote2
     {
         public Socket Socket => tcpHelper.Socket;
 
@@ -31,7 +31,7 @@ namespace MMONET.Remote
         /// 
         /// </summary>
         /// <param name="socket"></param>
-        protected TCPRemote(TCPHelper tcpHelper)
+        internal TCPRemote(TCPHelper tcpHelper)
         {
             Init(tcpHelper);
 
@@ -79,15 +79,7 @@ namespace MMONET.Remote
 
         #region RPC
 
-        public double RpcTimeOutMilliseconds
-        {
-            get => rpcCallbackPool.RpcTimeOutMilliseconds;
-            set => rpcCallbackPool.RpcTimeOutMilliseconds = value;
-        }
-
-        readonly IRpcCallbackPool rpcCallbackPool = new RpcCallbackPool(31);
-
-        public void UpdateRpcResult(double delta) => rpcCallbackPool.UpdateRpcResult(delta);
+        public IRpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
 
         #endregion
 
@@ -148,13 +140,13 @@ namespace MMONET.Remote
         {
             CheckReceive();
 
-            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>();
+            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>();
 
             var ex = tcpHelper.SendAsync(rpcID, message);
 
             if (ex != null)
             {
-                rpcCallbackPool.Remove(rpcID);
+                RpcCallbackPool.Remove(rpcID);
                 return Task.FromResult<(RpcResult result, Exception exception)>((default, ex));
             }
 
@@ -181,7 +173,7 @@ namespace MMONET.Remote
         {
             CheckReceive();
 
-            var (rpcID, source) = rpcCallbackPool.Regist<RpcResult>(OnException);
+            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException);
 
             var ex = tcpHelper.SendAsync(rpcID, message);
 
@@ -190,18 +182,20 @@ namespace MMONET.Remote
 
         public void SendAsync<T>(T message) => tcpHelper?.SendAsync(0, message);
 
+        Exception INetRemote2.SendAsync<T>(short rpcID, T message) => tcpHelper.SendAsync(rpcID, message);
 
         #endregion
 
         #region Receive
 
         public bool IsReceiving { get; protected set; }
-
+        public int ReceiveBufferSize => RemoteArgs.ReceiveBufferSize;
         public DateTime LastReceiveTime { get; protected set; }
         /// <summary>
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
+        OnReceiveMessage INetRemote2.OnReceive => onReceive;
 
         /// <summary>
         /// 异步接受消息包
@@ -218,73 +212,10 @@ namespace MMONET.Remote
         {
             this.onReceive += onReceive;
 
-            Receive();
+            tcpHelper.Receive();
         }
 
         #endregion
-
-        async void INetRemote.ReceiveCallback(int messageID, short rpcID, dynamic msg)
-        {
-            if (rpcID == 0 || rpcID == short.MinValue)
-            {
-                if (onReceive == null)
-                {
-                    return;
-                }
-                ///这个消息是非Rpc请求
-                ///普通响应onRely
-                var response = await onReceive(msg);
-
-                if (response is Task<dynamic> task)
-                {
-                    response = await task ?? null;
-                }
-
-                if (response is ValueTask<dynamic> vtask)
-                {
-                    response = await vtask ?? null;
-                }
-
-                if (response == null)
-                {
-                    return;
-                }
-                /// 普通返回
-                SendAsync(response);
-            }
-            else if (rpcID > 0)
-            {
-                if (onReceive == null)
-                {
-                    return;
-                }
-
-                ///这个消息rpc的请求 
-                ///普通响应onRely
-                var response = await onReceive(msg);
-                if (response is Task<object> task)
-                {
-                    response = await task ?? null;
-                }
-
-                if (response is ValueTask<object> vtask)
-                {
-                    response = await vtask ?? null;
-                }
-
-                if (response == null)
-                {
-                    return;
-                }
-                ///rpc的返回 
-                sender.SendAsync((short)(rpcID * -1), response);
-            }
-            else
-            {
-                ///这个消息是rpc返回（回复的RpcID为-1~-32767）
-                rpcCallbackPool.Call(rpcID, msg);
-            }
-        }
 
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
         {
@@ -293,6 +224,7 @@ namespace MMONET.Remote
                 Socket.Send(msgBuffer.Array, msgBuffer.Offset, msgBuffer.Count, SocketFlags.None);
             });
         }
+
     }
 
     /// <summary>
@@ -479,7 +411,6 @@ namespace MMONET.Remote
         #region Receive
         public bool IsReceiving { get; protected set; }
         public DateTime LastReceiveTime { get; protected set; }
-        public new int ReceiveBufferSize => RemoteArgs.ReceiveBufferSize;
         public void Receive()
         {
             if (Socket.Connected)

@@ -36,22 +36,6 @@ namespace MMONET.Remote
         {
             if (UpdateDelta.CoolDown)
             {
-                lock (remoteDic)
-                {
-                    foreach (var item in remoteDic)
-                    {
-                        if (!item.Value.IsVaild)
-                        {
-                            continue;
-                        }
-
-                        if (item.Value is IUpdateRpcResult rpcResult)
-                        {
-                            rpcResult.UpdateRpcResult(delta);
-                        }
-                    }
-                }
-
                 while (tempAddQ.Count > 0)
                 {
                     if (tempAddQ.TryDequeue(out var remote))
