@@ -56,7 +56,7 @@ namespace MMONET.Remote
                 MessagePool.PushReceivePacket(args, this);
             };
             tcpHelper.OnDisConnect += this.OnDisConnect;
-            IPEndPoint = tcpHelper.Socket.RemoteEndPoint as IPEndPoint;
+            ConnectIPEndPoint = tcpHelper.Socket.RemoteEndPoint as IPEndPoint;
         }
 
         public bool Connected
@@ -85,8 +85,8 @@ namespace MMONET.Remote
 
         #region Connect
 
-        public IPEndPoint IPEndPoint { get; set; }
-        public EndPoint OverrideEndPoint => tcpHelper.Socket.RemoteEndPoint;
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        public EndPoint RemappedEndPoint => tcpHelper.Socket.RemoteEndPoint;
 
         public event Action<SocketError> OnDisConnect;
 
@@ -106,10 +106,10 @@ namespace MMONET.Remote
 
         public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
-            this.IPEndPoint = endPoint;
+            this.ConnectIPEndPoint = endPoint;
             while (retryCount >= 0)
             {
-                var ex = await tcpHelper.ConnectAsync(IPEndPoint);
+                var ex = await tcpHelper.ConnectAsync(ConnectIPEndPoint);
                 if (ex == null)
                 {
                     ///连接成功

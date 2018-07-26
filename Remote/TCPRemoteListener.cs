@@ -11,12 +11,12 @@ namespace MMONET.Remote
     public class TCPRemoteListener : IRemoteListener<TCPRemote>
     {
         private TcpListener tcpListener;
-        public IPEndPoint IPEndPoint { get; set; }
-        EndPoint IEndPoint.OverrideEndPoint { get; }
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        EndPoint IEndPoint.RemappedEndPoint { get; }
 
         public TCPRemoteListener(int port)
         {
-            this.IPEndPoint = new IPEndPoint(IPAddress.None,port);
+            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
 
         public async Task<TCPRemote> ListenAsync()
@@ -24,7 +24,7 @@ namespace MMONET.Remote
             if (tcpListener == null)
             {
                 ///同时支持IPv4和IPv6
-                tcpListener = TcpListener.Create(IPEndPoint.Port);
+                tcpListener = TcpListener.Create(ConnectIPEndPoint.Port);
 
                 tcpListener.AllowNatTraversal(true);
             }

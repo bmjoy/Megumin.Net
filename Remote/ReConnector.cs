@@ -95,7 +95,7 @@ namespace MMONET.Remote
         async Task<bool> ReConnectAsync()
         {
             PreReConnect?.Invoke(this);
-            var (result, complete) = await Remote.ConnectAsync(Remote.IPEndPoint,1).WaitAsync(ReConnectTime);
+            var (result, complete) = await Remote.ConnectAsync(Remote.ConnectIPEndPoint,1).WaitAsync(ReConnectTime);
             if (complete&& result == null)
             {
                 ReConnectSuccess?.Invoke(this);

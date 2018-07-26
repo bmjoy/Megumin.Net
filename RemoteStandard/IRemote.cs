@@ -14,11 +14,11 @@ namespace Network.Remote
         /// <summary>
         /// 连接的目标地址
         /// </summary>
-        IPEndPoint IPEndPoint { get; set; }
+        IPEndPoint ConnectIPEndPoint { get; set; }
         /// <summary>
         /// 连接后重映射的地址
         /// </summary>
-        EndPoint OverrideEndPoint { get; }
+        EndPoint RemappedEndPoint { get; }
     }
 
     /// <summary>

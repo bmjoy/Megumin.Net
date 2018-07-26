@@ -37,7 +37,7 @@ namespace MMONET.DCS
 
         public async Task Start()
         {
-            IPAddress my = Remote.IPEndPoint.Address;
+            IPAddress my = Remote.ConnectIPEndPoint.Address;
             if (my == MainIP)
             {
                 //if (CheckSocketPort(MainPort))

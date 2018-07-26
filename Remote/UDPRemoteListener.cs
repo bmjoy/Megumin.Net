@@ -12,12 +12,12 @@ namespace MMONET.Remote
 {
     public class UDPRemoteListener : UdpClient, IRemoteListener<UDPRemote>
     {
-        public IPEndPoint IPEndPoint { get; set; }
-        EndPoint IEndPoint.OverrideEndPoint { get; }
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        EndPoint IEndPoint.RemappedEndPoint { get; }
 
         public UDPRemoteListener(int port):base(port)
         {
-            this.IPEndPoint = new IPEndPoint(IPAddress.None,port);
+            this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
 
         public bool IsListening { get; private set; }
@@ -37,33 +37,58 @@ namespace MMONET.Remote
         }
 
         /// <summary>
+        /// 正在连接的
+        /// </summary>
+        readonly Dictionary<IPEndPoint, UDPRemote> connecting = new Dictionary<IPEndPoint, UDPRemote>();
+        /// <summary>
+        /// 连接成功的
+        /// </summary>
+        readonly ConcurrentQueue<UDPRemote> connected = new ConcurrentQueue<UDPRemote>();
+        /// <summary>
         /// 重映射
         /// </summary>
         /// <param name="res"></param>
         private async void ReMappingAsync(UdpReceiveResult res)
         {
-            UDPRemote remoteNew = new UDPRemote();
-            var (Result, Complete) = await remoteNew.TryAccept(res).WaitAsync(5000);
-            if (Result && Complete)
+            if (!connecting.TryGetValue(res.RemoteEndPoint,out var remote))
             {
-                ///连接成功
-                RemotePool.Add(remoteNew);
-                if (TaskCompletionSource == null)
+                remote = new UDPRemote();
+                connecting[res.RemoteEndPoint] = remote;
+            }
+
+            var (Result, Complete) = await remote.TryAccept(res).WaitAsync(5000);
+
+            if (Complete)
+            {
+                ///完成
+                if (Result)
                 {
-                    connected.Enqueue(remoteNew);
+                    ///连接成功
+                    RemotePool.Add(remote);
+                    if (TaskCompletionSource == null)
+                    {
+                        connected.Enqueue(remote);
+                    }
+                    else
+                    {
+                        TaskCompletionSource.SetResult(remote);
+                    }
                 }
                 else
                 {
-                    TaskCompletionSource.SetResult(remoteNew);
+                    ///连接失败但没有超时
+                    remote.Dispose();
                 }
             }
             else
             {
-                remoteNew.Dispose();
+                ///超时，手动断开，释放remote;
+                remote.Disconnect(false);
+                remote.Dispose();
             }
         }
 
-        ConcurrentQueue<UDPRemote> connected = new ConcurrentQueue<UDPRemote>();
+
 
         public async Task<UDPRemote> ListenAsync()
         {

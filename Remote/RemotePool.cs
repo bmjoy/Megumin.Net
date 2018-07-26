@@ -42,12 +42,12 @@ namespace MMONET.Remote
                     {
                         if (remote != null)
                         {
-                            if (remoteDic.ContainsKey(remote.Guid) || remoteDic.ContainsKey(remote.OverrideEndPoint))
+                            if (remoteDic.ContainsKey(remote.Guid) || remoteDic.ContainsKey(remote.RemappedEndPoint))
                             {
                                 ///理论上不会冲突
                                 Console.WriteLine($"remoteDic 键值冲突");
                             }
-                            remoteDic[remote.Guid,remote.OverrideEndPoint] = remote;
+                            remoteDic[remote.Guid,remote.RemappedEndPoint] = remote;
                         }
                     }
                 }

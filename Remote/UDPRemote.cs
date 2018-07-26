@@ -121,7 +121,7 @@ namespace MMONET.Remote
             if (!IsReceiving)
             {
                 ///绑定远端，防止UDP流量攻击
-                Connect(IPEndPoint);
+                Connect(ConnectIPEndPoint);
             }
 
             IsReceiving = true;
@@ -176,7 +176,7 @@ namespace MMONET.Remote
                 return new Exception("连接正在进行中");
             }
             isConnecting = true;
-            this.IPEndPoint = endPoint;
+            this.ConnectIPEndPoint = endPoint;
             while (retryCount >= 0)
             {
                 var res = await this.Connect();
@@ -192,8 +192,8 @@ namespace MMONET.Remote
             return new SocketException((int)SocketError.AccessDenied);
         }
 
-        public IPEndPoint IPEndPoint { get; set; }
-        public EndPoint OverrideEndPoint => Socket.RemoteEndPoint;
+        public IPEndPoint ConnectIPEndPoint { get; set; }
+        public EndPoint RemappedEndPoint => Socket.RemoteEndPoint;
         public DateTime LastReceiveTime { get; private set; }
 
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
@@ -224,13 +224,13 @@ namespace MMONET.Remote
                 ///ESTABLISHED
                 lastseq += 1;
                 ///重定向到新的远端，并忽略所有其他远端消息。
-                IPEndPoint = res.RemoteEndPoint;
+                ConnectIPEndPoint = res.RemoteEndPoint;
 
                 ///测试超时
                 System.Threading.Thread.Sleep(6000);
 
                 this.WriteConnectMessage(1, 1, lastseq, seq + 1);
-                Connect(IPEndPoint);
+                Connect(ConnectIPEndPoint);
                 Connected = true;
                 return true;
             }
@@ -262,7 +262,7 @@ namespace MMONET.Remote
                 lastack = new Random().Next(0, 10000);
                 lastseq = seq;
 
-                IPEndPoint = udpReceive.RemoteEndPoint;
+                ConnectIPEndPoint = udpReceive.RemoteEndPoint;
                 this.WriteConnectMessage(1, 1, lastack, seq + 1);
 
                 var res = await base.ReceiveAsync();
@@ -313,7 +313,7 @@ namespace MMONET.Remote
             BitConverter.GetBytes(ACT).CopyTo(bf, TotalHeaderByteCount + 4);
             BitConverter.GetBytes(seq).CopyTo(bf, TotalHeaderByteCount + 8);
             BitConverter.GetBytes(ack).CopyTo(bf, TotalHeaderByteCount + 12);
-            var offset = await client.SendAsync(bf, bf.Length, client.IPEndPoint);
+            var offset = await client.SendAsync(bf, bf.Length, client.ConnectIPEndPoint);
             BufferPool.Push(bf);
         }
     }
