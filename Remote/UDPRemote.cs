@@ -169,6 +169,7 @@ namespace MMONET.Remote
         public int Guid { get; } = InterlockedID<IRemote>.NewID();
 
         bool isConnecting = false;
+        
         public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             if (isConnecting)

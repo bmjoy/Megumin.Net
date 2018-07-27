@@ -194,7 +194,7 @@ namespace MMONET.Message
             else
             {
                 ///这个消息是rpc返回（回复的RpcID为-1~-32767）
-                remote.RpcCallbackPool.Call(rpcID, msg);
+                remote.RpcCallbackPool.TrySetResult(rpcID, msg);
             }
         }
     }

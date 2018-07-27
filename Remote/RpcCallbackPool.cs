@@ -59,17 +59,16 @@ namespace MMONET.Remote
 
             TaskCompletionSource<(RpcResult Result, Exception Excption)> source
                 = new TaskCompletionSource<(RpcResult Result, Exception Excption)>();
+            short key = (short)(rpcID * -1);
+
+            if (TryDequeue(key, out var callback))
+            {
+                ///如果出现RpcID冲突，认为前一个已经超时。
+                callback.rpcCallback?.Invoke(null, new TimeoutException());
+            }
+
             lock (this)
             {
-                short key = (short)(rpcID * -1);
-                if (ContainsKey(key))
-                {
-                    ///如果出现RpcID冲突，认为前一个已经超时。
-                    var callback = this[key];
-                    Remove(key);
-                    callback.rpcCallback?.Invoke(null, new TimeoutException());
-                }
-
                 this[key] = (DateTime.Now,
                     (resp, ex) =>
                     {
@@ -104,7 +103,7 @@ namespace MMONET.Remote
                 );
             }
 
-            CreateCheckTimeout(rpcID);
+            CreateCheckTimeout(key);
 
             return (rpcID, source.Task);
         }
@@ -113,18 +112,15 @@ namespace MMONET.Remote
         {
             short rpcID = GetRpcID();
             ICanAwaitable<RpcResult> source = UglyTask<RpcResult>.Pop();
+            short key = (short)(rpcID * -1);
+            if (TryDequeue(key, out var callback))
+            {
+                ///如果出现RpcID冲突，认为前一个已经超时。
+                callback.rpcCallback?.Invoke(null, new TimeoutException());
+            }
 
             lock (this)
             {
-                short key = (short)(rpcID * -1);
-                if (this.ContainsKey(key))
-                {
-                    ///如果出现RpcID冲突，认为前一个已经超时。
-                    var callback = this[key];
-                    this.Remove(key);
-                    callback.rpcCallback?.Invoke(null, new TimeoutException());
-                }
-
                 this[key] = (DateTime.Now,
                     (resp, ex) =>
                     {
@@ -157,7 +153,7 @@ namespace MMONET.Remote
                 );
             }
 
-            CreateCheckTimeout(rpcID);
+            CreateCheckTimeout(key);
 
             return (rpcID, source);
         }
@@ -220,15 +216,25 @@ namespace MMONET.Remote
 
         void IRpcCallbackPool.Remove(short rpcID) => Remove(rpcID);
 
-        public void Call(short rpcID, dynamic msg)
+        public bool TrySetResult(short rpcID, dynamic msg)
+        {
+            return TryComplate(rpcID, msg, null);
+        }
+
+        public bool TrySetException(short rpcID, Exception exception)
+        {
+            return TryComplate(rpcID, null, exception);
+        }
+
+        bool TryComplate(short rpcID, dynamic msg,Exception exception)
         {
             ///rpc响应
             if (TryDequeue(rpcID, out var rpc))
             {
-                rpc.rpcCallback?.Invoke(msg, null);
+                rpc.rpcCallback?.Invoke(msg, exception);
+                return true;
             }
-
-            ///无返回
+            return false;
         }
     }
 }

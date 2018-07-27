@@ -40,15 +40,15 @@ namespace UnitFunc
             StartTcpListen(Port, cancellation);
 
             TCPRemote remote = new TCPRemote();
-
+            remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
-            SafeRpcSendAsync(remote).Wait();
-            RpcSendAsync(remote).Wait();
+            TestSend(remote);
             cancellation.Cancel();
         }
 
+        
 
-        [TestMethod]
+        //[TestMethod]
         public void TestUdpSend()
         {
             const int Port = 54323;
@@ -59,28 +59,9 @@ namespace UnitFunc
             IRemote remote = new UDPRemote();
 
             remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
-            SafeRpcSendAsync(remote).Wait();
-            RpcSendAsync(remote).Wait();
+            TestSend(remote);
             cancellation.Cancel();
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -160,11 +141,33 @@ namespace UnitFunc
             return;
         }
 
+        private static void TestSend(IRemote remote)
+        {
+            SafeRpcSendAsync(remote).Wait();
+            SafeRpcSendAsyncTimeOut(remote).Wait();
+            RpcSendAsync(remote).Wait();
+            RpcSendAsyncTimeOut(remote).Wait();
+        }
+
         private static async Task SafeRpcSendAsync(IRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             var res = await remote.SafeRpcSendAsync<TestPacket2>(packet2);
             Assert.AreEqual(packet2.Value, res.Value);
+        }
+
+        private static async Task SafeRpcSendAsyncTimeOut(IRemote remote)
+        {
+            TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
+            TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
+            remote.SafeRpcSendAsync<TestPacket2>(packet2,ex=>
+            {
+                source.SetResult(ex);
+            });
+
+            var (result, complete) = await source.Task.WaitAsync(3000);
+            Assert.AreEqual(true, complete);
+            Assert.AreEqual(typeof(TimeoutException), result.GetType());
         }
 
         private static async Task RpcSendAsync(IRemote remote)
@@ -174,5 +177,57 @@ namespace UnitFunc
             Assert.AreEqual(null, exception);
             Assert.AreEqual(packet2.Value, result.Value);
         }
+
+        private static async Task RpcSendAsyncTimeOut(IRemote remote)
+        {
+            TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
+            var (result, exception) = await remote.RpcSendAsync<TestPacket2>(packet2);
+            Assert.AreEqual(typeof(TimeoutException), exception.GetType());
+            Assert.AreEqual(null, result);
+        }
+
+
+
+
+
+        #region 反编译分析使用
+
+        public async Task TestAsync()
+        {
+            TCPRemote remote = new TCPRemote();
+            var res = await remote.SafeRpcSendAsync<TestPacket1>(null);
+            res.ToString();
+            await Task.Delay(10);
+            res.ToString();
+        }
+
+        public async void TestAsync2()
+        {
+            TCPRemote remote = new TCPRemote();
+            var res = await remote.SafeRpcSendAsync<TestPacket1>(null);
+            res.ToString();
+            await Task.Delay(10);
+            res.ToString();
+        }
+
+        public async void TestAsync3()
+        {
+            TCPRemote remote = new TCPRemote();
+            var res = await remote.RpcSendAsync<TestPacket1>(null);
+            res.ToString();
+            await Task.Delay(10);
+            res.ToString();
+        }
+
+        public async Task TestAsync4()
+        {
+            TCPRemote remote = new TCPRemote();
+            var res = await remote.RpcSendAsync<TestPacket1>(null);
+            res.ToString();
+            await Task.Delay(10);
+            res.ToString();
+        }
+
+        #endregion
     }
 }

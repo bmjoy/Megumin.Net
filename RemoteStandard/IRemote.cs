@@ -91,8 +91,10 @@ namespace Network.Remote
         (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
         (short rpcID, ICanAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
         bool TryGetValue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
+        bool TryDequeue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         void Remove(short rpcID);
-        void Call(short rpcID, dynamic msg);
+        bool TrySetResult(short rpcID, dynamic msg);
+        bool TrySetException(short rpcID, Exception exception);
     }
 
     /// <summary>
