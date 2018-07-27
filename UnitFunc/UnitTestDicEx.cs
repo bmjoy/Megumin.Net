@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace UnitFunc
 {
@@ -24,6 +25,20 @@ namespace UnitFunc
 
             test.RemoveAll(predicate);
             Assert.AreEqual(false,test.Any(predicate));
+        }
+
+        [TestMethod]
+        public void TestWaitAsync()
+        {
+            Wait().Wait();
+        }
+
+        private static async Task Wait()
+        {
+            var c = await Task.Delay(100).WaitAsync(150);
+            Assert.AreEqual(true, c);
+            var c2 = await Task.Delay(200).WaitAsync(150);
+            Assert.AreEqual(false, c2);
         }
     }
 }
