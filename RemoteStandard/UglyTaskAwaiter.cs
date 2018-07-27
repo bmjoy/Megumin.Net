@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Network.Remote;
 
 namespace Network.Remote
 {
@@ -25,14 +26,6 @@ namespace Network.Remote
         /// 通过此方法结束一个await 而不触发后续方法，也不触发异常，并释放所有资源
         /// </summary>
         void CancelWithNotExceptionAndContinuation();
-    }
-
-    public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
-    {
-        public static UglyTaskAwaiter<T> GetAwaiter<T>(this ICanAwaitable<T> canAwaitable)
-        {
-            return new UglyTaskAwaiter<T>(canAwaitable);
-        }
     }
 
     public struct UglyTaskAwaiter<T> : ICriticalNotifyCompletion
@@ -59,5 +52,13 @@ namespace Network.Remote
         {
             CanAwaiter.OnCompleted(continuation);
         }
+    }
+}
+
+public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
+{
+    public static UglyTaskAwaiter<T> GetAwaiter<T>(this ICanAwaitable<T> canAwaitable)
+    {
+        return new UglyTaskAwaiter<T>(canAwaitable);
     }
 }
