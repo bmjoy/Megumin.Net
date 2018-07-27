@@ -6,10 +6,14 @@ using System.Collections.Concurrent;
 
 namespace MMONET.Remote
 {
-    public class UglyTask<T> : ICanAwaitable<T>,IPoolElement
+    /// <summary>
+    /// 一个异步任务实现，特点是可以取消任务不会触发异常和后续方法。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class LazyTask<T> : ICanAwaitable<T>,IPoolElement
     {
-        static ConcurrentQueue<UglyTask<T>> pool = new ConcurrentQueue<UglyTask<T>>();
-        public static UglyTask<T> Pop()
+        static ConcurrentQueue<LazyTask<T>> pool = new ConcurrentQueue<LazyTask<T>>();
+        public static LazyTask<T> Pop()
         {
             if (pool.TryDequeue(out var task))
             {
@@ -20,7 +24,7 @@ namespace MMONET.Remote
                 }
             }
 
-            return new UglyTask<T>();
+            return new LazyTask<T>();
         }
 
         public static void ClearPool()
@@ -44,7 +48,7 @@ namespace MMONET.Remote
         {
             if (InPool)
             {
-                throw new ArgumentException($"{nameof(UglyTask<T>)}任务冲突，底层错误，请联系框架作者");
+                throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
             }
             this.continuation -= continuation;
             this.continuation += continuation;

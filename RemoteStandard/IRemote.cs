@@ -106,7 +106,7 @@ namespace Network.Remote
     public interface IRpcSendMessage : ISendMessage,ISupportSwitchThread
     {
         /// <summary>
-        /// 异步发送消息，封装Rpc过程,大多数情况你应该使用<see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
+        /// 异步发送消息，封装Rpc过程,两个Rpc方法各有优劣。
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>

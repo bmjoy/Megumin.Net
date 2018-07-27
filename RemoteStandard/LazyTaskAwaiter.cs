@@ -28,7 +28,7 @@ namespace Network.Remote
         void CancelWithNotExceptionAndContinuation();
     }
 
-    public struct UglyTaskAwaiter<T> : ICriticalNotifyCompletion
+    public struct LazyTaskAwaiter<T> : ICriticalNotifyCompletion
     {
         private ICanAwaitable<T> CanAwaiter;
 
@@ -39,7 +39,7 @@ namespace Network.Remote
             return CanAwaiter.Result;
         }
 
-        public UglyTaskAwaiter(ICanAwaitable<T> canAwait)
+        public LazyTaskAwaiter(ICanAwaitable<T> canAwait)
         {
             this.CanAwaiter = canAwait;
         }
@@ -57,8 +57,8 @@ namespace Network.Remote
 
 public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
 {
-    public static UglyTaskAwaiter<T> GetAwaiter<T>(this ICanAwaitable<T> canAwaitable)
+    public static LazyTaskAwaiter<T> GetAwaiter<T>(this ICanAwaitable<T> canAwaitable)
     {
-        return new UglyTaskAwaiter<T>(canAwaitable);
+        return new LazyTaskAwaiter<T>(canAwaitable);
     }
 }

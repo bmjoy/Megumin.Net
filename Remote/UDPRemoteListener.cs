@@ -120,10 +120,4 @@ namespace MMONET.Remote
             IsListening = false;
         }
     }
-
-
-    public class TaskEx
-    {
-        
-    }
 }

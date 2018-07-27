@@ -111,7 +111,7 @@ namespace MMONET.Remote
         public (short rpcID, ICanAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
         {
             short rpcID = GetRpcID();
-            ICanAwaitable<RpcResult> source = UglyTask<RpcResult>.Pop();
+            ICanAwaitable<RpcResult> source = LazyTask<RpcResult>.Pop();
             short key = (short)(rpcID * -1);
             if (TryDequeue(key, out var callback))
             {
