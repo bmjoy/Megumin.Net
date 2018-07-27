@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Network.Remote;
-using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(int messageID, short rpcID, System.ArraySegment<byte> messageBody, Network.Remote.INetRemote2 remote)>;
+using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(int messageID, short rpcID, System.ArraySegment<byte> messageBody, Network.Remote.IDealMessage remote)>;
 
 namespace MMONET.Message
 {
@@ -17,10 +17,10 @@ namespace MMONET.Message
             MainThreadScheduler.Add(Update);
         }
 
-        static ConcurrentQueue<(IReceivedPacket Packet, INetRemote2 Remote)> receivePool
-            = new ConcurrentQueue<(IReceivedPacket, INetRemote2)>();
-        static ConcurrentQueue<(IReceivedPacket Packet, INetRemote2 Remote)> dealPoop
-            = new ConcurrentQueue<(IReceivedPacket, INetRemote2)>();
+        static ConcurrentQueue<(IReceivedPacket Packet, IDealMessage Remote)> receivePool
+            = new ConcurrentQueue<(IReceivedPacket, IDealMessage)>();
+        static ConcurrentQueue<(IReceivedPacket Packet, IDealMessage Remote)> dealPoop
+            = new ConcurrentQueue<(IReceivedPacket, IDealMessage)>();
 
         /// <summary>
         /// 消息大包和remote一起放入接收消息池
@@ -28,7 +28,7 @@ namespace MMONET.Message
         /// <param name="packet"></param>
         /// <param name="remote"></param>
         /// <param name="switchThread">是否切换处理线程</param>
-        public static void PushReceivePacket(IReceivedPacket packet, INetRemote2 remote, bool switchThread)
+        public static void PushReceivePacket(IReceivedPacket packet, IDealMessage remote, bool switchThread)
         {
             if (switchThread)
             {
@@ -50,7 +50,7 @@ namespace MMONET.Message
         /// <param name="body"></param>
         /// <param name="remote"></param>
         /// <param name="switchThread">是否切换处理线程</param>
-        public static void PushReceivePacket(int messageID, short rpcID, ArraySegment<byte> body, INetRemote2 remote, bool switchThread)
+        public static void PushReceivePacket(int messageID, short rpcID, ArraySegment<byte> body, IDealMessage remote, bool switchThread)
         {
             if (switchThread)
             {
@@ -135,13 +135,13 @@ namespace MMONET.Message
                         //throw new Exception();
                     }
 
-                    (IReceivedPacket Packet, INetRemote2 Remote) = res;
+                    (IReceivedPacket Packet, IDealMessage Remote) = res;
                     DealLargeReceivePacket(Packet, Remote);
                 }
             }
         }
 
-        static void DealLargeReceivePacket(IReceivedPacket Packet, INetRemote2 Remote)
+        static void DealLargeReceivePacket(IReceivedPacket Packet, IDealMessage Remote)
         {
             while (Packet?.MessagePacket.Count > 0)
             {
@@ -154,7 +154,7 @@ namespace MMONET.Message
             Packet?.Push2Pool();
         }
 
-        static async void ReceiveCallback(INetRemote2 remote, int messageID, short rpcID, dynamic msg)
+        static async void ReceiveCallback(IDealMessage remote, int messageID, short rpcID, dynamic msg)
         {
             if (remote == null)
             {

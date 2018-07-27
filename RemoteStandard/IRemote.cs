@@ -170,7 +170,7 @@ namespace Network.Remote
         event Action<IReConnectable> ReConnectSuccess;
     }
 
-    public interface INetRemote2 : ISendMessage
+    public interface IDealMessage : ISendMessage
     {
         OnReceiveMessage OnReceive { get; }
         IRpcCallbackPool RpcCallbackPool { get; }
@@ -241,8 +241,6 @@ namespace Network.Remote
         /// </summary>
         int Guid { get; }
     }
-
-    
 
     /// <summary>
     /// 连接监听接口

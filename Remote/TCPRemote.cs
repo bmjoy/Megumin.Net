@@ -16,7 +16,7 @@ namespace MMONET.Remote
     /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
     /// </summary>
     public class TCPRemote : IRemote, ISendMessage, IReceiveMessage,
-        IConnectable,INetRemote2
+        IConnectable,IDealMessage
     {
         public Socket Socket => tcpHelper.Socket;
 
@@ -183,7 +183,7 @@ namespace MMONET.Remote
 
         public void SendAsync<T>(T message) => tcpHelper?.SendAsync(0, message);
 
-        Exception INetRemote2.SendAsync<T>(short rpcID, T message) => tcpHelper.SendAsync(rpcID, message);
+        Exception IDealMessage.SendAsync<T>(short rpcID, T message) => tcpHelper.SendAsync(rpcID, message);
 
         #endregion
 
@@ -200,7 +200,7 @@ namespace MMONET.Remote
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
-        OnReceiveMessage INetRemote2.OnReceive => onReceive;
+        OnReceiveMessage IDealMessage.OnReceive => onReceive;
 
         /// <summary>
         /// 异步接受消息包

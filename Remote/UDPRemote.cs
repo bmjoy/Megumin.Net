@@ -13,7 +13,7 @@ namespace MMONET.Remote
     /// <summary>
     /// 不支持多播地址
     /// </summary>
-    public partial class UDPRemote : UdpClient, IRemote,INetRemote2
+    public partial class UDPRemote : UdpClient, IRemote,IDealMessage
     {
         public int InstanceID { get; set; }
         public bool Connected { get; private set; }
@@ -92,7 +92,7 @@ namespace MMONET.Remote
             return null;
         }
 
-        Exception INetRemote2.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
+        Exception IDealMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
         #endregion
 
         #region Receive
@@ -107,7 +107,7 @@ namespace MMONET.Remote
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
-        OnReceiveMessage INetRemote2.OnReceive => onReceive;
+        OnReceiveMessage IDealMessage.OnReceive => onReceive;
 
         public void Receive(OnReceiveMessage onReceive)
         {
