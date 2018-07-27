@@ -119,6 +119,7 @@ namespace Network.Remote
         /// <summary>
         /// 异步发送消息，封装Rpc过程
         /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，异步方法的后续部分不会触发，所以后续部分可以省去空检查。
+        /// <para>****千万注意，只有在RpcResult有返回值的情况下，后续异步方法才会执行*****</para>
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="message"></param>
@@ -127,7 +128,7 @@ namespace Network.Remote
         /// <exception cref="NullReferenceException">返回值是空的</exception>
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
-        /// <remarks></remarks>
+        /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
         ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
     }
 
