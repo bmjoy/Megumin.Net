@@ -9,7 +9,7 @@ namespace Network.Remote
     /// <summary>
     /// 末端
     /// </summary>
-    public interface IEndPoint
+    public interface IRemoteEndPoint
     {
         /// <summary>
         /// 连接的目标地址
@@ -24,7 +24,7 @@ namespace Network.Remote
     /// <summary>
     /// 可连接的
     /// </summary>
-    public interface IConnectable : IEndPoint
+    public interface IConnectable : IRemoteEndPoint
     {
         /// <summary>
         /// 断开连接事件
@@ -216,7 +216,7 @@ namespace Network.Remote
     /// <summary>
     /// Socket封装
     /// </summary>
-    public interface IRemote : IEndPoint,ISendMessage,IReceiveMessage,
+    public interface IRemote : IRemoteEndPoint,ISendMessage,IReceiveMessage,
         IConnectable,IRpcSendMessage, IBroadCastSend
     {
         /// <summary>
@@ -246,7 +246,7 @@ namespace Network.Remote
     /// 连接监听接口
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface IRemoteListener<T> : IEndPoint
+    public interface IRemoteListener<T> : IRemoteEndPoint
         where T: IRemote
     {
         /// <summary>
@@ -257,22 +257,15 @@ namespace Network.Remote
     }
 
     /// <summary>
-    /// 池元素
+    /// 接收到的消息容器
     /// </summary>
-    public interface IPoolElement
+    public interface IReceivedPacket
     {
+        Queue<(int messageID, short rpcID, ArraySegment<byte> body)> MessagePacket { get; }
         /// <summary>
         /// 返回对象池中
         /// </summary>
         void Push2Pool();
-    }
-
-    /// <summary>
-    /// 接收到的消息容器
-    /// </summary>
-    public interface IReceivedPacket : IPoolElement
-    {
-        Queue<(int messageID, short rpcID, ArraySegment<byte> body)> MessagePacket { get; }
     }
 
     /// <summary>

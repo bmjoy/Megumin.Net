@@ -5,9 +5,6 @@ using System.Text;
 
 namespace MMONET
 {
-    
-
-
     public static class ListPool<T>
     {
         static ConcurrentQueue<List<T>> pool = new ConcurrentQueue<List<T>>();
@@ -42,5 +39,16 @@ namespace MMONET
             }
         }
 
+    }
+
+    /// <summary>
+    /// 池元素
+    /// </summary>
+    public interface IPoolElement
+    {
+        /// <summary>
+        /// 返回对象池中
+        /// </summary>
+        void Push2Pool();
     }
 }

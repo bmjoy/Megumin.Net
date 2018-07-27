@@ -13,7 +13,7 @@ namespace MMONET.Remote
     public class UDPRemoteListener : UdpClient, IRemoteListener<UDPRemote>
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        EndPoint IEndPoint.RemappedEndPoint { get; }
+        EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
 
         public UDPRemoteListener(int port):base(port)
         {

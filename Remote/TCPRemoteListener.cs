@@ -12,7 +12,7 @@ namespace MMONET.Remote
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        EndPoint IEndPoint.RemappedEndPoint { get; }
+        EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
 
         public TCPRemoteListener(int port)
         {

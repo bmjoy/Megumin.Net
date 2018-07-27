@@ -18,8 +18,6 @@ namespace System
         {
             return type.GetCustomAttributes(typeof(T), true).FirstOrDefault() as T;
         }
-
-        
     }
 }
 
