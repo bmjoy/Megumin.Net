@@ -27,9 +27,17 @@ namespace MMONET.Message
         /// </summary>
         /// <param name="packet"></param>
         /// <param name="remote"></param>
-        public static void PushReceivePacket(IReceivedPacket packet, INetRemote2 remote)
+        /// <param name="switchThread">是否切换处理线程</param>
+        public static void PushReceivePacket(IReceivedPacket packet, INetRemote2 remote, bool switchThread)
         {
-            receivePool.Enqueue((packet, remote));
+            if (switchThread)
+            {
+                receivePool.Enqueue((packet, remote));
+            }
+            else
+            {
+                DealLargeReceivePacket(packet, remote);
+            }
         }
 
         static MessageQueue2 receivePool2 = new MessageQueue2();
@@ -41,9 +49,18 @@ namespace MMONET.Message
         /// <param name="rpcID"></param>
         /// <param name="body"></param>
         /// <param name="remote"></param>
-        public static void PushReceivePacket(int messageID, short rpcID, ArraySegment<byte> body, INetRemote2 remote)
+        /// <param name="switchThread">是否切换处理线程</param>
+        public static void PushReceivePacket(int messageID, short rpcID, ArraySegment<byte> body, INetRemote2 remote, bool switchThread)
         {
-            receivePool2.Enqueue((messageID, rpcID, body, remote));
+            if (switchThread)
+            {
+                receivePool2.Enqueue((messageID, rpcID, body, remote));
+            }
+            else
+            {
+                var msg = MessageLUT.Deserialize(messageID, body);
+                ReceiveCallback(remote, messageID, rpcID, msg);
+            }
         }
 
         /// <summary>
@@ -52,11 +69,11 @@ namespace MMONET.Message
         /// <param name="delta"></param>
         static void Update(double delta)
         {
-            DealLargePackat();
-            DealSmallPackat();
+            DealLargePackatPool();
+            DealSmallPackatPool();
         }
 
-        private static void DealSmallPackat()
+        private static void DealSmallPackatPool()
         {
             bool haveMessage = false;
             //处理接受
@@ -91,7 +108,7 @@ namespace MMONET.Message
             }
         }
 
-        private static void DealLargePackat()
+        private static void DealLargePackatPool()
         {
             bool haveMessage = false;
             //处理接受
@@ -117,19 +134,24 @@ namespace MMONET.Message
                         //todo
                         //throw new Exception();
                     }
-                    var (Packet, Remote) = res;
-                    while (Packet?.MessagePacket.Count > 0)
-                    {
-                        var (messageID, rpcID, body) = Packet.MessagePacket.Dequeue();
-                        var msg = MessageLUT.Deserialize(messageID, body);
 
-                        ReceiveCallback(Remote, messageID, rpcID, msg);
-
-                    }
-
-                    Packet?.Push2Pool();
+                    (IReceivedPacket Packet, INetRemote2 Remote) = res;
+                    DealLargeReceivePacket(Packet, Remote);
                 }
             }
+        }
+
+        static void DealLargeReceivePacket(IReceivedPacket Packet, INetRemote2 Remote)
+        {
+            while (Packet?.MessagePacket.Count > 0)
+            {
+                var (messageID, rpcID, body) = Packet.MessagePacket.Dequeue();
+                var msg = MessageLUT.Deserialize(messageID, body);
+
+                ReceiveCallback(Remote, messageID, rpcID, msg);
+            }
+
+            Packet?.Push2Pool();
         }
 
         static async void ReceiveCallback(INetRemote2 remote, int messageID, short rpcID, dynamic msg)

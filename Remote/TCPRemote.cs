@@ -53,7 +53,7 @@ namespace MMONET.Remote
             this.tcpHelper = tcpHelper;
             tcpHelper.OnReceivedPacket += (args) =>
             {
-                MessagePool.PushReceivePacket(args, this);
+                MessagePool.PushReceivePacket(args, this, SwitchThread);
             };
             tcpHelper.OnDisConnect += this.OnDisConnect;
             ConnectIPEndPoint = tcpHelper.Socket.RemoteEndPoint as IPEndPoint;
@@ -192,6 +192,10 @@ namespace MMONET.Remote
         public bool IsReceiving { get; protected set; }
         public int ReceiveBufferSize => RemoteArgs.ReceiveBufferSize;
         public DateTime LastReceiveTime { get; protected set; }
+        /// <summary>
+        /// 是否将接收消息回调切换到指定线程<seealso cref="MainThreadScheduler"/>
+        /// </summary>
+        public bool SwitchThread { get; set; } = true;
         /// <summary>
         /// 接受消息的回调函数
         /// </summary>

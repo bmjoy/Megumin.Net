@@ -103,14 +103,17 @@ namespace Network.Remote
     /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
     /// <para>dynamic导致值类型装箱是可以妥协的。</para>
     /// </summary>
-    public interface IRpcSendMessage:ISendMessage
+    public interface IRpcSendMessage : ISendMessage,ISupportSwitchThread
     {
         /// <summary>
         /// 异步发送消息，封装Rpc过程,大多数情况你应该使用<see cref="ISendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
-        /// <param name="message">发送消息的类型需要序列化 查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
+        /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
         /// <returns>需要检测空值</returns>
+        /// <exception cref="NullReferenceException">返回值是空的</exception>
+        /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
+        /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message);
 
         /// <summary>
@@ -121,6 +124,10 @@ namespace Network.Remote
         /// <param name="message"></param>
         /// <param name="OnException">发生异常时的回调函数</param>
         /// <returns></returns>
+        /// <exception cref="NullReferenceException">返回值是空的</exception>
+        /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
+        /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
+        /// <remarks></remarks>
         ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
     }
 
@@ -172,7 +179,7 @@ namespace Network.Remote
     /// <summary>
     /// 接收消息
     /// </summary>
-    public interface IReceiveMessage
+    public interface IReceiveMessage:ISupportSwitchThread
     {
         /// <summary>
         /// 接收缓冲区大小
@@ -192,6 +199,17 @@ namespace Network.Remote
         /// </summary>
         /// <param name="onReceive">处理消息方法，如果远端为RPC调用，那么应该返回一个合适的结果，否则返回null</param>
         void Receive(OnReceiveMessage onReceive);
+    }
+
+    /// <summary>
+    /// 支持线程转换
+    /// </summary>
+    public interface ISupportSwitchThread
+    {
+        /// <summary>
+        /// 是否开启切换线程
+        /// </summary>
+        bool SwitchThread { get; set; }
     }
 
     /// <summary>
@@ -222,6 +240,8 @@ namespace Network.Remote
         /// </summary>
         int Guid { get; }
     }
+
+    
 
     /// <summary>
     /// 连接监听接口
@@ -262,4 +282,5 @@ namespace Network.Remote
     /// <param name="message"></param>
     /// <returns></returns>
     public delegate ValueTask<dynamic> OnReceiveMessage(dynamic message);
+
 }

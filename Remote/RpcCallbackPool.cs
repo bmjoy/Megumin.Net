@@ -82,12 +82,12 @@ namespace MMONET.Remote
                             {
                                 if (resp == null)
                                 {
-                                    source.SetResult((resp, new NullReferenceException()));
+                                    source.SetResult((default, new NullReferenceException()));
                                 }
                                 else
                                 {
-                                    ///返回类型错误
-                                    source.SetResult((resp, new ArgumentException($"返回类型错误，无法识别")));
+                                    ///转换类型错误
+                                    source.SetResult((default, new InvalidCastException($"返回类型错误，无法转换")));
                                 }
 
                             }
@@ -139,8 +139,8 @@ namespace MMONET.Remote
                                 }
                                 else
                                 {
-                                    ///返回类型错误
-                                    OnException?.Invoke(new ArgumentException($"返回类型错误，无法识别"));
+                                    ///转换类型错误
+                                    OnException?.Invoke(new InvalidCastException($"返回类型错误，无法转换"));
                                 }
                             }
                         }

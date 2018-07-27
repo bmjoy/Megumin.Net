@@ -99,7 +99,10 @@ namespace MMONET.Remote
 
         public int ReceiveBufferSize { get; }
         public bool IsReceiving { get; private set; }
-
+        /// <summary>
+        /// 是否将接收消息回调切换到指定线程<seealso cref="MainThreadScheduler"/>
+        /// </summary>
+        public bool SwitchThread { get; set; } = true;
         /// <summary>
         /// 接受消息的回调函数
         /// </summary>
@@ -148,7 +151,7 @@ namespace MMONET.Remote
             {
                 ///推入消息池
                 MessagePool.PushReceivePacket(MessageID, RpcID,
-                    new ArraySegment<byte>(result.Buffer, TotalHeaderByteCount, Size), this);
+                    new ArraySegment<byte>(result.Buffer, TotalHeaderByteCount, Size), this, SwitchThread);
             }
         }
 
