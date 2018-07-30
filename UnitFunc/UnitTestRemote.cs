@@ -72,9 +72,10 @@ namespace UnitFunc
             PrepareEnvironment(cancellation);
             StartUdpListen(Port, cancellation);
 
-            IRemote remote = new UDPRemote();
-
+            UDPRemote remote = new UDPRemote();
+            remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
+            //remote.Receive(null);
             TestSendAsync(remote).Wait();
             cancellation.Cancel();
         }
@@ -161,11 +162,12 @@ namespace UnitFunc
         {
             await SafeRpcSendAsync(remote);
             await SafeRpcSendAsyncTimeOut(remote);
-            //await SafeRpcSendAsyncTypeError(remote);
+            await SafeRpcSendAsyncTypeError(remote);
 
-            //await RpcSendAsync(remote);
-            //await RpcSendAsyncTimeOut(remote);
-            //await RpcSendAsyncTypeError(remote);
+            await RpcSendAsync(remote);
+            await RpcSendAsyncTimeOut(remote);
+            await RpcSendAsyncTypeError(remote);
+            //await Task.Delay(-1);
         }
 
         private static async Task SafeRpcSendAsync(IRemote remote)

@@ -19,7 +19,7 @@ namespace MMONET.Remote
         public int InstanceID { get; set; }
         public bool Connected => this.Client.Connected;
         public Socket Socket => this.Client;
-        public bool IsVaild { get; }
+        public bool IsVaild { get; } = true;
 
         public UDPRemote():base(0, AddressFamily.InterNetworkV6)
         {
@@ -248,9 +248,6 @@ namespace MMONET.Remote
             {
                 while (true)
                 {
-                    //var rf = new IPEndPoint(IPAddress.IPv6Any, 0);
-                    //var res = base.Receive(ref rf);
-                    //res.ToString();
                     var recv = await ReceiveAsync();
                     var (Size, MessageID, RpcID) = ParsePacketHeader(recv.Buffer, 0);
                     if (MessageID == FrameworkConst.UdpConnectMessageID)
