@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MMONET.Message;
 using Network.Remote;
@@ -13,12 +14,16 @@ namespace MMONET.Remote
     /// <summary>
     /// 不支持多播地址
     /// </summary>
-    public partial class UDPRemote : UdpClient, IRemote,IDealMessage
+    public partial class UDPRemote : UdpClient, IRemote, IDealMessage
     {
         public int InstanceID { get; set; }
-        public bool Connected { get; private set; }
+        public bool Connected => this.Client.Connected;
         public Socket Socket => this.Client;
         public bool IsVaild { get; }
+
+        public UDPRemote():base(0, AddressFamily.InterNetworkV6)
+        {
+        }
 
         #region RPC
 
@@ -86,9 +91,12 @@ namespace MMONET.Remote
 
             var bufferMsg = MessageLUT.Serialize(rpcID, message);
 
-            var s = SendAsync(bufferMsg.Array, bufferMsg.Count);
+            Task.Run(async () =>
+            {
+                var s = await SendAsync(bufferMsg.Array, bufferMsg.Count);
+                BufferPool.Push(bufferMsg.Array);
+            });
 
-            BufferPool.Push(bufferMsg.Array);
             return null;
         }
 
@@ -124,7 +132,10 @@ namespace MMONET.Remote
             if (!IsReceiving)
             {
                 ///绑定远端，防止UDP流量攻击
-                Connect(ConnectIPEndPoint);
+                //if (!Connected)
+                //{
+                //    Connect(ConnectIPEndPoint);
+                //}
             }
 
             IsReceiving = true;
@@ -183,17 +194,31 @@ namespace MMONET.Remote
             this.ConnectIPEndPoint = endPoint;
             while (retryCount >= 0)
             {
-                var res = await this.Connect();
-                if (res)
+                try
                 {
-                    isConnecting = false;
-                    return null;
+                    var res = await this.Connect();
+                    if (res)
+                    {
+                        isConnecting = false;
+                        return null;
+                    }
                 }
-                retryCount--;
+                catch (Exception e)
+                {
+                    if (retryCount <= 0)
+                    {
+                        isConnecting = false;
+                        return e; 
+                    }
+                }
+                finally
+                {
+                    retryCount--;
+                }
             }
 
             isConnecting = false;
-            return new SocketException((int)SocketError.AccessDenied);
+            return new SocketException((int)SocketError.TimedOut);
         }
 
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -208,56 +233,78 @@ namespace MMONET.Remote
 
     partial class UDPRemote
     {
+        int lastseq;
+        int lastack;
         async Task<bool> Connect()
         {
             lastseq = new Random().Next(0, 10000);
-            this.WriteConnectMessage(1, 0, lastseq, lastack);
+            var buffer =  MakeUDPConnectMessage(1, 0, lastseq, lastack);
+            CancellationTokenSource source = new CancellationTokenSource();
+            TaskCompletionSource<bool> taskCompletion = new TaskCompletionSource<bool>();
 
-            ///SYN_SENT
-            var res = await this.ReceiveAsync();
-
-            var (Size, MessageID, RpcID) = ParsePacketHeader(res.Buffer, 0);
-            if (MessageID != FrameworkConst.UdpConnectMessageID)
+#pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+            
+            Task.Run(async () =>
             {
-                return false;
-            }
+                while (true)
+                {
+                    //var rf = new IPEndPoint(IPAddress.IPv6Any, 0);
+                    //var res = base.Receive(ref rf);
+                    //res.ToString();
+                    var recv = await ReceiveAsync();
+                    var (Size, MessageID, RpcID) = ParsePacketHeader(recv.Buffer, 0);
+                    if (MessageID == FrameworkConst.UdpConnectMessageID)
+                    {
+                        var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);
+                        if (SYN == 1 && ACK == 1 && lastseq + 1 == ack)
+                        {
+                            ///ESTABLISHED
 
-            var (SYN, ACK, seq, ack) = ReadConnectMessage(res.Buffer);
-            if (SYN == 1 && ACK == 1 && lastseq +1 == ack)
+                            Connect(recv.RemoteEndPoint);
+                            break;
+                        }
+                    }
+                }
+                source.Cancel();
+                taskCompletion.SetResult(true);
+
+            }, source.Token);
+
+
+            Task.Run(async () =>
             {
-                ///ESTABLISHED
-                lastseq += 1;
-                ///重定向到新的远端，并忽略所有其他远端消息。
-                ConnectIPEndPoint = res.RemoteEndPoint;
+                while (true)
+                {
+                    await SendAsync(buffer, buffer.Length,ConnectIPEndPoint);
+                    await Task.Delay(1000);
+                }
+            },source.Token);
 
-                ///测试超时
-                System.Threading.Thread.Sleep(6000);
-
-                this.WriteConnectMessage(1, 1, lastseq, seq + 1);
-                Connect(ConnectIPEndPoint);
-                Connected = true;
-                return true;
-            }
-            else
+            Task.Run(async () => 
             {
-                return false;
-            }
+                await Task.Delay(5000, source.Token);
+                ///一段时间没有反应，默认失败。
+                source.Cancel();
+                taskCompletion.TrySetException(new TimeoutException());
+
+            },source.Token);
+
+
+#pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+
+            BufferPool.Push(buffer);
+            return await taskCompletion.Task;
         }
-
-        UDPConnectState connectState = UDPConnectState.CLOSED;
-        int lastseq;
-        int lastack;
 
         internal async Task<bool> TryAccept(UdpReceiveResult udpReceive)
         {
-            if (Connected)
+            if (Connected && this.Client.RemoteEndPoint.Equals(udpReceive.RemoteEndPoint))
             {
                 ///已经成功连接，忽略连接请求
                 return true;
             }
             
             ///LISTEN;
-
             var (SYN, ACK, seq, ack) = ReadConnectMessage(udpReceive.Buffer);
 
             if (SYN == 1 && ACK == 0)
@@ -267,28 +314,25 @@ namespace MMONET.Remote
                 lastseq = seq;
 
                 ConnectIPEndPoint = udpReceive.RemoteEndPoint;
-                this.WriteConnectMessage(1, 1, lastack, seq + 1);
 
-                var res = await base.ReceiveAsync();
+                ///绑定远端
+                base.Connect(udpReceive.RemoteEndPoint);
+                var buffer =  MakeUDPConnectMessage(1, 1, lastack, seq + 1);
 
-                var (Size, MessageID, RpcID) = ParsePacketHeader(res.Buffer, 0);
-                if (MessageID != FrameworkConst.UdpConnectMessageID)
+#pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
+                Task.Run(async ()=>
                 {
-                    return false;
-                }
+                    for (int i = 0; i < 3; i++)
+                    {
+                        await SendAsync(buffer, buffer.Length);
+                        await Task.Delay(800);
+                    }
 
-                (SYN, ACK, seq, ack) = ReadConnectMessage(res.Buffer);
+                    BufferPool.Push(buffer);
+                });
+#pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
 
-                if (ACK == 1 && lastseq + 1 == seq && lastack + 1 == ack)
-                {
-                    Connected = true;
-                    return true;
-                }
-                else
-                {
-                    ///INVALID;
-                    return false;
-                }
+                return true;
             }
             else
             {
@@ -305,11 +349,8 @@ namespace MMONET.Remote
             int ack = BitConverter.ToInt32(buffer, TotalHeaderByteCount + 12);
             return (SYN, ACK, seq, ack);
         }
-    }
 
-    static class ConnectEX
-    {
-        public static async Task WriteConnectMessage(this UDPRemote client, int SYN, int ACT, int seq, int ack)
+        static byte[] MakeUDPConnectMessage(int SYN, int ACT, int seq, int ack)
         {
             var bf = BufferPool.Pop(32);
             MakePacket(16, FrameworkConst.UdpConnectMessageID, 0, bf);
@@ -317,8 +358,7 @@ namespace MMONET.Remote
             BitConverter.GetBytes(ACT).CopyTo(bf, TotalHeaderByteCount + 4);
             BitConverter.GetBytes(seq).CopyTo(bf, TotalHeaderByteCount + 8);
             BitConverter.GetBytes(ack).CopyTo(bf, TotalHeaderByteCount + 12);
-            var offset = await client.SendAsync(bf, bf.Length, client.ConnectIPEndPoint);
-            BufferPool.Push(bf);
+            return bf;
         }
     }
 

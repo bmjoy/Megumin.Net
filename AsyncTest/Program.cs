@@ -11,21 +11,25 @@ namespace AsyncTest
 
         static void Main(string[] args)
         {
-            //NewMethod1();
+            NewMethod1();
 
+            NewMethod2();
+
+            Console.ReadLine();
+        }
+
+        private static void NewMethod2()
+        {
             Test3 test3 = new Test3();
             test3.Test2();
             ThreadPool.QueueUserWorkItem(state =>
             {
-                test3.source.Task.GetAwaiter().OnCompleted(()=> 
+                test3.source.Task.GetAwaiter().OnCompleted(() =>
                 {
                     test3.ToString();
                 });
                 test3.source.SetResult(1);
             });
-
-
-            Console.ReadLine();
         }
 
         private static void NewMethod1()

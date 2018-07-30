@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TestMessage.cs" />
+    <Compile Include="UnitTestUDPClient.cs" />
     <Compile Include="UnitTestRemote.cs" />
     <Compile Include="UnitTestDicEx.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

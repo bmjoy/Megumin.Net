@@ -32,9 +32,25 @@ namespace UnitFunc
         }
 
         [TestMethod]
+        public void TestMethodUDPConnect()
+        {
+            CancellationTokenSource cancellation = new CancellationTokenSource();
+            const int Port = 54322;
+            StartUdpListen(Port, cancellation);
+
+            List<IRemote> remotes = new List<IRemote>();
+            for (int i = 0; i < 1; i++)
+            {
+                remotes.Add(new UDPRemote());
+            }
+            TestConnect(remotes, Port).Wait();
+            cancellation.Cancel();
+        }
+
+        [TestMethod]
         public void TestTcpSend()
         {
-            const int Port = 54322;
+            const int Port = 54323;
             CancellationTokenSource cancellation = new CancellationTokenSource();
             PrepareEnvironment(cancellation);
             StartTcpListen(Port, cancellation);
@@ -48,17 +64,17 @@ namespace UnitFunc
 
         
 
-        //[TestMethod]
+        [TestMethod]
         public void TestUdpSend()
         {
-            const int Port = 54323;
+            const int Port = 54324;
             CancellationTokenSource cancellation = new CancellationTokenSource();
             PrepareEnvironment(cancellation);
             StartUdpListen(Port, cancellation);
 
             IRemote remote = new UDPRemote();
 
-            remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
+            remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
             TestSendAsync(remote).Wait();
             cancellation.Cancel();
         }
@@ -112,7 +128,7 @@ namespace UnitFunc
                     r.Receive(Receive);
                 }
             });
-            Task.Delay(50).Wait();
+            Task.Delay(200).Wait();
         }
 
         private static async ValueTask<dynamic> Receive(dynamic message)
@@ -135,7 +151,7 @@ namespace UnitFunc
         {
             foreach (var item in remotes)
             {
-                var res = await item.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
+                var res = await item.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, port));
                 Assert.AreEqual(null, res);
             }
             return;
@@ -145,11 +161,11 @@ namespace UnitFunc
         {
             await SafeRpcSendAsync(remote);
             await SafeRpcSendAsyncTimeOut(remote);
-            await SafeRpcSendAsyncTypeError(remote);
+            //await SafeRpcSendAsyncTypeError(remote);
 
-            await RpcSendAsync(remote);
-            await RpcSendAsyncTimeOut(remote);
-            await RpcSendAsyncTypeError(remote);
+            //await RpcSendAsync(remote);
+            //await RpcSendAsyncTimeOut(remote);
+            //await RpcSendAsyncTypeError(remote);
         }
 
         private static async Task SafeRpcSendAsync(IRemote remote)

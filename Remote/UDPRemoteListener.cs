@@ -15,7 +15,7 @@ namespace MMONET.Remote
         public IPEndPoint ConnectIPEndPoint { get; set; }
         EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
 
-        public UDPRemoteListener(int port):base(port)
+        public UDPRemoteListener(int port):base(port, AddressFamily.InterNetworkV6)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
@@ -54,37 +54,37 @@ namespace MMONET.Remote
             {
                 remote = new UDPRemote();
                 connecting[res.RemoteEndPoint] = remote;
-            }
 
-            var (Result, Complete) = await remote.TryAccept(res).WaitAsync(5000);
+                var (Result, Complete) = await remote.TryAccept(res).WaitAsync(5000);
 
-            if (Complete)
-            {
-                ///完成
-                if (Result)
+                if (Complete)
                 {
-                    ///连接成功
-                    RemotePool.Add(remote);
-                    if (TaskCompletionSource == null)
+                    ///完成
+                    if (Result)
                     {
-                        connected.Enqueue(remote);
+                        ///连接成功
+                        RemotePool.Add(remote);
+                        if (TaskCompletionSource == null)
+                        {
+                            connected.Enqueue(remote);
+                        }
+                        else
+                        {
+                            TaskCompletionSource.SetResult(remote);
+                        }
                     }
                     else
                     {
-                        TaskCompletionSource.SetResult(remote);
+                        ///连接失败但没有超时
+                        remote.Dispose();
                     }
                 }
                 else
                 {
-                    ///连接失败但没有超时
+                    ///超时，手动断开，释放remote;
+                    remote.Disconnect(false);
                     remote.Dispose();
                 }
-            }
-            else
-            {
-                ///超时，手动断开，释放remote;
-                remote.Disconnect(false);
-                remote.Dispose();
             }
         }
 

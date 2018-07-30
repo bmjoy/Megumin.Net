@@ -168,7 +168,7 @@ namespace MMONET.Message
                 }
                 ///这个消息是非Rpc请求
                 ///普通响应onRely
-                var response = await remote.OnReceive(msg);
+                var response = await remote.OnReceive.Invoke(msg);
 
                 if (response is Task<dynamic> task)
                 {
@@ -195,7 +195,7 @@ namespace MMONET.Message
                 }
                 ///这个消息rpc的请求 
                 ///普通响应onRely
-                var response = await remote.OnReceive(msg);
+                var response = await remote.OnReceive.Invoke(msg);
                 if (response is Task<object> task)
                 {
                     response = await task ?? null;
