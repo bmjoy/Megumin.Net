@@ -19,7 +19,7 @@ namespace MMONET.Remote
         public int InstanceID { get; set; }
         public bool Connected => this.Client.Connected;
         public Socket Socket => this.Client;
-        public bool IsVaild { get; } = true;
+        public bool IsVaild { get; protected set; } = true;
 
         public UDPRemote():base(0, AddressFamily.InterNetworkV6)
         {
@@ -88,7 +88,7 @@ namespace MMONET.Remote
             {
                 return null;
             }
-
+            
             var bufferMsg = MessageLUT.Serialize(rpcID, message);
 
             Task.Run(async () =>
@@ -129,14 +129,14 @@ namespace MMONET.Remote
 
         async void MyReceiveAsync()
         {
-            if (!IsReceiving)
-            {
-                ///绑定远端，防止UDP流量攻击
-                //if (!Connected)
-                //{
-                //    Connect(ConnectIPEndPoint);
-                //}
-            }
+            //if (!IsReceiving)
+            //{
+            //    ///绑定远端，防止UDP流量攻击
+            //    if (!Connected)
+            //    {
+            //        Connect(ConnectIPEndPoint);
+            //    }
+            //}
 
             IsReceiving = true;
 
@@ -172,12 +172,17 @@ namespace MMONET.Remote
 
         public void Disconnect(bool triggerOnDisConnectEvent = true)
         {
-            throw new NotImplementedException();
-        }
+            IsVaild = false;
+            if (Connected)
+            {
+                this.Close();
+                this.Dispose();
+            }
 
-        public void ReceiveCallback(int messageID, short rpcID, dynamic msg)
-        {
-            throw new NotImplementedException();
+            if (triggerOnDisConnectEvent)
+            {
+                OnDisConnect?.Invoke(SocketError.Disconnecting);
+            }
         }
 
         public int Guid { get; } = InterlockedID<IRemote>.NewID();
@@ -357,15 +362,5 @@ namespace MMONET.Remote
             BitConverter.GetBytes(ack).CopyTo(bf, TotalHeaderByteCount + 12);
             return bf;
         }
-    }
-
-    enum UDPConnectState
-    {
-        CLOSED,
-        LISTEN,
-        SYN_SENT,
-        SYN_RCVD,
-        ESTABLISHED,
-        INVALID,
     }
 }
