@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MMONET.Message;
 using Network.Remote;
@@ -33,10 +34,9 @@ namespace MMONET.Remote
         /// <param name="socket"></param>
         internal TCPRemote(TCPHelper tcpHelper)
         {
-            Init(tcpHelper);
-
             ///断开连接将remote设置为无效
             OnDisConnect += (er) => { IsVaild = false; };
+            Init(tcpHelper);
         }
 
         /// <summary>
@@ -55,7 +55,12 @@ namespace MMONET.Remote
             {
                 MessagePool.PushReceivePacket(args, this, SwitchThread);
             };
-            tcpHelper.OnDisConnect += this.OnDisConnect;
+
+            tcpHelper.OnDisConnect += (error) =>
+            {
+                this.OnDisConnect?.Invoke(error);
+            };
+
             ConnectIPEndPoint = tcpHelper.Socket.RemoteEndPoint as IPEndPoint;
         }
 
@@ -90,18 +95,11 @@ namespace MMONET.Remote
 
         public event Action<SocketError> OnDisConnect;
 
-        public void Disconnect(bool triggerOnDisConnectEvent)
+        public void Disconnect()
         {
             IsVaild = false;
-            if (Connected)
-            {
-                tcpHelper.Dispose();
-            }
-
-            if (triggerOnDisConnectEvent)
-            {
-                OnDisConnect?.Invoke(SocketError.Disconnecting);
-            }
+            tcpHelper.ManualClose();
+            tcpHelper.Dispose();
         }
 
         public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
@@ -234,7 +232,7 @@ namespace MMONET.Remote
     /// <summary>
     /// 出现任何错误直接作废
     /// </summary>
-    public class TCPHelper
+    public class TCPHelper:IDisposable
     {
         public TCPHelper()
         {
@@ -284,7 +282,6 @@ namespace MMONET.Remote
         List<ArraySegment<byte>> dealList = new List<ArraySegment<byte>>(13);
         public bool IsSending { get; protected set; }
         protected SocketAsyncEventArgs sendArgs;
-        private bool disposedValue;
 
         /// <summary>
         /// 异步发送
@@ -544,45 +541,110 @@ namespace MMONET.Remote
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="socketError"></param>
         void OnReceiveError(RemoteArgs args, SocketError socketError)
         {
-            ///遇到错误关闭连接
-            if (!disposedValue)
-            {
-                OnDisConnect?.Invoke(socketError);
-            }
-            Dispose();
+            OnReceiveError(socketError);
+
             args.Push2Pool();
+        }
+
+        protected virtual void OnReceiveError(SocketError socketError)
+        {
+            if (manualClosing == 0)
+            {
+                ///遇到错误关闭连接
+                try
+                {
+                    OnDisConnect?.Invoke(socketError);
+                }
+                finally
+                {
+                    Dispose();
+                }
+            }
         }
 
         #endregion
 
-        public void Stop()
+        /// <summary>
+        /// 非0表示手动关闭
+        /// </summary>
+        int manualClosing = 0;
+        internal void ManualClose()
         {
-            Socket.Shutdown(SocketShutdown.Both);
-            Socket.Disconnect(false);
-            Socket.Close();
-            Socket.Dispose();
+            Interlocked.Increment(ref manualClosing);
+            try
+            {
+                if (Socket.Connected)
+                {
+                    Socket.Shutdown(SocketShutdown.Both);
+                    Socket.Disconnect(false);
+                    Socket.Close();
+                }
+            }
+            catch (Exception)
+            {
+                //todo
+            }
         }
 
+        #region IDisposable Support
+        private bool disposedValue = false; // 要检测冗余调用
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: 释放托管状态(托管对象)。
+                    Socket.Dispose();
+
+                    lock (this)
+                    {
+                        foreach (var item in sendWaitList)
+                        {
+                            BufferPool.Push(item.Array);
+                        }
+                        sendWaitList.Clear();
+                        foreach (var item in dealList)
+                        {
+                            BufferPool.Push(item.Array);
+                        }
+                        dealList.Clear();
+                    }
+
+                    IsSending = false;
+                    IsReceiving = false;
+                }
+
+                // TODO: 释放未托管的资源(未托管的对象)并在以下内容中替代终结器。
+                // TODO: 将大型字段设置为 null。
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: 仅当以上 Dispose(bool disposing) 拥有用于释放未托管资源的代码时才替代终结器。
+        // ~TCPRemote() {
+        //   // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
+        //   Dispose(false);
+        // }
+
+        // 添加此代码以正确实现可处置模式。
         public void Dispose()
         {
-            Socket.Dispose();
-            disposedValue = true;
-
-            foreach (var item in sendWaitList)
-            {
-                BufferPool.Push(item.Array);
-            }
-            sendWaitList.Clear();
-            foreach (var item in dealList)
-            {
-                BufferPool.Push(item.Array);
-            }
-            dealList.Clear();
-            IsSending = false;
-            IsReceiving = false;
+            // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
+            Dispose(true);
+            // TODO: 如果在以上内容中替代了终结器，则取消注释以下行。
+            // GC.SuppressFinalize(this);
         }
+        #endregion
     }
 
 }

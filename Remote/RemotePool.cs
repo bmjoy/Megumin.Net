@@ -40,7 +40,7 @@ namespace MMONET.Remote
                 {
                     if (tempAddQ.TryDequeue(out var remote))
                     {
-                        if (remote != null)
+                        if (remote != null && remote.IsVaild)
                         {
                             if (remoteDic.ContainsKey(remote.Guid) || remoteDic.ContainsKey(remote.RemappedEndPoint))
                             {

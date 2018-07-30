@@ -86,7 +86,7 @@ namespace MMONET.Remote
                 else
                 {
                     ///重连失败，断线
-                    Remote.Disconnect(true);
+                    Remote.Disconnect();
                 }
             }
             

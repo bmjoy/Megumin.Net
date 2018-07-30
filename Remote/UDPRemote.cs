@@ -21,7 +21,8 @@ namespace MMONET.Remote
         public Socket Socket => this.Client;
         public bool IsVaild { get; protected set; } = true;
 
-        public UDPRemote():base(0, AddressFamily.InterNetworkV6)
+        public UDPRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+            :base(0, addressFamily)
         {
         }
 
@@ -93,8 +94,15 @@ namespace MMONET.Remote
 
             Task.Run(async () =>
             {
-                var s = await SendAsync(bufferMsg.Array, bufferMsg.Count);
-                BufferPool.Push(bufferMsg.Array);
+                try
+                {
+                    var s = await SendAsync(bufferMsg.Array, bufferMsg.Count);
+                    BufferPool.Push(bufferMsg.Array);
+                }
+                catch (SocketException se)
+                {
+                    OnReceiveError(se.SocketErrorCode);
+                }
             });
 
             return null;
@@ -124,6 +132,7 @@ namespace MMONET.Remote
             if (!IsReceiving)
             {
                 MyReceiveAsync();
+
             }
         }
 
@@ -139,15 +148,22 @@ namespace MMONET.Remote
             //}
 
             IsReceiving = true;
-
-            var res = await ReceiveAsync();
-            LastReceiveTime = DateTime.Now;
-            if (IsVaild)
+            try
             {
-                MyReceiveAsync();
-            }
+                var res = await ReceiveAsync();
+                LastReceiveTime = DateTime.Now;
+                if (IsVaild)
+                {
+                    MyReceiveAsync();
+                }
 
-            ParseBuffer(res);
+                ParseBuffer(res);
+            }
+            catch (SocketException se)
+            {
+                IsReceiving = false;
+                OnReceiveError(se.SocketErrorCode);
+            }
         }
 
         private void ParseBuffer(UdpReceiveResult result)
@@ -170,19 +186,42 @@ namespace MMONET.Remote
 
         public event Action<SocketError> OnDisConnect;
 
-        public void Disconnect(bool triggerOnDisConnectEvent = true)
+        public void Disconnect()
         {
             IsVaild = false;
+            Interlocked.Increment(ref manualClosing);
             if (Connected)
             {
                 this.Close();
                 this.Dispose();
             }
+        }
 
-            if (triggerOnDisConnectEvent)
+        /// <summary>
+        /// 非0表示手动关闭
+        /// </summary>
+        int manualClosing = 0;
+        protected virtual void OnReceiveError(SocketError socketError)
+        {
+            if (manualClosing == 0)
             {
-                OnDisConnect?.Invoke(SocketError.Disconnecting);
+                ///遇到错误关闭连接
+                try
+                {
+                    OnDisConnect?.Invoke(socketError);
+                }
+                finally
+                {
+                    Dispose();
+                }
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            IsReceiving = false;
+            IsSending = false;
+            base.Dispose(disposing);    
         }
 
         public int Guid { get; } = InterlockedID<IRemote>.NewID();
@@ -196,7 +235,19 @@ namespace MMONET.Remote
                 return new Exception("连接正在进行中");
             }
             isConnecting = true;
-            this.ConnectIPEndPoint = endPoint;
+
+            if (this.Client.AddressFamily != endPoint.AddressFamily)
+            {
+                ///IP版本转换
+                this.ConnectIPEndPoint = new IPEndPoint(
+                    this.Client.AddressFamily == AddressFamily.InterNetworkV6 ? endPoint.Address.MapToIPv6() :
+                    endPoint.Address.MapToIPv4(), endPoint.Port);
+            }
+            else
+            {
+                this.ConnectIPEndPoint = endPoint;
+            }
+
             while (retryCount >= 0)
             {
                 try

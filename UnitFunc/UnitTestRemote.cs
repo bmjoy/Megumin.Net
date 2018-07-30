@@ -154,6 +154,7 @@ namespace UnitFunc
             {
                 var res = await item.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, port));
                 Assert.AreEqual(null, res);
+                item.Disconnect();
             }
             return;
         }

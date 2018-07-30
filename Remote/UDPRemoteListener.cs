@@ -10,12 +10,16 @@ using static MMONET.Message.MessageLUT;
 
 namespace MMONET.Remote
 {
+    /// <summary>
+    /// IPV4 IPV6 udp中不能混用
+    /// </summary>
     public class UDPRemoteListener : UdpClient, IRemoteListener<UDPRemote>
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
         EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
 
-        public UDPRemoteListener(int port):base(port, AddressFamily.InterNetworkV6)
+        public UDPRemoteListener(int port,AddressFamily addressFamily = AddressFamily.InterNetworkV6)
+            : base(port, addressFamily)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
@@ -82,7 +86,7 @@ namespace MMONET.Remote
                 else
                 {
                     ///超时，手动断开，释放remote;
-                    remote.Disconnect(false);
+                    remote.Disconnect();
                     remote.Dispose();
                 }
             }

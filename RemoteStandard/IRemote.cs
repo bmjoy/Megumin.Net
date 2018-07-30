@@ -38,10 +38,9 @@ namespace Network.Remote
         /// <returns></returns>
         Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0);
         /// <summary>
-        /// 主动断开连接
-        /// <param name="triggerOnDisConnectEvent">选则是否触发事件</param>
+        /// 主动断开连接 不会触发OnDisConnect事件
         /// </summary>
-        void Disconnect(bool triggerOnDisConnectEvent = true);
+        void Disconnect();
     }
 
     /// <summary>
