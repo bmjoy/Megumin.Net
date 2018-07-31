@@ -193,7 +193,6 @@ namespace MMONET.Remote
             if (Connected)
             {
                 this.Close();
-                this.Dispose();
             }
         }
 
@@ -219,9 +218,22 @@ namespace MMONET.Remote
 
         protected override void Dispose(bool disposing)
         {
-            IsReceiving = false;
-            IsSending = false;
-            base.Dispose(disposing);    
+            try
+            {
+                IsReceiving = false;
+                IsSending = false;
+                onReceive = null;
+                if (IsVaild && Connected)
+                {
+                    Disconnect();
+                }
+                OnDisConnect = null;
+            }
+            finally
+            {
+                base.Dispose(disposing);
+                IsVaild = false;
+            }
         }
 
         public int Guid { get; } = InterlockedID<IRemote>.NewID();

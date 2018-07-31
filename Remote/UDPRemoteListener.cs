@@ -67,7 +67,6 @@ namespace MMONET.Remote
                     if (Result)
                     {
                         ///连接成功
-                        RemotePool.Add(remote);
                         if (TaskCompletionSource == null)
                         {
                             connected.Enqueue(remote);

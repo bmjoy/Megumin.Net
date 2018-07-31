@@ -93,14 +93,22 @@ namespace UnitFunc
             MessageLUT.AddFormatter(typeof(TestPacket1), 1000, (Seiralizer<TestPacket1>)TestPacket1.S, TestPacket1.D);
             MessageLUT.AddFormatter(typeof(TestPacket2), 1001, (Seiralizer<TestPacket2>)TestPacket2.S, TestPacket2.D);
 
-            ThreadPool.QueueUserWorkItem((A) =>
+            Task.Factory.StartNew(() =>
             {
-                while (!cancellation.Token.IsCancellationRequested)
+                while (true)
                 {
                     MainThreadScheduler.Update(0);
                     Thread.Yield();
                 }
-            });
+            },cancellation.Token, TaskCreationOptions.LongRunning,TaskScheduler.Default);
+            //ThreadPool.QueueUserWorkItem((A) =>
+            //{
+            //    while (!cancellation.Token.IsCancellationRequested)
+            //    {
+            //        MainThreadScheduler.Update(0);
+            //        Thread.Yield();
+            //    }
+            //});
             Task.Delay(50).Wait();
         }
 

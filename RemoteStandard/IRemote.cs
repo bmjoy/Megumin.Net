@@ -215,8 +215,8 @@ namespace Network.Remote
     /// <summary>
     /// Socket封装
     /// </summary>
-    public interface IRemote : IRemoteEndPoint,ISendMessage,IReceiveMessage,
-        IConnectable,IRpcSendMessage, IBroadCastSend
+    public interface IRemote : IRemoteEndPoint, ISendMessage, IReceiveMessage,
+        IConnectable, IRpcSendMessage, IBroadCastSend, IDisposable
     {
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
