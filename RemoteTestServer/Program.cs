@@ -65,11 +65,11 @@ namespace RemoteTest
 
         private static void TestConnect(IRemote re)
         {
-            re.InstanceID = connectCount;
+            re.UserToken = connectCount;
             re.Receive(null);
             re.OnDisConnect += (er) =>
             {
-                Console.WriteLine($"连接断开{re.InstanceID}");
+                Console.WriteLine($"连接断开{re.UserToken}");
             };
         }
 

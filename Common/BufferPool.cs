@@ -26,6 +26,11 @@ namespace MMONET
         /// <returns></returns>
         static Pool GetPool(int needSize)
         {
+            if (needSize == 8192)
+            {
+                return pools[9];
+            }
+
             if (needSize == 256)
             {
                 return pools[4];

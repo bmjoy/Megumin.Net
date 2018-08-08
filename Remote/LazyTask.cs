@@ -10,8 +10,16 @@ namespace MMONET.Remote
     /// 一个异步任务实现，特点是可以取消任务不会触发异常和后续方法。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class LazyTask<T> : ICanAwaitable<T>,IPoolElement
+    public class LazyTask<T> : ILazyAwaitable<T>,IPoolElement
     {
+        enum State
+        {
+            InPool,
+            Waiting,
+            Success,
+            Faild,
+        }
+
         static ConcurrentQueue<LazyTask<T>> pool = new ConcurrentQueue<LazyTask<T>>();
         public static LazyTask<T> Pop()
         {
@@ -19,12 +27,12 @@ namespace MMONET.Remote
             {
                 if (task != null)
                 {
-                    task.InPool = false;
+                    task.state = State.Waiting;
                     return task;
                 }
             }
 
-            return new LazyTask<T>();
+            return new LazyTask<T>() { state = State.Waiting };
         }
 
         public static void ClearPool()
@@ -38,63 +46,94 @@ namespace MMONET.Remote
             }
         }
 
-        bool InPool = false;
+        State state = State.InPool;
 
         private Action continuation;
-        public bool IsCompleted { get; protected set; } = false;
+        /// <summary>
+        /// 是否进入异步挂起阶段
+        /// </summary>
+        private bool alreadyEnterAsync = false;
+
+        public bool IsCompleted => state == State.Success || state == State.Faild;
         public T Result { get; protected set; }
 
         public void UnsafeOnCompleted(Action continuation)
         {
-            if (InPool)
+            if (state == State.InPool)
             {
                 throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
             }
+
+            alreadyEnterAsync = true;
             this.continuation -= continuation;
             this.continuation += continuation;
+            TryComplete();
         }
 
         public void OnCompleted(Action continuation)
         {
+            if (state == State.InPool)
+            {
+                throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
+            }
+
+            alreadyEnterAsync = true;
             this.continuation -= continuation;
             this.continuation += continuation;
+            TryComplete();
         }
 
         public void SetResult(T result)
         {
-            if (InPool)
+            if (state == State.InPool)
             {
                 throw new InvalidOperationException($"任务不存在");
             }
             this.Result = result;
-            IsCompleted = true;
-            continuation?.Invoke();
-            ///处理后续方法结束，归还到池中
-            ((IPoolElement)this).Push2Pool();
+            state = State.Success;
+            TryComplete();
+
+        }
+
+        private void TryComplete()
+        {
+            if (alreadyEnterAsync)
+            {
+                if (state == State.Success)
+                {
+                    continuation?.Invoke();
+                }
+
+                ///处理后续方法结束，归还到池中
+                ((IPoolElement)this).Push2Pool();
+            }
         }
 
         public void CancelWithNotExceptionAndContinuation()
         {
-            ((IPoolElement)this).Push2Pool();
+            Result = default;
+            state = State.Faild;
+            TryComplete();
         }
 
         void IPoolElement.Push2Pool()
         {
             Reset();
 
-            if (!InPool)
+            if (state != State.InPool)
             {
                 if (pool.Count < 150)
                 {
                     pool.Enqueue(this);
-                    InPool = true;
+                    state = State.InPool;
+
                 }
             }
         }
 
         void Reset()
         {
-            IsCompleted = false;
+            alreadyEnterAsync = false;
             Result = default;
             continuation = null;
         }

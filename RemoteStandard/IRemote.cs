@@ -49,10 +49,6 @@ namespace Network.Remote
     public interface ISendMessage
     {
         /// <summary>
-        /// remote 是否在发送数据
-        /// </summary>
-        bool IsSending { get; }
-        /// <summary>
         /// 发送消息，无阻塞立刻返回
         /// <para>调用方 无法了解发送情况</para>
         /// 序列化过程同步执行，方法返回表示序列化已结束，修改message内容不影响发送数据。
@@ -88,7 +84,7 @@ namespace Network.Remote
         /// </summary>
         int RpcTimeOutMilliseconds { get; set; }
         (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
-        (short rpcID, ICanAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
+        (short rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
         bool TryGetValue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         bool TryDequeue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         void Remove(short rpcID);
@@ -102,10 +98,10 @@ namespace Network.Remote
     /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
     /// <para>dynamic导致值类型装箱是可以妥协的。</para>
     /// </summary>
-    public interface IRpcSendMessage : ISendMessage,ISupportSwitchThread
+    public interface IRpcSendMessage : ISendMessage
     {
         /// <summary>
-        /// 异步发送消息，封装Rpc过程,两个Rpc方法各有优劣。
+        /// 异步发送消息，封装Rpc过程。
         /// </summary>
         /// <typeparam name="RpcResult">期待的Rpc结果类型，如果收到返回类型，但是类型不匹配，返回null</typeparam>
         /// <param name="message">发送消息的类型需要序列化 具体实现使用查找表<see cref="MessageLUT"/> 中指定ID和序列化函数</param>
@@ -115,6 +111,16 @@ namespace Network.Remote
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message);
 
+    }
+
+    /// <summary>
+    /// RpcSend会自动开始Receive。
+    /// <para></para>
+    /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
+    /// <para>dynamic导致值类型装箱是可以妥协的。</para>
+    /// </summary>
+    public interface ILazyRpcSendMessage
+    {
         /// <summary>
         /// 异步发送消息，封装Rpc过程
         /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
@@ -129,7 +135,8 @@ namespace Network.Remote
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
-        ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
+        ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
+
     }
 
     /// <summary>
@@ -170,27 +177,13 @@ namespace Network.Remote
         event Action<IReConnectable> ReConnectSuccess;
     }
 
-    public interface IDealMessage : ISendMessage
-    {
-        OnReceiveMessage OnReceive { get; }
-        IRpcCallbackPool RpcCallbackPool { get; }
-        Exception SendAsync<T>(short rpcID, T message);
-    }
+
 
     /// <summary>
     /// 接收消息
     /// </summary>
-    public interface IReceiveMessage:ISupportSwitchThread
+    public interface IReceiveMessage
     {
-        /// <summary>
-        /// 接收缓冲区大小
-        /// </summary>
-        int ReceiveBufferSize { get; }
-        /// <summary>
-        /// 当前是否在接收
-        /// </summary>
-        bool IsReceiving { get; }
-
         /// <summary>
         /// 最后一次收到消息的时间
         /// </summary>
@@ -222,24 +215,25 @@ namespace Network.Remote
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
         /// </summary>
-        int InstanceID { get; set; }
-        /// <summary>
-        /// 当前是否连接
-        /// </summary>
-        bool Connected { get; }
+        int UserToken { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        Socket Socket { get; }
+        Socket Client { get; }
         /// <summary>
         /// 
         /// </summary>
         bool IsVaild { get; }
 
         /// <summary>
-        /// 
+        /// 这个是框架全局分配的ID。进程唯一。
         /// </summary>
         int Guid { get; }
+    }
+
+    public interface ISuperRemote:IRemote,ILazyRpcSendMessage
+    {
+
     }
 
     /// <summary>

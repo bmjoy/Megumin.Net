@@ -151,15 +151,14 @@ namespace MMONET.Message
             AddDFormatter(messageID, deserilizer, key);
         }
 
-
+        [Obsolete]
         public static ArraySegment<byte> Serialize<T>(short rpcID, T message)
         {
-            ///序列化消息
-
-            var (MessageID, Seiralizer) = sFormatter[message.GetType()];
-
             ///序列化用buffer
             var buffer65536 = BufferPool.Pop65536();
+
+            ///序列化消息
+            var (MessageID, Seiralizer) = sFormatter[message.GetType()];
 
             Seiralizer<T> seiralizer = Seiralizer as Seiralizer<T>;
 
@@ -184,6 +183,31 @@ namespace MMONET.Message
             BufferPool.Push65536(buffer65536);
 
             return new ArraySegment<byte>(messagebuffer, 0, length + TotalHeaderByteCount);
+        }
+
+        public static (int messageID, ArraySegment<byte> byteUserMessage) Serialize<T>(byte[] buffer65536, T message)
+        {
+            if (sFormatter.TryGetValue(message.GetType(),out var sf))
+            {
+                ///序列化消息
+                var (MessageID, Seiralizer) = sf;
+
+                Seiralizer<T> seiralizer = Seiralizer as Seiralizer<T>;
+
+                ushort length = seiralizer(message, ref buffer65536);
+
+                if (length > 8192 - TotalHeaderByteCount)
+                {
+                    BufferPool.Push65536(buffer65536);
+                    ///消息过长
+                    throw new ArgumentOutOfRangeException($"消息长度大于{8192 - TotalHeaderByteCount}," +
+                        $"请拆分发送。");
+                }
+
+                return (MessageID, new ArraySegment<byte>(buffer65536, 0, length));
+            }
+
+            return (-1,default);
         }
 
         public static dynamic Deserialize(int messageID,ArraySegment<byte> body)

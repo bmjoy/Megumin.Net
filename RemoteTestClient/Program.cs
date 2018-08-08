@@ -94,7 +94,7 @@ namespace RemoteTestClient
 
             Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ------ 发送总时间: {look1.ElapsedMilliseconds}----- 平均每秒发送:{MessageCount * 1000 / (look1.ElapsedMilliseconds+1)}");
 
-            var res2 = await remote.SafeRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex });
+            var res2 = await remote.LazyRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex });
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
             //Remote.BroadCastAsync(new Packet1 { Value = -99999 },remote);
 

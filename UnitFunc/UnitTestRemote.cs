@@ -182,7 +182,7 @@ namespace UnitFunc
         private static async Task SafeRpcSendAsync(IRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
-            var res = await remote.SafeRpcSendAsync<TestPacket2>(packet2);
+            var res = await remote.LazyRpcSendAsync<TestPacket2>(packet2);
             Assert.AreEqual(packet2.Value, res.Value);
         }
 
@@ -190,7 +190,7 @@ namespace UnitFunc
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
-            remote.SafeRpcSendAsync<TestPacket1>(packet2, ex =>
+            remote.LazyRpcSendAsync<TestPacket1>(packet2, ex =>
              {
                  source.SetResult(ex);
              });
@@ -204,7 +204,7 @@ namespace UnitFunc
         {
             TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
-            remote.SafeRpcSendAsync<TestPacket2>(packet2,ex=>
+            remote.LazyRpcSendAsync<TestPacket2>(packet2,ex=>
             {
                 source.SetResult(ex);
             });
@@ -243,7 +243,7 @@ namespace UnitFunc
         public async Task TestAsync()
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.SafeRpcSendAsync<TestPacket1>(null);
+            var res = await remote.LazyRpcSendAsync<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
             res.ToString();
@@ -252,7 +252,7 @@ namespace UnitFunc
         public async void TestAsync2()
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.SafeRpcSendAsync<TestPacket1>(null);
+            var res = await remote.LazyRpcSendAsync<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
             res.ToString();

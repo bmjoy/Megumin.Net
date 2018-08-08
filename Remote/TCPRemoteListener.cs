@@ -8,7 +8,7 @@ using Network.Remote;
 
 namespace MMONET.Remote
 {
-    public class TCPRemoteListener : IRemoteListener<TCPRemote>
+    public class TCPRemoteListener : IRemoteListener<TCPRemote2>
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
@@ -19,7 +19,7 @@ namespace MMONET.Remote
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
 
-        public async Task<TCPRemote> ListenAsync()
+        public async Task<TCPRemote2> ListenAsync()
         {
             if (tcpListener == null)
             {
@@ -43,7 +43,7 @@ namespace MMONET.Remote
                 tcpListener = null;
                 ListenAsync();
             }
-            TCPRemote remote = new TCPRemote(new TCPHelper(remoteSocket));
+            TCPRemote2 remote = new TCPRemote2(remoteSocket);
             return remote;
         }
 

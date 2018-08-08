@@ -17,9 +17,9 @@ namespace MMONET.Remote
     /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
     /// </summary>
     public class TCPRemote : IRemote, ISendMessage, IReceiveMessage,
-        IConnectable,IDealMessage,IDisposable
+        IConnectable,IDealObjectMessage,IDisposable
     {
-        public Socket Socket => tcpHelper.Socket;
+        public Socket Client => tcpHelper.Socket;
 
         private TCPHelper tcpHelper;
 
@@ -53,7 +53,7 @@ namespace MMONET.Remote
             this.tcpHelper = tcpHelper;
             tcpHelper.OnReceivedPacket += (args) =>
             {
-                MessagePool.PushReceivePacket(args, this, SwitchThread);
+                MessageThreadTransducer.PushReceivePacket(args, this, SwitchThread);
             };
 
             tcpHelper.OnDisConnect += (error) =>
@@ -68,7 +68,7 @@ namespace MMONET.Remote
         {
             get
             {
-                return Socket?.Connected ?? false;
+                return Client?.Connected ?? false;
             }
         }
 
@@ -76,7 +76,7 @@ namespace MMONET.Remote
         /// RemoteBase类型中的唯一ID。
         /// </summary>
         public int Guid { get; } = InterlockedID<IRemote>.NewID();
-        public int InstanceID { get; set; }
+        public int UserToken { get; set; }
         /// <summary>
         /// 如果为false <see cref="MainThreadScheduler.Update(double)"/>会检测从<see cref="RemotePool"/>中移除
         /// </summary>
@@ -168,7 +168,7 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        public ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+        public ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
             CheckReceive();
 
@@ -181,7 +181,7 @@ namespace MMONET.Remote
 
         public void SendAsync<T>(T message) => tcpHelper?.SendAsync(0, message);
 
-        Exception IDealMessage.SendAsync<T>(short rpcID, T message) => tcpHelper.SendAsync(rpcID, message);
+        Exception IDealObjectMessage.SendAsync<T>(short rpcID, T message) => tcpHelper.SendAsync(rpcID, message);
 
         #endregion
 
@@ -198,13 +198,13 @@ namespace MMONET.Remote
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
-        OnReceiveMessage IDealMessage.OnReceive => onReceive;
+        OnReceiveMessage IDealObjectMessage.OnReceive => onReceive;
 
         /// <summary>
         /// 异步接受消息包
         /// <para>1.remote收到消息大包（拼合的小包组）</para>
-        /// <para>2.remote 调用 <see cref="MessagePool.PushReceivePacket(IReceivedPacket, INetRemote)"/></para>
-        /// <para>消息大包和remote一起放入接收消息池<see cref="MessagePool"/>（这一环节为了切换执行异步方法后续的线程）</para>
+        /// <para>2.remote 调用 <see cref="MessageThreadTransducer.PushReceivePacket(IReceivedPacket, INetRemote)"/></para>
+        /// <para>消息大包和remote一起放入接收消息池<see cref="MessageThreadTransducer"/>（这一环节为了切换执行异步方法后续的线程）</para>
         /// <para>3.（主线程）<see cref="MainThreadScheduler.Update(double)"/>时统一从池中取出消息，反序列化。
         ///          每个小包是一个消息，由remote <see cref="INetRemote.ReceiveCallback"/>>处理</para>
         /// <para>4.1 检查RpcID(内置不可见) 如果是Rpc结果，触发异步方法后续。如果rpc已经超时，消息被直接丢弃</para>
@@ -224,7 +224,7 @@ namespace MMONET.Remote
         {
             return Task.Run(() =>
             {
-                Socket.Send(msgBuffer.Array, msgBuffer.Offset, msgBuffer.Count, SocketFlags.None);
+                Client.Send(msgBuffer.Array, msgBuffer.Offset, msgBuffer.Count, SocketFlags.None);
             });
         }
 
@@ -353,7 +353,13 @@ namespace MMONET.Remote
             }
 
             var bufferMsg = MessageLUT.Serialize(rpcID, message);
+            SendAYSNC(bufferMsg);
 
+            return null;
+        }
+
+        private void SendAYSNC(ArraySegment<byte> bufferMsg)
+        {
             bool sendNow = false;
 
             ///如果现在没有发送消息，手动调用发送。
@@ -375,10 +381,7 @@ namespace MMONET.Remote
             {
                 Send();
             }
-
-            return null;
         }
-
 
         void Send()
         {

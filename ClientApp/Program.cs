@@ -53,7 +53,7 @@ namespace TestClient
                 };
 
                 ///有返回值，这个是一个RPC过程，Exception在网络中传递
-                var resp = await remote.SafeRpcSendAsync<Login2GateResult>(login);
+                var resp = await remote.LazyRpcSendAsync<Login2GateResult>(login);
                 if (resp.IsSuccess)
                 {
                     Console.WriteLine("登陆成功");

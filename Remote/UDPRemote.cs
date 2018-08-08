@@ -14,11 +14,11 @@ namespace MMONET.Remote
     /// <summary>
     /// 不支持多播地址
     /// </summary>
-    public partial class UDPRemote : UdpClient, IRemote, IDealMessage
+    public partial class UDPRemote : UdpClient, IRemote, IDealObjectMessage
     {
-        public int InstanceID { get; set; }
+        public int UserToken { get; set; }
         public bool Connected => this.Client.Connected;
-        public Socket Socket => this.Client;
+        public Socket Client => this.Client;
         public bool IsVaild { get; protected set; } = true;
 
         public UDPRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6)
@@ -58,7 +58,7 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        public virtual ICanAwaitable<RpcResult> SafeRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+        public virtual ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
         {
             if (!IsReceiving)
             {
@@ -108,7 +108,7 @@ namespace MMONET.Remote
             return null;
         }
 
-        Exception IDealMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
+        Exception IDealObjectMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
         #endregion
 
         #region Receive
@@ -123,7 +123,7 @@ namespace MMONET.Remote
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
-        OnReceiveMessage IDealMessage.OnReceive => onReceive;
+        OnReceiveMessage IDealObjectMessage.OnReceive => onReceive;
 
         public void Receive(OnReceiveMessage onReceive)
         {
@@ -177,7 +177,7 @@ namespace MMONET.Remote
             else
             {
                 ///推入消息池
-                MessagePool.PushReceivePacket(MessageID, RpcID,
+                MessageThreadTransducer.PushReceivePacket(MessageID, RpcID,
                     new ArraySegment<byte>(result.Buffer, TotalHeaderByteCount, Size), this, SwitchThread);
             }
         }
@@ -290,7 +290,7 @@ namespace MMONET.Remote
         }
 
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        public EndPoint RemappedEndPoint => Socket.RemoteEndPoint;
+        public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
         public DateTime LastReceiveTime { get; private set; }
 
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)

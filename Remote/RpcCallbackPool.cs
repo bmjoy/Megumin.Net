@@ -108,10 +108,10 @@ namespace MMONET.Remote
             return (rpcID, source.Task);
         }
 
-        public (short rpcID, ICanAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
+        public (short rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
         {
             short rpcID = GetRpcID();
-            ICanAwaitable<RpcResult> source = LazyTask<RpcResult>.Pop();
+            ILazyAwaitable<RpcResult> source = LazyTask<RpcResult>.Pop();
             short key = (short)(rpcID * -1);
             if (TryDequeue(key, out var callback))
             {

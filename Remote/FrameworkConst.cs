@@ -19,5 +19,52 @@ namespace MMONET.Remote
         /// </summary>
         public const int HeartbeatsMessageID = 255;
 
+        /// <summary>
+        /// 报头初始偏移8
+        /// </summary>
+        public const ushort HeaderOffset = 2 + 4 + 2;
+    }
+
+    internal static class BitConvert_C6FCE74980A447BBACC6792A9E36F323
+    {
+        public static void WriteToByte(this short num, byte[] buffer, int offset)
+        {
+            var b = BitConverter.GetBytes(num);
+            Buffer.BlockCopy(b, 0, buffer, offset, 2);
+        }
+
+        public static void WriteToByte(this ushort num, byte[] buffer, int offset)
+        {
+            var b = BitConverter.GetBytes(num);
+            Buffer.BlockCopy(b, 0, buffer, offset, 2);
+        }
+
+        public static void WriteToByte(this int num, byte[] buffer, int offset)
+        {
+            var b = BitConverter.GetBytes(num);
+            Buffer.BlockCopy(b, 0, buffer, offset, 4);
+        }
+
+        public static void WriteToByte(this long num, byte[] buffer, int offset)
+        {
+            var b = BitConverter.GetBytes(num);
+            Buffer.BlockCopy(b, 0, buffer, offset, 8);
+        }
+
+        public static short ReadShort(this byte[] buffer, int offset)
+        {
+            return BitConverter.ToInt16(buffer, offset);
+        }
+
+        public static ushort ReadUShort(this byte[] buffer, int offset)
+        {
+            return BitConverter.ToUInt16(buffer, offset);
+        }
+
+        public static int ReadInt(this byte[] buffer, int offset)
+        {
+            return BitConverter.ToInt32(buffer, offset);
+        }
+
     }
 }
