@@ -17,11 +17,15 @@ namespace MMONET.Remote
         /// 这是留给用户赋值的
         /// </summary>
         public int UserToken { get; set; }
-        public bool IsVaild { get; protected set; }
+        public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public event OnReceiveMessage OnReceive;
         public DateTime LastReceiveTime { get; protected set; } = DateTime.Now;
         public IRpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
+        /// <summary>
+        /// 当前是否为手动关闭中
+        /// </summary>
+        protected bool manualDisconnecting = false;
     }
 
     /// 发送
@@ -52,10 +56,15 @@ namespace MMONET.Remote
             var sendbuffer = PacketBuffer(messageID, rpcID, default, byteMessage);
             BufferPool.Push65536(sbuffer);
 
-            SendByteBuffer(sendbuffer);
+            SendByteBufferAsync(sendbuffer);
         }
 
-        protected abstract void SendByteBuffer(ArraySegment<byte> bufferMsg);
+        /// <summary>
+        /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
+        /// </summary>
+        /// <param name="bufferMsg"></param>
+        /// <remarks>个人猜测，此处是性能敏感区域，使用Task可能会影响性能（并没有经过测试）</remarks>
+        protected abstract void SendByteBufferAsync(ArraySegment<byte> bufferMsg);
 
         public Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message)
         {

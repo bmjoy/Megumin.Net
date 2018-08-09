@@ -7,229 +7,81 @@ using System.Threading;
 using System.Threading.Tasks;
 using MMONET.Message;
 using Network.Remote;
-using static MMONET.Message.MessageLUT;
 
 namespace MMONET.Remote
 {
     /// <summary>
-    /// 不支持多播地址
+    /// 不支持多播地址 每包大小最好不要大于 523（548 - 框架报头8+17）
     /// </summary>
-    public partial class UDPRemote : UdpClient, IRemote, IDealMessage
+    public partial class UDPRemote : RemoteBase, IRemote, ISuperRemote
     {
-        public int UserToken { get; set; }
-        public bool Connected => this.Client.Connected;
-        public bool IsVaild { get; protected set; } = true;
+        public Socket Client => udpClient?.Client;
+        public UdpClient udpClient;
+        public EndPoint RemappedEndPoint => udpClient?.Client.RemoteEndPoint;
 
-        public UDPRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6)
-            :base(0, addressFamily)
+        public UDPRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6) :
+            this(new UdpClient(0, addressFamily))
         {
+
         }
 
-        #region RPC
-
-        public IRpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
-        bool IDealMessage.TrySetRpcResult(short rpcID, dynamic message) => RpcCallbackPool?.TrySetResult(rpcID, message);
-
-        #endregion
-
-        #region Send
-
-        public bool IsSending { get; protected set; }
-
-        public virtual Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message)
+        internal UDPRemote(UdpClient udp)
         {
-            if (!IsReceiving)
-            {
-                Receive(null);
-            }
-
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>();
-
-            SendAsync(rpcID, message);
-
-            return source;
+            udpClient = udp;
+            IsVaild = true;
         }
 
-
-        /// <summary>
-        /// <see cref="IRpcSendMessage.SafeRpcSendAsync{RpcResult}(dynamic, Action{Exception})"/>
-        /// </summary>
-        /// <typeparam name="RpcResult"></typeparam>
-        /// <param name="message"></param>
-        /// <param name="OnException"></param>
-        /// <returns></returns>
-        public virtual ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+        void OnSocketException(SocketError error)
         {
-            if (!IsReceiving)
-            {
-                Receive(null);
-            }
-
-            var (rpcID, source) = RpcCallbackPool.Regist<RpcResult>(OnException);
-
-            SendAsync(rpcID, message);
-
-            return source;
+            udpClient?.Close();
+            OnDisConnect?.Invoke(error);
         }
 
-        public virtual void SendAsync<T>(T message)
-        {
-            SendAsync(0, message);
-        }
+        #region IDisposable Support
+        private bool disposedValue = false; // 要检测冗余调用
 
-        /// <summary>
-        /// 异步发送
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        Exception SendAsync<T>(short rpcID, T message)
+        protected virtual void Dispose(bool disposing)
         {
-            if (!Connected)
+            if (!disposedValue)
             {
-                return null;
-            }
-            
-            var bufferMsg = MessageLUT.Serialize(rpcID, message);
-
-            Task.Run(async () =>
-            {
-                try
+                if (disposing)
                 {
-                    var s = await SendAsync(bufferMsg.Array, bufferMsg.Count);
-                    BufferPool.Push(bufferMsg.Array);
-                }
-                catch (SocketException se)
-                {
-                    OnReceiveError(se.SocketErrorCode);
-                }
-            });
-
-            return null;
-        }
-
-        void IDealMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
-        #endregion
-
-        #region Receive
-
-        public int ReceiveBufferSize { get; }
-        public bool IsReceiving { get; private set; }
-        /// <summary>
-        /// 是否将接收消息回调切换到指定线程<seealso cref="MainThreadScheduler"/>
-        /// </summary>
-        public bool SwitchThread { get; set; } = true;
-        /// <summary>
-        /// 接受消息的回调函数
-        /// </summary>
-        protected OnReceiveMessage onReceive;
-
-        public void Receive(OnReceiveMessage onReceive)
-        {
-            this.onReceive = onReceive;
-
-            if (!IsReceiving)
-            {
-                MyReceiveAsync();
-
-            }
-        }
-
-        async void MyReceiveAsync()
-        {
-            IsReceiving = true;
-            try
-            {
-                var res = await ReceiveAsync();
-                LastReceiveTime = DateTime.Now;
-                if (IsVaild)
-                {
-                    MyReceiveAsync();
+                    // TODO: 释放托管状态(托管对象)。
+                    udpClient.Dispose();
                 }
 
-                ParseBuffer(res);
-            }
-            catch (SocketException se)
-            {
-                IsReceiving = false;
-                OnReceiveError(se.SocketErrorCode);
+                // TODO: 释放未托管的资源(未托管的对象)并在以下内容中替代终结器。
+                // TODO: 将大型字段设置为 null。
+                IsVaild = false;
+                disposedValue = true;
             }
         }
 
-        private void ParseBuffer(UdpReceiveResult result)
+        // TODO: 仅当以上 Dispose(bool disposing) 拥有用于释放未托管资源的代码时才替代终结器。
+        // ~UDPRemote2() {
+        //   // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
+        //   Dispose(false);
+        // }
+
+        // 添加此代码以正确实现可处置模式。
+        public void Dispose()
         {
-            var (Size, MessageID, RpcID) = ParsePacketHeader(result.Buffer, 0);
-            if (MessageID == FrameworkConst.HeartbeatsMessageID)
-            {
-                ///拦截框架心跳包
-                //todo
-            }
-            else
-            {
-                ///推入消息池
-                MessageThreadTransducer.PushReceivePacket(MessageID, RpcID,
-                    new ArraySegment<byte>(result.Buffer, TotalHeaderByteCount, Size), this, SwitchThread);
-            }
+            // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
+            Dispose(true);
+            // TODO: 如果在以上内容中替代了终结器，则取消注释以下行。
+            // GC.SuppressFinalize(this);
         }
-
         #endregion
 
+    }
+
+    ///连接
+    partial class UDPRemote
+    {
         public event Action<SocketError> OnDisConnect;
 
-        public void Disconnect()
-        {
-            IsVaild = false;
-            Interlocked.Increment(ref manualClosing);
-            if (Connected)
-            {
-                this.Close();
-            }
-        }
-
-        /// <summary>
-        /// 非0表示手动关闭
-        /// </summary>
-        int manualClosing = 0;
-        protected virtual void OnReceiveError(SocketError socketError)
-        {
-            if (manualClosing == 0)
-            {
-                ///遇到错误关闭连接
-                try
-                {
-                    OnDisConnect?.Invoke(socketError);
-                }
-                finally
-                {
-                    Dispose();
-                }
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            try
-            {
-                IsReceiving = false;
-                IsSending = false;
-                onReceive = null;
-                if (IsVaild && Connected)
-                {
-                    Disconnect();
-                }
-                OnDisConnect = null;
-            }
-            finally
-            {
-                base.Dispose(disposing);
-                IsVaild = false;
-            }
-        }
-
-        public int Guid { get; } = InterlockedID<IRemote>.NewID();
-
         bool isConnecting = false;
-        
+
         /// <summary>
         /// IPv4 和 IPv6不能共用
         /// </summary>
@@ -260,7 +112,7 @@ namespace MMONET.Remote
             {
                 try
                 {
-                    var res = await this.Connect();
+                    var res = await this.ConnectAsync();
                     if (res)
                     {
                         isConnecting = false;
@@ -272,7 +124,7 @@ namespace MMONET.Remote
                     if (retryCount <= 0)
                     {
                         isConnecting = false;
-                        return e; 
+                        return e;
                     }
                 }
                 finally
@@ -285,35 +137,30 @@ namespace MMONET.Remote
             return new SocketException((int)SocketError.TimedOut);
         }
 
-        public IPEndPoint ConnectIPEndPoint { get; set; }
-        public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
-        public DateTime LastReceiveTime { get; private set; }
-
-        public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
+        public void Disconnect()
         {
-            return this.SendAsync(msgBuffer.Array, msgBuffer.Count);
+            IsVaild = false;
+            manualDisconnecting = true;
+            udpClient?.Close();
         }
-    }
 
-    partial class UDPRemote
-    {
         int lastseq;
         int lastack;
-        async Task<bool> Connect()
+        async Task<bool> ConnectAsync()
         {
             lastseq = new Random().Next(0, 10000);
-            var buffer =  MakeUDPConnectMessage(1, 0, lastseq, lastack);
+            var buffer = MakeUDPConnectMessage(1, 0, lastseq, lastack);
             CancellationTokenSource source = new CancellationTokenSource();
             TaskCompletionSource<bool> taskCompletion = new TaskCompletionSource<bool>();
 
 #pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
-            
+
             Task.Run(async () =>
             {
                 while (true)
                 {
-                    var recv = await ReceiveAsync();
-                    var (Size, MessageID, RpcID) = ParsePacketHeader(recv.Buffer, 0);
+                    var recv = await udpClient.ReceiveAsync();
+                    var (Size, MessageID, RpcID) = MessageLUT.ParsePacketHeader(recv.Buffer, 0);
                     if (MessageID == FrameworkConst.UdpConnectMessageID)
                     {
                         var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);
@@ -321,7 +168,7 @@ namespace MMONET.Remote
                         {
                             ///ESTABLISHED
 
-                            Connect(recv.RemoteEndPoint);
+                            udpClient.Connect(recv.RemoteEndPoint);
                             break;
                         }
                     }
@@ -336,19 +183,19 @@ namespace MMONET.Remote
             {
                 while (true)
                 {
-                    await SendAsync(buffer, buffer.Length,ConnectIPEndPoint);
+                    await udpClient.SendAsync(buffer,buffer.Length, ConnectIPEndPoint);
                     await Task.Delay(1000);
                 }
-            },source.Token);
+            }, source.Token);
 
-            Task.Run(async () => 
+            Task.Run(async () =>
             {
                 await Task.Delay(5000, source.Token);
                 ///一段时间没有反应，默认失败。
                 source.Cancel();
                 taskCompletion.TrySetException(new TimeoutException());
 
-            },source.Token);
+            }, source.Token);
 
 
 #pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
@@ -359,12 +206,12 @@ namespace MMONET.Remote
 
         internal async Task<bool> TryAccept(UdpReceiveResult udpReceive)
         {
-            if (Connected && this.Client.RemoteEndPoint.Equals(udpReceive.RemoteEndPoint))
+            if (Client.Connected && this.Client.RemoteEndPoint.Equals(udpReceive.RemoteEndPoint))
             {
                 ///已经成功连接，忽略连接请求
                 return true;
             }
-            
+
             ///LISTEN;
             var (SYN, ACK, seq, ack) = ReadConnectMessage(udpReceive.Buffer);
 
@@ -377,15 +224,15 @@ namespace MMONET.Remote
                 ConnectIPEndPoint = udpReceive.RemoteEndPoint;
 
                 ///绑定远端
-                base.Connect(udpReceive.RemoteEndPoint);
-                var buffer =  MakeUDPConnectMessage(1, 1, lastack, seq + 1);
+                udpClient.Connect(udpReceive.RemoteEndPoint);
+                var buffer = MakeUDPConnectMessage(1, 1, lastack, seq + 1);
 
 #pragma warning disable CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
-                Task.Run(async ()=>
+                Task.Run(async () =>
                 {
                     for (int i = 0; i < 3; i++)
                     {
-                        await SendAsync(buffer, buffer.Length);
+                        udpClient.Send(buffer,buffer.Length);
                         await Task.Delay(800);
                     }
 
@@ -402,24 +249,207 @@ namespace MMONET.Remote
             }
         }
 
-        static (int SYN,int ACK,int seq,int ack) ReadConnectMessage(byte[] buffer)
+        static (int SYN, int ACK, int seq, int ack) ReadConnectMessage(byte[] buffer)
         {
-            int SYN = BitConverter.ToInt32(buffer, TotalHeaderByteCount);
-            int ACK = BitConverter.ToInt32(buffer, TotalHeaderByteCount + 4);
-            int seq = BitConverter.ToInt32(buffer, TotalHeaderByteCount + 8);
-            int ack = BitConverter.ToInt32(buffer, TotalHeaderByteCount + 12);
+            int tempOffset = 9;
+            int SYN = BitConverter.ToInt32(buffer, tempOffset);
+            int ACK = BitConverter.ToInt32(buffer, tempOffset + 4);
+            int seq = BitConverter.ToInt32(buffer, tempOffset + 8);
+            int ack = BitConverter.ToInt32(buffer, tempOffset + 12);
             return (SYN, ACK, seq, ack);
         }
 
         static byte[] MakeUDPConnectMessage(int SYN, int ACT, int seq, int ack)
         {
             var bf = BufferPool.Pop(32);
-            MakePacket(16, FrameworkConst.UdpConnectMessageID, 0, bf);
-            BitConverter.GetBytes(SYN).CopyTo(bf, TotalHeaderByteCount);
-            BitConverter.GetBytes(ACT).CopyTo(bf, TotalHeaderByteCount + 4);
-            BitConverter.GetBytes(seq).CopyTo(bf, TotalHeaderByteCount + 8);
-            BitConverter.GetBytes(ack).CopyTo(bf, TotalHeaderByteCount + 12);
+            16.WriteToByte(bf, 0);
+            FrameworkConst.UdpConnectMessageID.WriteToByte(bf, 2);
+            ((short)0).WriteToByte(bf, 6);
+            bf[8] = 0;
+            int tempOffset = 9;
+            BitConverter.GetBytes(SYN).CopyTo(bf, tempOffset);
+            BitConverter.GetBytes(ACT).CopyTo(bf, tempOffset + 4);
+            BitConverter.GetBytes(seq).CopyTo(bf, tempOffset + 8);
+            BitConverter.GetBytes(ack).CopyTo(bf, tempOffset + 12);
             return bf;
+        }
+    }
+
+    /// 发送
+    partial class UDPRemote
+    {
+        protected override void SendByteBufferAsync(ArraySegment<byte> bufferMsg)
+        {
+            try
+            {
+                Task.Run(() =>
+                        {
+                            byte[] buffer = default;
+                            if (bufferMsg.Offset > 0)
+                            {
+                                buffer = BufferPool.Pop(bufferMsg.Count);
+                                Buffer.BlockCopy(bufferMsg.Array, bufferMsg.Offset, buffer, 0, bufferMsg.Count);
+                                BufferPool.Push(bufferMsg.Array);
+                            }
+                            else
+                            {
+                                buffer = bufferMsg.Array;
+                            }
+
+                            udpClient.Send(buffer, bufferMsg.Count);
+                            BufferPool.Push(buffer);
+                        });
+            }
+            catch (SocketException e)
+            {
+                if (!manualDisconnecting)
+                {
+                    OnSocketException(e.SocketErrorCode);
+                }
+            }
+            
+        }
+
+        public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer)
+        {
+            if (msgBuffer.Offset == 0)
+            {
+                return udpClient.SendAsync(msgBuffer.Array, msgBuffer.Count);
+            }
+
+            ///此处几乎用不到，省掉一个async。
+            var buffer = new byte[msgBuffer.Count];
+            Buffer.BlockCopy(msgBuffer.Array, msgBuffer.Offset, buffer, 0, msgBuffer.Offset);
+            return udpClient.SendAsync(buffer, msgBuffer.Count);
+        }
+    }
+
+    /// 接收
+    partial class UDPRemote
+    {
+        public bool isReceiving = false;
+        protected override void ReceiveStart()
+        {
+            if (!Client.Connected || isReceiving)
+            {
+                return;
+            }
+            ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
+        }
+
+        async void ReceiveAsync(ArraySegment<byte> buffer)
+        {
+            if (!Client.Connected || isReceiving || disposedValue)
+            {
+                return;
+            }
+
+            try
+            {
+                isReceiving = true;
+                var res = await udpClient.ReceiveAsync(buffer);
+                LastReceiveTime = DateTime.Now;
+                if (IsVaild)
+                {
+                    ///递归，继续接收
+                    ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
+                }
+
+                DealMessageAsync(res.Buffer);
+            }
+            catch (SocketException e)
+            {
+                if (!manualDisconnecting)
+                {
+                    OnSocketException(e.SocketErrorCode);
+                }
+                isReceiving = false;
+            }
+        }
+
+        private void DealMessageAsync(ArraySegment<byte> byteMessage)
+        {
+            Task.Run(() =>
+            {
+                //解包
+                var unpackedMessage = UnPacketBuffer(byteMessage);
+
+                ///处理字节消息
+                (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+                    = DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
+                                        unpackedMessage.extraType, unpackedMessage.extraMessage,
+                                        unpackedMessage.byteUserMessage);
+
+                DealObjectMessage(IsContinue, SwitchThread, rpcID, objectMessage);
+
+                ///回收池对象
+                BufferPool.Push(byteMessage.Array);
+            });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="byteUserMessage"></param>
+        /// <returns></returns>
+        protected override (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage) 
+            WhenNoExtra(int messageID, short rpcID, ArraySegment<byte> byteUserMessage)
+        {
+            if (messageID == FrameworkConst.HeartbeatsMessageID)
+            {
+                ///拦截框架心跳包
+                
+                //todo
+
+
+                return (false, false, default, default);
+            }
+            else
+            {
+                return base.WhenNoExtra(messageID, rpcID, byteUserMessage);
+            }
+        }
+    }
+
+    public class UdpConnectMessage
+    {
+        static UdpConnectMessage()
+        {
+            MessageLUT.AddFormatter<UdpConnectMessage>(FrameworkConst.UdpConnectMessageID,
+                Serialize, Deserialize);
+        }
+
+        public int SYN;
+        public int ACT;
+        public int seq;
+        public int ack;
+        static UdpConnectMessage Deserialize(ArraySegment<byte> buffer)
+        {
+            int tempoffset = buffer.Offset;
+            int SYN = buffer.Array.ReadInt(tempoffset);
+            int ACT = buffer.Array.ReadInt(tempoffset + 4);
+            int seq = buffer.Array.ReadInt(tempoffset + 8);
+            int ack = buffer.Array.ReadInt(tempoffset + 12);
+            return new UdpConnectMessage() { SYN = SYN, ACT = ACT, seq = seq, ack = ack };
+        }
+
+        static ushort Serialize(UdpConnectMessage connectMessage, ref byte[] bf)
+        {
+            connectMessage.SYN.WriteToByte(bf, 0);
+            connectMessage.ACT.WriteToByte(bf, 4);
+            connectMessage.seq.WriteToByte(bf, 8);
+            connectMessage.ack.WriteToByte(bf, 12);
+            return 16;
+        }
+
+        public void Deconstruct(out int SYN, out int ACT, out int seq, out int ack)
+        {
+            SYN = this.SYN;
+            ACT = this.ACT;
+            seq = this.seq;
+            ack = this.ack;
         }
     }
 }

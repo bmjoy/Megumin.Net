@@ -118,6 +118,7 @@ namespace MMONET.Remote
     {
         /// <summary>
         /// 封装将要发送的字节消息,这个方法控制消息字节的布局。并调用了 SerializeExtraMessage。
+        /// <para>框架使用的字节布局 2总长度 + 4消息ID + 2RpcID + (ExtraMessageByte) + UserMessageByte</para>
         /// </summary>
         /// <param name="messageID"></param>
         /// <param name="rpcID"></param>

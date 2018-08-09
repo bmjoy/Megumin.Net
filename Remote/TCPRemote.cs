@@ -20,10 +20,6 @@ namespace MMONET.Remote
     {
         public Socket Client { get; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
-        /// <summary>
-        /// 当前是否为手动关闭中
-        /// </summary>
-        bool manualDisconnecting = false;
 
         public TCPRemote() : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
@@ -202,9 +198,10 @@ namespace MMONET.Remote
 
         /// <summary>
         /// 注意，发送完成时内部回收了buffer。
+        /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
         /// </summary>
         /// <param name="bufferMsg"></param>
-        protected override void SendByteBuffer(ArraySegment<byte> bufferMsg)
+        protected override void SendByteBufferAsync(ArraySegment<byte> bufferMsg)
         {
             sendWaitList.Add(bufferMsg);
             SendStart();
@@ -345,11 +342,15 @@ namespace MMONET.Remote
                     ///半包复制
                     Buffer.BlockCopy(residual.Array, residual.Offset, newBuffer, 0, residual.Count);
                 }
-                ///继续接收
-                ReceiveAsync(new ArraySegment<byte>(newBuffer, residual.Count, MaxBufferLength - residual.Count));
+
+                ///这里先处理消息在继续接收，处理消息是异步的，耗时并不长，下N次继续接收消息都可能是同步完成，
+                ///先接收可能导致比较大的消息时序错位。
 
                 ///处理消息
                 DealMessageAsync(list);
+
+                ///继续接收
+                ReceiveAsync(new ArraySegment<byte>(newBuffer, residual.Count, MaxBufferLength - residual.Count));
             }
             catch (SocketException e)
             {

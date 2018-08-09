@@ -56,7 +56,7 @@ namespace MMONET.Remote
         {
             if (!connecting.TryGetValue(res.RemoteEndPoint,out var remote))
             {
-                remote = new UDPRemote();
+                remote = new UDPRemote(this.Client.AddressFamily);
                 connecting[res.RemoteEndPoint] = remote;
 
                 var (Result, Complete) = await remote.TryAccept(res).WaitAsync(5000);

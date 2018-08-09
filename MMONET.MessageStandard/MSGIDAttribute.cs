@@ -7,6 +7,7 @@ namespace MMONET.Message
     /// <summary>
     /// 使用MessageID来为每一个消息指定一个唯一ID(-999~999 被框架占用)
     /// </summary>
+    [AttributeUsage(AttributeTargets.Class|AttributeTargets.Interface|AttributeTargets.Struct|AttributeTargets.Enum)]
     public sealed class MSGID : Attribute
     {
 
