@@ -6,9 +6,9 @@ using Network.Remote;
 
 namespace MMONET.Remote
 {
-    internal interface IDealObjectMessage : ISendMessage
+    internal interface IDealMessage : ISendMessage
     {
-        ValueTask<dynamic> DealObjectMessage(dynamic message);
+        ValueTask<dynamic> OnReceiveMessage(dynamic message);
         void SendAsync<T>(short rpcID, T message);
         bool TrySetRpcResult(short rpcID, dynamic message);
     }

@@ -14,11 +14,10 @@ namespace MMONET.Remote
     /// <summary>
     /// 不支持多播地址
     /// </summary>
-    public partial class UDPRemote : UdpClient, IRemote, IDealObjectMessage
+    public partial class UDPRemote : UdpClient, IRemote, IDealMessage
     {
         public int UserToken { get; set; }
         public bool Connected => this.Client.Connected;
-        public Socket Client => this.Client;
         public bool IsVaild { get; protected set; } = true;
 
         public UDPRemote(AddressFamily addressFamily = AddressFamily.InterNetworkV6)
@@ -29,6 +28,7 @@ namespace MMONET.Remote
         #region RPC
 
         public IRpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
+        bool IDealMessage.TrySetRpcResult(short rpcID, dynamic message) => RpcCallbackPool?.TrySetResult(rpcID, message);
 
         #endregion
 
@@ -108,7 +108,7 @@ namespace MMONET.Remote
             return null;
         }
 
-        Exception IDealObjectMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
+        void IDealMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
         #endregion
 
         #region Receive
@@ -123,7 +123,6 @@ namespace MMONET.Remote
         /// 接受消息的回调函数
         /// </summary>
         protected OnReceiveMessage onReceive;
-        OnReceiveMessage IDealObjectMessage.OnReceive => onReceive;
 
         public void Receive(OnReceiveMessage onReceive)
         {
@@ -138,15 +137,6 @@ namespace MMONET.Remote
 
         async void MyReceiveAsync()
         {
-            //if (!IsReceiving)
-            //{
-            //    ///绑定远端，防止UDP流量攻击
-            //    if (!Connected)
-            //    {
-            //        Connect(ConnectIPEndPoint);
-            //    }
-            //}
-
             IsReceiving = true;
             try
             {
@@ -240,6 +230,12 @@ namespace MMONET.Remote
 
         bool isConnecting = false;
         
+        /// <summary>
+        /// IPv4 和 IPv6不能共用
+        /// </summary>
+        /// <param name="endPoint"></param>
+        /// <param name="retryCount"></param>
+        /// <returns></returns>
         public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
             if (isConnecting)

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(short rpcID, dynamic message, MMONET.Remote.IDealObjectMessage remote)>;
+using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(short rpcID, dynamic message, MMONET.Remote.IDealMessage remote)>;
 
 namespace MMONET.Remote
 {
@@ -24,7 +24,7 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="remote"></param>
         /// <param name="switchThread">是否切换处理线程</param>
-        internal static void PushReceivePacket(short rpcID, dynamic message, IDealObjectMessage remote, bool switchThread)
+        internal static void PushReceivePacket(short rpcID, dynamic message, IDealMessage remote, bool switchThread)
         {
             if (switchThread)
             {
@@ -73,7 +73,7 @@ namespace MMONET.Remote
             }
         }
 
-        static async void ReceiveCallback(IDealObjectMessage remote, short rpcID, dynamic msg)
+        static async void ReceiveCallback(IDealMessage remote, short rpcID, dynamic msg)
         {
             if (remote == null)
             {
@@ -83,7 +83,7 @@ namespace MMONET.Remote
             {
                 ///这个消息是非Rpc请求
                 ///普通响应onRely
-                var response = await remote.DealObjectMessage(msg);
+                var response = await remote.OnReceiveMessage(msg);
 
                 if (response is Task<dynamic> task)
                 {
@@ -106,7 +106,7 @@ namespace MMONET.Remote
             {
                 ///这个消息rpc的请求 
                 ///普通响应onRely
-                var response = await remote.DealObjectMessage(msg);
+                var response = await remote.OnReceiveMessage(msg);
 
                 if (response is Task<object> task)
                 {

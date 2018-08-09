@@ -35,7 +35,7 @@ namespace UnitFunc
         public void TestMethodUDPConnect()
         {
             CancellationTokenSource cancellation = new CancellationTokenSource();
-            const int Port = 54322;
+            const int Port = 44321;
             StartUdpListen(Port, cancellation);
 
             List<IRemote> remotes = new List<IRemote>();
@@ -62,12 +62,10 @@ namespace UnitFunc
             cancellation.Cancel();
         }
 
-        
-
         [TestMethod]
         public void TestUdpSend()
         {
-            const int Port = 54324;
+            const int Port = 44323;
             CancellationTokenSource cancellation = new CancellationTokenSource();
             PrepareEnvironment(cancellation);
             StartUdpListen(Port, cancellation);
@@ -77,6 +75,37 @@ namespace UnitFunc
             remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
             //remote.Receive(null);
             TestSendAsync(remote).Wait();
+            cancellation.Cancel();
+        }
+
+        [TestMethod]
+        public void TestLazyTcpSend()
+        {
+            const int Port = 54324;
+            CancellationTokenSource cancellation = new CancellationTokenSource();
+            PrepareEnvironment(cancellation);
+            StartTcpListen(Port, cancellation);
+
+            TCPRemote remote = new TCPRemote();
+            remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
+            remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
+            TestLazySendAsync(remote).Wait();
+            cancellation.Cancel();
+        }
+
+        [TestMethod]
+        public void TestLazyUdpSend()
+        {
+            const int Port = 44323;
+            CancellationTokenSource cancellation = new CancellationTokenSource();
+            PrepareEnvironment(cancellation);
+            StartUdpListen(Port, cancellation);
+
+            UDPRemote remote = new UDPRemote();
+            remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
+            remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
+            //remote.Receive(null);
+            TestLazySendAsync(remote).Wait();
             cancellation.Cancel();
         }
 
@@ -169,24 +198,28 @@ namespace UnitFunc
 
         private static async Task TestSendAsync(IRemote remote)
         {
-            await SafeRpcSendAsync(remote);
-            await SafeRpcSendAsyncTimeOut(remote);
-            await SafeRpcSendAsyncTypeError(remote);
-
             await RpcSendAsync(remote);
             await RpcSendAsyncTimeOut(remote);
             await RpcSendAsyncTypeError(remote);
             //await Task.Delay(-1);
         }
 
-        private static async Task SafeRpcSendAsync(IRemote remote)
+        private static async Task TestLazySendAsync(ISuperRemote remote)
+        {
+            await SafeRpcSendAsync(remote);
+            await SafeRpcSendAsyncTimeOut(remote);
+            await SafeRpcSendAsyncTypeError(remote);
+            //await Task.Delay(-1);
+        }
+
+        private static async Task SafeRpcSendAsync(ISuperRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             var res = await remote.LazyRpcSendAsync<TestPacket2>(packet2);
             Assert.AreEqual(packet2.Value, res.Value);
         }
 
-        private static async Task SafeRpcSendAsyncTypeError(IRemote remote)
+        private static async Task SafeRpcSendAsyncTypeError(ISuperRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
@@ -200,7 +233,7 @@ namespace UnitFunc
             Assert.AreEqual(typeof(InvalidCastException), result.GetType());
         }
 
-        private static async Task SafeRpcSendAsyncTimeOut(IRemote remote)
+        private static async Task SafeRpcSendAsyncTimeOut(ISuperRemote remote)
         {
             TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
