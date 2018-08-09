@@ -11,7 +11,11 @@ namespace MMONET.Remote
     using ByteMessageList = ListPool<ArraySegment<byte>>;
     using ExtraMessage = System.ValueTuple<int?, int?, int?, int?>;
 
-
+    /// <summary>
+    /// <para>TcpChannel内存开销 整体采用内存池优化</para>
+    /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>
+    /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
+    /// </summary>
     public partial class TCPRemote2 :IRemote,ISuperRemote
     {
         public Socket Client { get; }
@@ -39,9 +43,8 @@ namespace MMONET.Remote
 
         void OnSocketException(SocketError error)
         {
-            OnDisConnect?.Invoke(error);
-
             TryDisConnectSocket();
+            OnDisConnect?.Invoke(error);
         }
 
         void TryDisConnectSocket()
@@ -141,20 +144,28 @@ namespace MMONET.Remote
     {
         public event Action<SocketError> OnDisConnect;
 
+        bool isConnecting = false;
         public async Task<Exception> ConnectAsync(IPEndPoint endPoint, int retryCount = 0)
         {
+            if (isConnecting)
+            {
+                return new Exception("连接正在进行中");
+            }
+            isConnecting = true;
             this.ConnectIPEndPoint = endPoint;
             while (retryCount >= 0)
             {
                 try
                 {
                     await Client.ConnectAsync(ConnectIPEndPoint);
+                    isConnecting = false;
                     return null;
                 }
                 catch (Exception e)
                 {
                     if (retryCount <= 0)
                     {
+                        isConnecting = false;
                         return e;
                     }
                     else
@@ -164,6 +175,7 @@ namespace MMONET.Remote
                 }
             }
 
+            isConnecting = false;
             return new NullReferenceException();
         }
 
@@ -178,6 +190,11 @@ namespace MMONET.Remote
     /// 发送实例消息
     partial class TCPRemote2 : ISendMessage,IRpcSendMessage,ILazyRpcSendMessage
     {
+        /// <summary>
+        /// 异步发送
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message"></param>
         public void SendAsync<T>(T message)
         {
             SendAsync(0, message);
@@ -395,6 +412,7 @@ namespace MMONET.Remote
             try
             {
                 isReceiving = true;
+                ///本次接收的长度
                 var length = await Client.ReceiveAsync(buffer, SocketFlags.None);
 
                 if (length == 0)
@@ -405,6 +423,7 @@ namespace MMONET.Remote
                 }
 
                 LastReceiveTime = DateTime.Now;
+                //////有效消息长度
                 int totalValidLength = length + buffer.Offset;
                 var list = ByteMessageList.Pop();
                 ///分包
@@ -479,13 +498,38 @@ namespace MMONET.Remote
         /// <param name="length"></param>
         /// <param name="source"></param>
         /// <param name="pushCompleteMessage"></param>
-        /// <returns></returns>
+        /// <returns>剩余的半包。</returns>
         public virtual ArraySegment<byte> CutOff(int length, byte[] source, IList<ArraySegment<byte>> pushCompleteMessage)
         {
-            pushCompleteMessage.Add(default);
-            return default;
+            ///已经完整读取消息包的长度
+            int offset = 0;
+            ///长度至少要大于2（2个字节表示消息总长度）
+            while (length - offset > 2)
+            {
+                ///取得单个消息总长度
+                ushort size = source.ReadUShort(offset);
+                if (length - offset < size)
+                {
+                    ///剩余消息长度不是一个完整包
+                    break;
+                }
+
+                var newMessage = new ArraySegment<byte>(source, offset, size);
+                pushCompleteMessage.Add(newMessage);
+
+
+                offset += size;
+            }
+
+            ///返回剩余的半包。
+            return new ArraySegment<byte>(source,offset,length - offset);
         }
 
+        /// <summary>
+        /// 处理收到的实例消息
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
         public virtual ValueTask<dynamic> DealObjectMessage(dynamic message)
         {
             if (OnReceive == null)
