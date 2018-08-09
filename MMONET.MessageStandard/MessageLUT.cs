@@ -28,34 +28,6 @@ namespace MMONET.Message
     /// </summary>
     public class MessageLUT
     {
-        #region Message
-
-        /// <summary>
-        /// 描述消息包长度字节所占的字节数
-        /// <para>长度类型ushort，所以一个包理论最大长度不能超过65535字节，框架要求一个包不能大于8192 - 8 个 字节</para>
-        /// <para>建议单个包大小10到1024字节</para>
-        /// 
-        /// 按照千兆网卡计算，一个玩家每秒10~30包，大约10~30KB，大约能负载3000玩家。
-        /// </summary>
-        public const int MessageLengthByteCount = sizeof(ushort);
-
-        /// <summary>
-        /// 消息包类型ID 字节长度
-        /// </summary>
-        public const int MessageIDByteCount = sizeof(int);
-
-        /// <summary>
-        /// 消息包类型ID 字节长度
-        /// </summary>
-        public const int RpcIDByteCount = sizeof(ushort);
-
-        /// <summary>
-        /// 报头总长度 8
-        /// </summary>
-        public const int TotalHeaderByteCount =
-            MessageLengthByteCount + MessageIDByteCount + RpcIDByteCount;
-
-        #endregion
 
         static readonly Dictionary<int, Deserilizer> dFormatter = new Dictionary<int, Deserilizer>();
         static readonly Dictionary<Type, (int MessageID, Delegate Seiralizer)> sFormatter = new Dictionary<Type, (int MessageID, Delegate Seiralizer)>();
@@ -151,41 +123,15 @@ namespace MMONET.Message
             AddDFormatter(messageID, deserilizer, key);
         }
 
-        [Obsolete]
-        public static ArraySegment<byte> Serialize<T>(short rpcID, T message)
-        {
-            ///序列化用buffer
-            var buffer65536 = BufferPool.Pop65536();
-
-            ///序列化消息
-            var (MessageID, Seiralizer) = sFormatter[message.GetType()];
-
-            Seiralizer<T> seiralizer = Seiralizer as Seiralizer<T>;
-
-            ushort length = seiralizer(message, ref buffer65536);
-
-            if (length > 8192 - TotalHeaderByteCount)
-            {
-                BufferPool.Push65536(buffer65536);
-                ///消息过长
-                throw new ArgumentOutOfRangeException($"消息长度大于{8192 - TotalHeaderByteCount}," +
-                    $"请拆分发送。");
-            }
-
-            ///待发送buffer
-            var messagebuffer = BufferPool.Pop(length + TotalHeaderByteCount);
-
-            ///封装报头
-            MakePacket(length, MessageID, rpcID, messagebuffer);
-            ///第一次消息值拷贝
-            Buffer.BlockCopy(buffer65536, 0, messagebuffer, TotalHeaderByteCount, length);
-            ///返还序列化用buffer
-            BufferPool.Push65536(buffer65536);
-
-            return new ArraySegment<byte>(messagebuffer, 0, length + TotalHeaderByteCount);
-        }
-
-        public static (int messageID, ArraySegment<byte> byteUserMessage) Serialize<T>(byte[] buffer65536, T message)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="buffer65536"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static (int messageID, ArraySegment<byte> byteUserMessage) 
+            Serialize<T>(byte[] buffer65536, T message)
         {
             if (sFormatter.TryGetValue(message.GetType(),out var sf))
             {
@@ -196,11 +142,11 @@ namespace MMONET.Message
 
                 ushort length = seiralizer(message, ref buffer65536);
 
-                if (length > 8192 - TotalHeaderByteCount)
+                if (length > 8192)
                 {
                     BufferPool.Push65536(buffer65536);
                     ///消息过长
-                    throw new ArgumentOutOfRangeException($"消息长度大于{8192 - TotalHeaderByteCount}," +
+                    throw new ArgumentOutOfRangeException($"消息长度大于{8192}," +
                         $"请拆分发送。");
                 }
 
@@ -210,6 +156,12 @@ namespace MMONET.Message
             return (-1,default);
         }
 
+        /// <summary>
+        /// /
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="body"></param>
+        /// <returns></returns>
         public static dynamic Deserialize(int messageID,ArraySegment<byte> body)
         {
             if (dFormatter.ContainsKey(messageID))
@@ -219,66 +171,6 @@ namespace MMONET.Message
             else
             {
                 return null;
-            }
-        }
-
-        /// <summary>
-        /// 封包
-        /// </summary>
-        /// <param name="length"></param>
-        /// <param name="messageID"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="sbuffer"></param>
-        public static void MakePacket(ushort length, int messageID, short rpcID, byte[] sbuffer)
-        {
-            int offset = 0;
-
-            sbuffer[offset] = unchecked((byte)(length >> 8));
-            sbuffer[offset + 1] = unchecked((byte)(length));
-            //BitConverter.GetBytes(length).CopyTo(sbuffer, 0);
-            offset += MessageLengthByteCount;
-
-
-            sbuffer[offset] = unchecked((byte)(messageID >> 24));
-            sbuffer[offset + 1] = unchecked((byte)(messageID >> 16));
-            sbuffer[offset + 2] = unchecked((byte)(messageID >> 8));
-            sbuffer[offset + 3] = unchecked((byte)(messageID));
-            offset += MessageIDByteCount;
-
-
-            sbuffer[offset] = unchecked((byte)(rpcID >> 8));
-            sbuffer[offset + 1] = unchecked((byte)(rpcID));
-
-            offset += RpcIDByteCount;
-        }
-
-        /// <summary>
-        /// 解析报头 (长度至少要大于8（8个字节也就是一个报头长度）)
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">数据长度小于报头长度</exception>
-        public static (ushort Size, int MessageID, short RpcID)
-            ParsePacketHeader(byte[] buffer, int offset)
-        {
-            if (buffer.Length - offset >= TotalHeaderByteCount)
-            {
-                ushort size = (ushort)(buffer[offset] << 8 | buffer[offset + 1]);
-
-                int messageID = (int)(buffer[offset + MessageLengthByteCount] << 24
-                                    | buffer[offset + MessageLengthByteCount + 1] << 16
-                                    | buffer[offset + MessageLengthByteCount + 2] << 8
-                                    | buffer[offset + MessageLengthByteCount + 3]);
-
-                short rpcID = (short)(buffer[offset + MessageLengthByteCount + MessageIDByteCount] << 8
-                                    | buffer[offset + MessageLengthByteCount + MessageIDByteCount + 1]);
-
-                return (size, messageID, rpcID);
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException("数据长度小于报头长度");
             }
         }
     }

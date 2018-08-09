@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using MessageQueue2 = System.Collections.Concurrent.ConcurrentQueue<(short rpcID, dynamic message, MMONET.Remote.IDealMessage remote)>;
+using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<(short rpcID, dynamic message, MMONET.Remote.IDealMessage remote)>;
 
 namespace MMONET.Remote
 {
@@ -14,8 +14,8 @@ namespace MMONET.Remote
             MainThreadScheduler.Add(Update);
         }
 
-        static MessageQueue2 receivePool2 = new MessageQueue2();
-        static MessageQueue2 dealPoop2 = new MessageQueue2();
+        static MessageQueue receivePool = new MessageQueue();
+        static MessageQueue dealPoop = new MessageQueue();
 
         /// <summary>
         /// 实例消息
@@ -24,11 +24,11 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="remote"></param>
         /// <param name="switchThread">是否切换处理线程</param>
-        internal static void PushReceivePacket(short rpcID, dynamic message, IDealMessage remote, bool switchThread)
+        internal static void Push(short rpcID, dynamic message, IDealMessage remote, bool switchThread)
         {
             if (switchThread)
             {
-                receivePool2.Enqueue((rpcID, message, remote));
+                receivePool.Enqueue((rpcID, message, remote));
             }
             else
             {
@@ -49,21 +49,21 @@ namespace MMONET.Remote
         {
             bool haveMessage = false;
             
-            if (receivePool2.Count > 0)
+            if (receivePool.Count > 0)
             {
                 haveMessage = true;
             }
 
             if (haveMessage)
             {
-                var temp = receivePool2;
-                receivePool2 = dealPoop2;
-                dealPoop2 = temp;
+                var temp = receivePool;
+                receivePool = dealPoop;
+                dealPoop = temp;
 
-                while (dealPoop2.Count > 0)
+                while (dealPoop.Count > 0)
                 {
                     //var (Packet, Remote) = dealPoop.Dequeue();
-                    if (!dealPoop2.TryDequeue(out var res))
+                    if (!dealPoop.TryDequeue(out var res))
                     {
                         continue;
                     }

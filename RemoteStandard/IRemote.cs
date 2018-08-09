@@ -59,19 +59,12 @@ namespace Network.Remote
         void SendAsync<T>(T message);
     }
 
+    /// <summary>
+    /// rpc完成时方法签名
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="exception"></param>
     public delegate void RpcCallback(dynamic message, Exception exception);
-
-    ///// <summary>
-    ///// 更新Rpc结果，框架调用
-    ///// </summary>
-    //public interface IUpdateRpcResult
-    //{
-    //    /// <summary>
-    //    /// 检测Rpc是否收到结果,是否超时，方法由框架注册到 MainThreadScheduler.
-    //    /// </summary>
-    //    /// <param name="delta"></param>
-    //    void UpdateRpcResult(double delta);
-    //}
 
     /// <summary>
     /// 更新Rpc结果，框架调用，协助处理Rpc封装
@@ -98,7 +91,7 @@ namespace Network.Remote
     /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
     /// <para>dynamic导致值类型装箱是可以妥协的。</para>
     /// </summary>
-    public interface IRpcSendMessage : ISendMessage
+    public interface IRpcSendMessage
     {
         /// <summary>
         /// 异步发送消息，封装Rpc过程。
@@ -136,7 +129,6 @@ namespace Network.Remote
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
         ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
-
     }
 
     /// <summary>
@@ -196,18 +188,7 @@ namespace Network.Remote
     }
 
     /// <summary>
-    /// 支持线程转换
-    /// </summary>
-    public interface ISupportSwitchThread
-    {
-        /// <summary>
-        /// 是否开启切换线程
-        /// </summary>
-        bool SwitchThread { get; set; }
-    }
-
-    /// <summary>
-    /// Socket封装
+    /// 应用网络层API封装
     /// </summary>
     public interface IRemote : IRemoteEndPoint, ISendMessage, IReceiveMessage,
         IConnectable, IRpcSendMessage, IBroadCastSend, IDisposable
@@ -231,6 +212,9 @@ namespace Network.Remote
         int Guid { get; }
     }
 
+    /// <summary>
+    /// 应用网络层API封装
+    /// </summary>
     public interface ISuperRemote:IRemote,ILazyRpcSendMessage
     {
 
@@ -248,18 +232,6 @@ namespace Network.Remote
         /// </summary>
         /// <returns></returns>
         Task<T> ListenAsync();
-    }
-
-    /// <summary>
-    /// 接收到的消息容器
-    /// </summary>
-    public interface IReceivedPacket
-    {
-        Queue<(int messageID, short rpcID, ArraySegment<byte> body)> MessagePacket { get; }
-        /// <summary>
-        /// 返回对象池中
-        /// </summary>
-        void Push2Pool();
     }
 
     /// <summary>

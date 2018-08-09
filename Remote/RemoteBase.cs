@@ -132,7 +132,7 @@ namespace MMONET.Remote
             if (IsContinue)
             {
                 ///处理实例消息
-                MessageThreadTransducer.PushReceivePacket(rpcID, objectMessage, this, SwitchThread);
+                MessageThreadTransducer.Push(rpcID, objectMessage, this, SwitchThread);
             }
         }
 

@@ -16,7 +16,7 @@ namespace MMONET
         /// </summary>
         public static long totalBufferSize = 0;
 
-        // 16 32 64 128 256 512 1024 2048 4096 8192
+        //32 64 128 256 512 1024 2048 4096 8192 16384
         static readonly Pool[] pools = new Pool[10];
 
         /// <summary>
@@ -28,33 +28,37 @@ namespace MMONET
         {
             if (needSize == 8192)
             {
-                return pools[9];
+                return pools[8];
             }
 
-            if (needSize == 256)
+            if (needSize == 512)
             {
                 return pools[4];
             }
-            else if (needSize < 256)
+            else if (needSize < 512)
             {
-                if (needSize == 64)
+                if (needSize == 128)
                 {
                     return pools[2];
                 }
-                else if (needSize < 64)
+                else if (needSize < 128)
                 {
-                    if (needSize <= 16)
+                    if (needSize <= 32)
                     {
                         return pools[0];
                     }
-                    else
+                    else if (needSize <= 64)
                     {
                         return pools[1];
+                    }
+                    else
+                    {
+                        return pools[2];
                     }
                 }
                 else
                 {
-                    if (needSize <= 128)
+                    if (needSize <= 256)
                     {
                         return pools[3];
                     }
@@ -66,19 +70,19 @@ namespace MMONET
             }
             else
             {
-                if (needSize == 2048)
+                if (needSize == 4096)
                 {
                     return pools[7];
                 }
-                else if (needSize < 2048)
+                else if (needSize < 4096)
                 {
-                    if (needSize <= 512)
+                    if (needSize <= 1024)
                     {
                         return pools[5];
                     }
                     else
                     {
-                        if (needSize <= 1024)
+                        if (needSize <= 2048)
                         {
                             return pools[6];
                         }
@@ -90,7 +94,7 @@ namespace MMONET
                 }
                 else
                 {
-                    if (needSize <= 4096)
+                    if (needSize <= 8192)
                     {
                         return pools[8];
                     }
@@ -106,7 +110,7 @@ namespace MMONET
         {
             for (int i = 0; i < 10; i++)
             {
-                pools[i] = new Pool((int)Math.Pow(2,i + 4),(10 - i) * 100);
+                pools[i] = new Pool((int)Math.Pow(2,i + 5),(10 - i) * 50);
             }
         }
 

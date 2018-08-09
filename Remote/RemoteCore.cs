@@ -172,5 +172,61 @@ namespace MMONET.Remote
 
             return (messageID, rpcID, extratype, extraMessage, new ArraySegment<byte>(buffer.Array, offset, totalLength - offset));
         }
+
+
+        #region Message
+
+        /// <summary>
+        /// 描述消息包长度字节所占的字节数
+        /// <para>长度类型ushort，所以一个包理论最大长度不能超过65535字节，框架要求一个包不能大于8192 - 8 个 字节</para>
+        /// <para>建议单个包大小10到1024字节</para>
+        /// 
+        /// 按照千兆网卡计算，一个玩家每秒10~30包，大约10~30KB，大约能负载3000玩家。
+        /// </summary>
+        public const int MessageLengthByteCount = sizeof(ushort);
+
+        /// <summary>
+        /// 消息包类型ID 字节长度
+        /// </summary>
+        public const int MessageIDByteCount = sizeof(int);
+
+        /// <summary>
+        /// 消息包类型ID 字节长度
+        /// </summary>
+        public const int RpcIDByteCount = sizeof(ushort);
+
+        /// <summary>
+        /// 报头总长度 8
+        /// </summary>
+        public const int TotalHeaderByteCount =
+            MessageLengthByteCount + MessageIDByteCount + RpcIDByteCount;
+
+        #endregion
+
+        /// <summary>
+        /// 解析报头 (长度至少要大于8（8个字节也就是一个报头长度）)
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException">数据长度小于报头长度</exception>
+        public virtual (ushort Size, int MessageID, short RpcID)
+            ReadPacketHeader(byte[] buffer, int offset)
+        {
+            if (buffer.Length - offset >= TotalHeaderByteCount)
+            {
+                ushort size = buffer.ReadUShort(offset);
+
+                int messageID = buffer.ReadInt(offset + 2);
+
+                short rpcID = buffer.ReadShort(offset + 6);
+
+                return (size, messageID, rpcID);
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException("数据长度小于报头长度");
+            }
+        }
     }
 }

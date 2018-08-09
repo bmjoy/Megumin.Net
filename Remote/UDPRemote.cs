@@ -160,7 +160,7 @@ namespace MMONET.Remote
                 while (true)
                 {
                     var recv = await udpClient.ReceiveAsync();
-                    var (Size, MessageID, RpcID) = MessageLUT.ParsePacketHeader(recv.Buffer, 0);
+                    var (Size, MessageID, RpcID) = ReadPacketHeader(recv.Buffer, 0);
                     if (MessageID == FrameworkConst.UdpConnectMessageID)
                     {
                         var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);

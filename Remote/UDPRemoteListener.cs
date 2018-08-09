@@ -17,6 +17,7 @@ namespace MMONET.Remote
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
         EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
+        readonly UDPRemote headerReader = new UDPRemote();
 
         public UDPRemoteListener(int port,AddressFamily addressFamily = AddressFamily.InterNetworkV6)
             : base(port, addressFamily)
@@ -32,7 +33,7 @@ namespace MMONET.Remote
             while (IsListening)
             {
                 var res = await ReceiveAsync();
-                var (Size, MessageID, RpcID) = ParsePacketHeader(res.Buffer, 0);
+                var (Size, MessageID, RpcID) = headerReader.ReadPacketHeader(res.Buffer, 0);
                 if (MessageID == FrameworkConst.UdpConnectMessageID)
                 {
                     ReMappingAsync(res);
