@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MMONET;
+using MMONET.Remote;
 
 namespace UnitFunc
 {
@@ -92,6 +93,13 @@ namespace UnitFunc
             Assert.AreEqual(16384, buffer.Length);
             buffer = BufferPool.Pop(16385);
             Assert.AreEqual(16384, buffer.Length);
+        }
+
+        [TestMethod]
+        public void TestLazyTask()
+        {
+            //dynamic task = LazyTask<int>.Pop();
+            //Assert.AreEqual(1, (int)task.state);
         }
     }
 }

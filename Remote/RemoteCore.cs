@@ -138,7 +138,7 @@ namespace MMONET.Remote
             ///拷贝消息正文
             Buffer.BlockCopy(byteUserMessage.Array, byteUserMessage.Offset, sendbuffer, forwardPartLength, byteUserMessage.Count);
 
-            ushort totolLength = (ushort)(offset + byteMessageLength);
+            ushort totolLength = (ushort)(forwardPartLength + byteMessageLength);
 
             ///写入报头
             totolLength.WriteToByte(sendbuffer, 0);
@@ -158,19 +158,20 @@ namespace MMONET.Remote
             UnPacketBuffer(ArraySegment<byte> buffer)
         {
             int offset = buffer.Offset;
-            ushort totalLength = buffer.Array.ReadUShort(offset);
-            offset += 2;
+            int currentOffset = 0;
+            ushort totalLength = buffer.Array.ReadUShort(offset + currentOffset);
+            currentOffset += 2;
 
-            int messageID = buffer.Array.ReadInt(offset);
-            offset += 4;
+            int messageID = buffer.Array.ReadInt(offset + currentOffset);
+            currentOffset += 4;
 
-            short rpcID = buffer.Array.ReadShort(offset);
-            offset += 2;
+            short rpcID = buffer.Array.ReadShort(offset + currentOffset);
+            currentOffset += 2;
 
-            var (length, extratype, extraMessage) = DeserializeExtraMessage(buffer.Array, offset);
-            offset += length;
+            var (length, extratype, extraMessage) = DeserializeExtraMessage(buffer.Array, offset + currentOffset);
+            currentOffset += length;
 
-            return (messageID, rpcID, extratype, extraMessage, new ArraySegment<byte>(buffer.Array, offset, totalLength - offset));
+            return (messageID, rpcID, extratype, extraMessage, new ArraySegment<byte>(buffer.Array, offset + currentOffset, buffer.Count - currentOffset));
         }
 
 

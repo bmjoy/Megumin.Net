@@ -203,7 +203,10 @@ namespace MMONET.Remote
         /// <param name="bufferMsg"></param>
         protected override void SendByteBufferAsync(ArraySegment<byte> bufferMsg)
         {
-            sendWaitList.Add(bufferMsg);
+            lock (sendlock)
+            {
+                sendWaitList.Add(bufferMsg);
+            }
             SendStart();
         }
 

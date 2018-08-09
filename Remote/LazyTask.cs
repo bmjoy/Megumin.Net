@@ -99,6 +99,11 @@ namespace MMONET.Remote
         {
             if (alreadyEnterAsync)
             {
+                if (state == State.Waiting)
+                {
+                    return;
+                }
+
                 if (state == State.Success)
                 {
                     continuation?.Invoke();
@@ -111,6 +116,11 @@ namespace MMONET.Remote
 
         public void CancelWithNotExceptionAndContinuation()
         {
+            if (state == State.InPool)
+            {
+                throw new InvalidOperationException($"任务不存在");
+            }
+
             Result = default;
             state = State.Faild;
             TryComplete();
