@@ -303,14 +303,18 @@ namespace MMONET.Remote
         /// <summary>
         /// 线程安全的，多次调用不应该发生错误
         /// </summary>
-        protected override void ReceiveStart()
-        {
-            if (!Client.Connected || isReceiving || disposedValue)
-            {
-                return;
-            }
-            ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
-        }
+        /// <remarks> ReceiveStart 的本地Loopback 接收峰值能达到60,000,000 字节每秒。
+        /// ReceiveStart2 的本地Loopback 接收峰值能达到200,000,000 字节每秒。可以稳定在每秒6000 0000字节每秒。
+        /// 不是严格的测试，但是隐约表明异步task方法不适合性能敏感区域。
+        /// </remarks>
+        protected override void ReceiveStart() => ReceiveStart2();
+        //{
+        //    if (!Client.Connected || isReceiving || disposedValue)
+        //    {
+        //        return;
+        //    }
+        //    ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
+        //}
 
         async void ReceiveAsync(ArraySegment<byte> buffer)
         {
@@ -359,6 +363,83 @@ namespace MMONET.Remote
                 if (!manualDisconnecting)
                 {
                     OnSocketException(e.SocketErrorCode);
+                }
+                isReceiving = false;
+            }
+        }
+
+        SocketAsyncEventArgs receiveArgs;
+        void ReceiveStart2()
+        {
+            if (!Client.Connected || isReceiving || disposedValue)
+            {
+                return;
+            }
+
+            isReceiving = true;
+            InnerReveiveStart();
+        }
+
+        void InnerReveiveStart()
+        {
+            if (receiveArgs == null)
+            {
+                receiveArgs = new SocketAsyncEventArgs();
+                receiveArgs.SetBuffer(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength);
+                receiveArgs.Completed += ReceiveComplete;
+            }
+
+            if (!Client.ReceiveAsync(receiveArgs))
+            {
+                ReceiveComplete(this, receiveArgs);
+            }
+        }
+
+        void ReceiveComplete(object sender, SocketAsyncEventArgs args)
+        {
+            if (args.SocketError == SocketError.Success)
+            {
+                ///本次接收的长度
+                int length = args.BytesTransferred;
+
+                if (length == 0)
+                {
+                    OnSocketException(SocketError.Shutdown);
+                    isReceiving = false;
+                    return;
+                }
+
+                LastReceiveTime = DateTime.Now;
+                //////有效消息长度
+                int totalValidLength = length + args.Offset;
+
+                var list = ByteMessageList.Pop();
+                ///分包
+                var residual = CutOff(totalValidLength, args.Buffer, list);
+
+                var newBuffer = BufferPool.Pop(MaxBufferLength);
+                if (residual.Count > 0)
+                {
+                    ///半包复制
+                    Buffer.BlockCopy(residual.Array, residual.Offset, newBuffer, 0, residual.Count);
+                }
+
+                args.SetBuffer(newBuffer, residual.Count, MaxBufferLength - residual.Count);
+
+                ///这里先处理消息在继续接收，处理消息是异步的，耗时并不长，下N次继续接收消息都可能是同步完成，
+                ///先接收可能导致比较大的消息时序错位。
+
+                ///处理消息
+                DealMessageAsync(list);
+
+                ///继续接收
+                InnerReveiveStart();
+            }
+            else
+            {
+                if (!manualDisconnecting)
+                {
+                    OnSocketException(args.SocketError);
                 }
                 isReceiving = false;
             }
