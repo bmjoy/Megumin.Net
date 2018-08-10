@@ -305,7 +305,7 @@ namespace MMONET.Remote
         /// </summary>
         protected override void ReceiveStart()
         {
-            if (!Client.Connected || isReceiving)
+            if (!Client.Connected || isReceiving || disposedValue)
             {
                 return;
             }
@@ -314,7 +314,7 @@ namespace MMONET.Remote
 
         async void ReceiveAsync(ArraySegment<byte> buffer)
         {
-            if (!Client.Connected)
+            if (!Client.Connected || disposedValue)
             {
                 return;
             }

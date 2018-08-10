@@ -339,7 +339,7 @@ namespace MMONET.Remote
 
         async void ReceiveAsync(ArraySegment<byte> buffer)
         {
-            if (!Client.Connected || isReceiving || disposedValue)
+            if (!Client.Connected || disposedValue)
             {
                 return;
             }
