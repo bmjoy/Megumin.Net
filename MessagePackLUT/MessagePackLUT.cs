@@ -47,7 +47,7 @@ namespace MMONET.Message
 
     static class MessagePackSerializerEx
     {
-        public static ushort Serialize<T>(T obj, ref byte[] buffer)
+        public static ushort Serialize<T>(T obj, byte[] buffer)
         {
             var formatter = MessagePackSerializer.DefaultResolver.GetFormatterWithVerify<T>();
 

@@ -7,7 +7,8 @@ using System.Threading;
 namespace MMONET
 {
     /// <summary>
-    /// 
+    /// 内部 在ConcurrentQueue 和 HashSet之间做了很多取舍，最终使用ConcurrentQueue。所以请千万小心，不要将同一个
+    /// 数组Push进Pool中两次。
     /// </summary>
     public class BufferPool
     {
@@ -20,7 +21,7 @@ namespace MMONET
         static readonly Pool[] pools = new Pool[10];
 
         /// <summary>
-        /// 二分查找
+        /// 愚蠢的二分查找
         /// </summary>
         /// <param name="needSize"></param>
         /// <returns></returns>
@@ -29,6 +30,11 @@ namespace MMONET
             if (needSize == 8192)
             {
                 return pools[8];
+            }
+
+            if (needSize == 16384)
+            {
+                return pools[9];
             }
 
             if (needSize == 512)
@@ -127,6 +133,7 @@ namespace MMONET
 
         /// <summary>
         /// 归还buffer
+        /// <para>请千万小心，不要将同一个数组Push进Pool中两次，会发生致命错误，池中没有内置去重机制。</para>
         /// </summary>
         /// <param name="buffer"></param>
         public static void Push(byte[] buffer)
@@ -159,9 +166,28 @@ namespace MMONET
 
             pool65536.Push(buffer);
         }
+        /// <summary>
+        /// 取得长度为16384的buffer
+        /// </summary>
+        public static byte[] Pop16384()
+        {
+            return pools[9].Pop();
+        }
 
-        
+        /// <summary>
+        /// 归还长度为16384的buffer
+        /// </summary>
+        /// <param name="buffer"></param>
+        public static void Push16384(byte[] buffer)
+        {
+            if (buffer.Length != 16384)
+            {
+                return;
+            }
 
+            pools[9].Push(buffer);
+        }
+ 
         class Pool
         {
             public Pool(int Size,int maxCacheCount = 97)

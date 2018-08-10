@@ -435,7 +435,7 @@ namespace MMONET.Remote
             return new UdpConnectMessage() { SYN = SYN, ACT = ACT, seq = seq, ack = ack };
         }
 
-        static ushort Serialize(UdpConnectMessage connectMessage, ref byte[] bf)
+        static ushort Serialize(UdpConnectMessage connectMessage, byte[] bf)
         {
             connectMessage.SYN.WriteToByte(bf, 0);
             connectMessage.ACT.WriteToByte(bf, 4);

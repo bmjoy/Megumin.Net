@@ -29,9 +29,9 @@ namespace MMONET.Message
     /// 将消息从0位置开始 序列化 到 指定buffer中,返回序列化长度
     /// </summary>
     /// <param name="message">消息实例</param>
-    /// <param name="buffer">给定的buffer,长度为65535</param>
+    /// <param name="buffer">给定的buffer,长度为16384</param>
     /// <returns>序列化消息的长度</returns>
-    public delegate ushort Seiralizer<in T>(T message,ref byte[] buffer);
+    public delegate ushort Seiralizer<in T>(T message,byte[] buffer);
 
 
 }

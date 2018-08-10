@@ -50,11 +50,11 @@ namespace MMONET.Remote
         protected void SendAsync<T>(short rpcID, T message)
         {
             ///序列化用buffer
-            var sbuffer = BufferPool.Pop65536();
+            var sbuffer = BufferPool.Pop16384();
             var (messageID, byteMessage) = SerializeMessage(sbuffer, message);
 
             var sendbuffer = PacketBuffer(messageID, rpcID, default, byteMessage);
-            BufferPool.Push65536(sbuffer);
+            BufferPool.Push16384(sbuffer);
 
             SendByteBufferAsync(sendbuffer);
         }

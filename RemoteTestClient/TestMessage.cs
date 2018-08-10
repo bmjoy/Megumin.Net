@@ -8,7 +8,7 @@ namespace MMONET.Remote.Test
     {
         public int Value { get; set; }
 
-        public static ushort S<T>(T message, ref byte[] buffer)
+        public static ushort S<T>(T message, byte[] buffer)
         {
             if (message is TestPacket1 packet)
             {
@@ -30,7 +30,7 @@ namespace MMONET.Remote.Test
     {
         public float Value { get; set; }
 
-        public static ushort S<T>(T message, ref byte[] buffer)
+        public static ushort S<T>(T message, byte[] buffer)
         {
             if (message is TestPacket2 packet)
             {

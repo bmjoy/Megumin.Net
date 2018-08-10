@@ -46,12 +46,12 @@ namespace MMONET.Message
 
     static class Protobuf_netSerializerEx
     {
-        public static ushort Serialize<T>(T obj, ref byte[] buffer)
+        public static ushort Serialize<T>(T obj, byte[] buffer)
         {
             using (Stream s = new MemoryStream())
             {
                 Serializer.Serialize(s, obj);
-                int lenght = s.Read(buffer, 0, 65536);
+                int lenght = s.Read(buffer, 0, buffer.Length);
                 return (ushort)lenght;
             }
         }

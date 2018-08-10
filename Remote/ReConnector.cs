@@ -133,7 +133,7 @@ namespace MMONET.Remote
         /// </summary>
         public DateTime Time { get; set; }
 
-        public static ushort Seiralizer(HeartBeatsMessage heartBeats, ref byte[] buffer)
+        public static ushort Seiralizer(HeartBeatsMessage heartBeats, byte[] buffer)
         {
             BitConverter.GetBytes(heartBeats.Time.ToBinary()).CopyTo(buffer, 0);
             return sizeof(long);

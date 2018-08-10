@@ -45,7 +45,7 @@ namespace MMONET.Message
 
     static class ProtobufLUTSerializerEx
     {
-        public static ushort Serialize<T>(IMessage<T> obj, ref byte[] buffer)
+        public static ushort Serialize<T>(IMessage<T> obj, byte[] buffer)
             where T:IMessage<T>
         {
             using (CodedOutputStream co = new CodedOutputStream(buffer))

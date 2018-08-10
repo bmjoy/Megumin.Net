@@ -19,10 +19,35 @@ namespace MMONET.Remote
         /// </summary>
         public const int HeartbeatsMessageID = 255;
 
+        
+
+        #region Message
+
+        /// <summary>
+        /// 描述消息包长度字节所占的字节数
+        /// <para>长度类型ushort，所以一个包理论最大长度不能超过65535字节，框架要求一个包不能大于8192 - 8 个 字节</para>
+        /// <para>建议单个包大小10到1024字节</para>
+        /// 
+        /// 按照千兆网卡计算，一个玩家每秒10~30包，大约10~30KB，大约能负载3000玩家。
+        /// </summary>
+        public const int MessageLengthByteCount = sizeof(ushort);
+
+        /// <summary>
+        /// 消息包类型ID 字节长度
+        /// </summary>
+        public const int MessageIDByteCount = sizeof(int);
+
+        /// <summary>
+        /// 消息包类型ID 字节长度
+        /// </summary>
+        public const int RpcIDByteCount = sizeof(ushort);
+
         /// <summary>
         /// 报头初始偏移8
         /// </summary>
-        public const ushort HeaderOffset = 2 + 4 + 2;
+        public const int HeaderOffset = 2 + 4 + 2;
+
+        #endregion
     }
 
     internal static class BitConvert_C6FCE74980A447BBACC6792A9E36F323

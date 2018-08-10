@@ -31,8 +31,8 @@ namespace MMONET.Message
 
         static readonly Dictionary<int, Deserilizer> dFormatter = new Dictionary<int, Deserilizer>();
         static readonly Dictionary<Type, (int MessageID, Delegate Seiralizer)> sFormatter = new Dictionary<Type, (int MessageID, Delegate Seiralizer)>();
-        ///序列化方法第二个参数必须为 ref byte[]
-        static Type args2type = typeof(byte[]).MakeByRefType();
+        ///序列化方法第二个参数必须为 byte[]
+        static Type args2type = typeof(byte[]);
 
         protected static void AddSFormatter(Type type, int messageID, Delegate seiralizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
@@ -124,14 +124,16 @@ namespace MMONET.Message
         }
 
         /// <summary>
-        /// 
+        /// 长度不能大于8192
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="buffer65536"></param>
+        /// <param name="buffer16384"></param>
         /// <param name="message"></param>
         /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException"> 消息长度大于8192,请拆分发送。"</exception>
+        /// <remarks>框架中TCP接收最大支持8192，所以发送也不能大于8192，为了安全起见，框架提供的字节数组长度是16384的。</remarks>
         public static (int messageID, ArraySegment<byte> byteUserMessage) 
-            Serialize<T>(byte[] buffer65536, T message)
+            Serialize<T>(byte[] buffer16384, T message)
         {
             if (sFormatter.TryGetValue(message.GetType(),out var sf))
             {
@@ -140,24 +142,24 @@ namespace MMONET.Message
 
                 Seiralizer<T> seiralizer = Seiralizer as Seiralizer<T>;
 
-                ushort length = seiralizer(message, ref buffer65536);
+                ushort length = seiralizer(message, buffer16384);
 
                 if (length > 8192)
                 {
-                    BufferPool.Push65536(buffer65536);
+                    BufferPool.Push16384(buffer16384);
                     ///消息过长
                     throw new ArgumentOutOfRangeException($"消息长度大于{8192}," +
                         $"请拆分发送。");
                 }
 
-                return (MessageID, new ArraySegment<byte>(buffer65536, 0, length));
+                return (MessageID, new ArraySegment<byte>(buffer16384, 0, length));
             }
 
             return (-1,default);
         }
 
         /// <summary>
-        /// /
+        /// 
         /// </summary>
         /// <param name="messageID"></param>
         /// <param name="body"></param>

@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MMONET.Message;
 using ExtraMessage = System.ValueTuple<int?, int?, int?, int?>;
+using static MMONET.Remote.FrameworkConst;
 
 namespace MMONET.Remote
 {
@@ -55,11 +56,11 @@ namespace MMONET.Remote
         /// 序列化消息阶段
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="buffer65536"></param>
+        /// <param name="buffer16384"></param>
         /// <param name="message"></param>
         /// <returns></returns>
         protected virtual (int messageID, ArraySegment<byte> byteUserMessage)
-            SerializeMessage<T>(byte[] buffer65536, T message) => MessageLUT.Serialize(buffer65536, message);
+            SerializeMessage<T>(byte[] buffer16384, T message) => MessageLUT.Serialize(buffer16384, message);
 
         /// <summary>
         /// 反序列化消息阶段
@@ -75,15 +76,15 @@ namespace MMONET.Remote
         /// <summary>
         /// 序列化外部附加的消息
         /// </summary>
-        /// <param name="buffer65536"></param>
+        /// <param name="buffer"></param>
         /// <param name="offset"></param>
         /// <param name="extraMessage"></param>
         /// <returns>返回长度</returns>
-        protected virtual ushort SerializeExtraMessage(byte[] buffer65536, int offset, ExtraMessage extraMessage)
+        protected virtual ushort SerializeExtraMessage(byte[] buffer, int offset, ExtraMessage extraMessage)
         {
             if (extraMessage.Item1 == null)
             {
-                buffer65536[offset] = 0;
+                buffer[offset] = 0;
                 return 1;
             }
 
@@ -174,36 +175,6 @@ namespace MMONET.Remote
             return (messageID, rpcID, extratype, extraMessage, new ArraySegment<byte>(buffer.Array, offset + currentOffset, buffer.Count - currentOffset));
         }
 
-
-        #region Message
-
-        /// <summary>
-        /// 描述消息包长度字节所占的字节数
-        /// <para>长度类型ushort，所以一个包理论最大长度不能超过65535字节，框架要求一个包不能大于8192 - 8 个 字节</para>
-        /// <para>建议单个包大小10到1024字节</para>
-        /// 
-        /// 按照千兆网卡计算，一个玩家每秒10~30包，大约10~30KB，大约能负载3000玩家。
-        /// </summary>
-        public const int MessageLengthByteCount = sizeof(ushort);
-
-        /// <summary>
-        /// 消息包类型ID 字节长度
-        /// </summary>
-        public const int MessageIDByteCount = sizeof(int);
-
-        /// <summary>
-        /// 消息包类型ID 字节长度
-        /// </summary>
-        public const int RpcIDByteCount = sizeof(ushort);
-
-        /// <summary>
-        /// 报头总长度 8
-        /// </summary>
-        public const int TotalHeaderByteCount =
-            MessageLengthByteCount + MessageIDByteCount + RpcIDByteCount;
-
-        #endregion
-
         /// <summary>
         /// 解析报头 (长度至少要大于8（8个字节也就是一个报头长度）)
         /// </summary>
@@ -214,7 +185,7 @@ namespace MMONET.Remote
         public virtual (ushort Size, int MessageID, short RpcID)
             ReadPacketHeader(byte[] buffer, int offset)
         {
-            if (buffer.Length - offset >= TotalHeaderByteCount)
+            if (buffer.Length - offset >= HeaderOffset)
             {
                 ushort size = buffer.ReadUShort(offset);
 
