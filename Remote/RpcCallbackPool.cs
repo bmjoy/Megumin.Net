@@ -196,25 +196,6 @@ namespace MMONET.Remote
             return false;
         }
 
-        //[Obsolete]
-        //public void UpdateRpcResult(double delta)
-        //{
-        //    lock (this)
-        //    {
-        //        ///检查Rpc超时
-        //        this.RemoveAll(kv =>
-        //        {
-        //            var es = DateTime.Now - kv.Value.startTime;
-        //            var istimeout = es.TotalMilliseconds > RpcTimeOutMilliseconds;
-        //            if (istimeout)
-        //            {
-        //                kv.Value.rpcCallback?.Invoke(null, new TimeoutException());
-        //            }
-        //            return istimeout;
-        //        });
-        //    }
-        //}
-
         void IRpcCallbackPool.Remove(short rpcID) => Remove(rpcID);
 
         public bool TrySetResult(short rpcID, dynamic msg)

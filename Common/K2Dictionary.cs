@@ -6,6 +6,12 @@ using System.Text;
 
 namespace MMONET
 {
+    /// <summary>
+    /// 不是线程安全的
+    /// </summary>
+    /// <typeparam name="TKey1"></typeparam>
+    /// <typeparam name="TKey2"></typeparam>
+    /// <typeparam name="TValue"></typeparam>
     public class K2Dictionary<TKey1, TKey2, TValue> : IDictionary<TKey1,TKey2,TValue>
     {
         readonly Dictionary<TKey1, TValue> dic1 = new Dictionary<TKey1, TValue>();

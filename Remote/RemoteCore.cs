@@ -11,10 +11,9 @@ namespace MMONET.Remote
     ///可由继承类修改的关键部分
     public abstract partial class RemoteCore
     {
-
-
         /// <summary>
-        /// 
+        /// 处理收到的字节消息，这个时候ExtraMessage 已被反序列化完成，返回值决定是否继续执行下一步消息处理。
+        /// 在这个方法中反序列化byteUserMessage -> objectMessage
         /// </summary>
         /// <param name="messageID"></param>
         /// <param name="rpcID"></param>
