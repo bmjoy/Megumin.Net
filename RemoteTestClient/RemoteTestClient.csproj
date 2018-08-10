@@ -7,10 +7,13 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>7.1</LangVersion>
+    <DebugType>full</DebugType>
+    <DocumentationFile>bin\Debug\net471\RemoteTestClient.xml</DocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>7.1</LangVersion>
+    <DocumentationFile>bin\Release\net471\RemoteTestClient.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
