@@ -314,7 +314,7 @@ namespace MMONET.Remote
 
         async void ReceiveAsync(ArraySegment<byte> buffer)
         {
-            if (!Client.Connected || isReceiving)
+            if (!Client.Connected)
             {
                 return;
             }
@@ -324,7 +324,6 @@ namespace MMONET.Remote
                 isReceiving = true;
                 ///本次接收的长度
                 var length = await Client.ReceiveAsync(buffer, SocketFlags.None);
-
                 if (length == 0)
                 {
                     OnSocketException(SocketError.Shutdown);

@@ -21,8 +21,8 @@ namespace RemoteTestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 100;
-        static int RemoteCount = 1;
+        static int MessageCount = 10000;
+        static int RemoteCount = 100;
         private static async void ConAsync()
         {
             MessageLUT.AddFormatter(typeof(TestPacket1), 1000, (Seiralizer<TestPacket1>)TestPacket1.S, TestPacket1.D);
@@ -94,7 +94,18 @@ namespace RemoteTestClient
 
             Console.WriteLine($"Remote{clientIndex}: SendAsync{MessageCount}包 ------ 发送总时间: {look1.ElapsedMilliseconds}----- 平均每秒发送:{MessageCount * 1000 / (look1.ElapsedMilliseconds+1)}");
 
-            var res2 = await remote.LazyRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex });
+            var res2 = await remote.LazyRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex },
+                (ex) =>
+                {
+                    if (ex is TimeoutException timeout)
+                    {
+                        Console.WriteLine($"Rpc调用超时----------------------------------------- {clientIndex}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Rpc调用异常--------------------{ex}------------- {clientIndex}");
+                    }
+                });
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
             //Remote.BroadCastAsync(new Packet1 { Value = -99999 },remote);
 
