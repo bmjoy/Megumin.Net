@@ -36,7 +36,7 @@ namespace MMONET.Message
         static readonly Dictionary<int, Deserilizer> dFormatter = new Dictionary<int, Deserilizer>();
         static readonly Dictionary<Type, (int MessageID, Delegate Seiralizer)> sFormatter = new Dictionary<Type, (int MessageID, Delegate Seiralizer)>();
         ///序列化方法第二个参数必须为 byte[]
-        static Type args2type = typeof(byte[]);
+        static Type args2type = typeof(Span<byte>);
 
         protected static void AddSFormatter(Type type, int messageID, Delegate seiralizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
