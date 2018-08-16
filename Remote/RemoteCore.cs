@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using MMONET.Message;
 using ExtraMessage = System.ValueTuple<int?, int?, int?, int?>;
 using static MMONET.Remote.FrameworkConst;
+using System.Buffers;
+using System.Buffers.Binary;
 
 namespace MMONET.Remote
 {
@@ -22,7 +24,7 @@ namespace MMONET.Remote
         /// <param name="byteUserMessage"></param>
         /// <returns></returns>
         protected virtual (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
-            DealBytesMessage(int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ArraySegment<byte> byteUserMessage)
+            DealBytesMessage(int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ReadOnlyMemory<byte> byteUserMessage)
         {
             if (extraType == 0)
             {
@@ -41,7 +43,7 @@ namespace MMONET.Remote
         /// <param name="byteUserMessage"></param>
         /// <returns></returns>
         protected virtual (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
-            WhenNoExtra(int messageID, short rpcID, ArraySegment<byte> byteUserMessage)
+            WhenNoExtra(int messageID, short rpcID, ReadOnlyMemory<byte> byteUserMessage)
         {
             var message = DeserializeMessage(messageID, byteUserMessage);
             return (true, true, rpcID, message);
@@ -58,14 +60,14 @@ namespace MMONET.Remote
         /// <param name="buffer16384"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        protected virtual (int messageID, ArraySegment<byte> byteUserMessage)
-            SerializeMessage<T>(byte[] buffer16384, T message) => MessageLUT.Serialize(buffer16384, message);
+        protected virtual (int messageID, ushort length)
+            SerializeMessage<T>(Span<byte> buffer16384, T message) => MessageLUT.Serialize(buffer16384, message);
 
         /// <summary>
         /// 反序列化消息阶段
         /// </summary>
         /// <returns></returns>
-        protected virtual dynamic DeserializeMessage(int messageID, ArraySegment<byte> byteUserMessage)
+        protected virtual dynamic DeserializeMessage(int messageID, ReadOnlyMemory<byte> byteUserMessage)
             => MessageLUT.Deserialize(messageID, byteUserMessage);
     }
 
@@ -79,8 +81,9 @@ namespace MMONET.Remote
         /// <param name="offset"></param>
         /// <param name="extraMessage"></param>
         /// <returns>返回长度</returns>
-        protected virtual ushort SerializeExtraMessage(byte[] buffer, int offset, ExtraMessage extraMessage)
+        protected virtual ushort SerializeExtraMessage(Span<byte> buffer, ExtraMessage extraMessage)
         {
+            int offset = 0;
             if (extraMessage.Item1 == null)
             {
                 buffer[offset] = 0;
@@ -94,12 +97,16 @@ namespace MMONET.Remote
         /// 反序列化外部附加的消息
         /// </summary>
         /// <param name="buffer"></param>
-        /// <param name="offset"></param>
         /// <returns></returns>
         protected virtual (ushort length, byte extraType, ExtraMessage extraMessage) 
-            DeserializeExtraMessage(byte[] buffer, int offset)
+            DeserializeExtraMessage(ReadOnlySpan<byte> buffer)
         {
-            byte extraType = buffer[offset];
+            if (buffer.IsEmpty)
+            {
+                return default;
+            }
+
+            byte extraType = buffer[0];
             switch (extraType)
             {
                 case 0:
@@ -124,73 +131,63 @@ namespace MMONET.Remote
         /// <param name="rpcID"></param>
         /// <param name="extraMessage"></param>
         /// <param name="byteUserMessage"></param>
-        /// <returns></returns>
-        protected virtual ArraySegment<byte> PacketBuffer(int messageID, short rpcID, ExtraMessage extraMessage, ArraySegment<byte> byteUserMessage)
+        /// <returns>框架使用BigEndian</returns>
+        protected virtual IMemoryOwner<byte> PacketBuffer(int messageID, short rpcID, ExtraMessage extraMessage, Span<byte> byteUserMessage)
         {
-            int byteMessageLength = byteUserMessage.Count;
+            Span<byte> extrabyte = stackalloc byte[17];
+
+            ///序列化额外附加信息
+            var extralenght = SerializeExtraMessage(extrabyte, extraMessage);
+            ushort totolLength = (ushort)(FrameworkConst.HeaderOffset + extralenght + byteUserMessage.Length);
+ 
             ///申请发送用 buffer ((框架约定1)发送字节数组发送完成后由发送逻辑回收)         额外信息的最大长度17
-            var sendbuffer = BufferPool.Pop(byteMessageLength + FrameworkConst.HeaderOffset + 17);
+            var sendbuffer2 = MemoryPool<byte>.Shared.Rent(totolLength);
 
+            ///写入报头 大端字节序写入
+            BinaryPrimitives.WriteUInt16BigEndian(sendbuffer2.Memory.Span, totolLength);
+            BinaryPrimitives.WriteInt32BigEndian(sendbuffer2.Memory.Span.Slice(2), messageID);
+            BinaryPrimitives.WriteInt16BigEndian(sendbuffer2.Memory.Span.Slice(6), rpcID);
 
-            ushort offset = FrameworkConst.HeaderOffset;
-            var forwardPartLength = offset + SerializeExtraMessage(sendbuffer, offset, extraMessage);
-
+            ///拷贝额外消息
+            extrabyte.CopyTo(sendbuffer2.Memory.Span.Slice(FrameworkConst.HeaderOffset));
             ///拷贝消息正文
-            Buffer.BlockCopy(byteUserMessage.Array, byteUserMessage.Offset, sendbuffer, forwardPartLength, byteUserMessage.Count);
+            byteUserMessage.CopyTo(sendbuffer2.Memory.Span.Slice(FrameworkConst.HeaderOffset + extralenght));
 
-            ushort totolLength = (ushort)(forwardPartLength + byteMessageLength);
-
-            ///写入报头
-            totolLength.WriteToByte(sendbuffer, 0);
-            messageID.WriteToByte(sendbuffer, 2);
-            rpcID.WriteToByte(sendbuffer, 2 + 4);
-
-            return new ArraySegment<byte>(sendbuffer, 0, totolLength);
+            return sendbuffer2;
         }
 
         /// <summary>
         /// 解包。 这个方法解析消息字节的布局。并调用了 DeserializeExtraMessage。
-        /// <para> 和 <see cref="PacketBuffer(int, short, ExtraMessage, ArraySegment{byte})"/> 对应</para>
+        /// <para> 和 <see cref="PacketBuffer(int, short, ExtraMessage, Span{byte})"/> 对应</para>
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        protected virtual (int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ArraySegment<byte> byteUserMessage)
-            UnPacketBuffer(ArraySegment<byte> buffer)
+        protected virtual (int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ReadOnlyMemory<byte> byteUserMessage)
+            UnPacketBuffer(ReadOnlyMemory<byte> buffer)
         {
-            int offset = buffer.Offset;
-            int currentOffset = 0;
-            ushort totalLength = buffer.Array.ReadUShort(offset + currentOffset);
-            currentOffset += 2;
+            var (totalLenght, messageID, rpcID) = ReadPacketHeader(buffer.Span);
 
-            int messageID = buffer.Array.ReadInt(offset + currentOffset);
-            currentOffset += 4;
+            var (length, extratype, extraMessage) = DeserializeExtraMessage(buffer.Span.Slice(FrameworkConst.HeaderOffset));
 
-            short rpcID = buffer.Array.ReadShort(offset + currentOffset);
-            currentOffset += 2;
-
-            var (length, extratype, extraMessage) = DeserializeExtraMessage(buffer.Array, offset + currentOffset);
-            currentOffset += length;
-
-            return (messageID, rpcID, extratype, extraMessage, new ArraySegment<byte>(buffer.Array, offset + currentOffset, buffer.Count - currentOffset));
+            return (messageID, rpcID, extratype, extraMessage, buffer.Slice(FrameworkConst.HeaderOffset + length));
         }
 
         /// <summary>
         /// 解析报头 (长度至少要大于8（8个字节也就是一个报头长度）)
         /// </summary>
         /// <param name="buffer"></param>
-        /// <param name="offset"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException">数据长度小于报头长度</exception>
-        public virtual (ushort Size, int MessageID, short RpcID)
-            ReadPacketHeader(byte[] buffer, int offset)
+        public virtual (ushort totalLenght, int messageID, short rpcID)
+            ReadPacketHeader(ReadOnlySpan<byte> buffer)
         {
-            if (buffer.Length - offset >= HeaderOffset)
+            if (buffer.Length >= HeaderOffset)
             {
-                ushort size = buffer.ReadUShort(offset);
+                ushort size = BinaryPrimitives.ReadUInt16BigEndian(buffer);
 
-                int messageID = buffer.ReadInt(offset + 2);
+                int messageID = BinaryPrimitives.ReadInt32BigEndian(buffer.Slice(2));
 
-                short rpcID = buffer.ReadShort(offset + 6);
+                short rpcID = BinaryPrimitives.ReadInt16BigEndian(buffer.Slice(6));
 
                 return (size, messageID, rpcID);
             }

@@ -72,8 +72,11 @@ namespace MMONET.Message
             dynamic dformatter = Activator.CreateInstance(parsertype);
             return  (buffer) =>
                     {
-                        IMessage message = dformatter.ParseFrom(buffer.Array, buffer.Offset, buffer.Count);
-                        return message;
+                        using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))
+                        {
+                            IMessage message = dformatter.ParseFrom(stream);
+                            return message;
+                        }
                     };
         }
     }

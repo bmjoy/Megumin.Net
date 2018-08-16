@@ -70,7 +70,7 @@ namespace MMONET.Message
         {
             return (buffer) =>
             {
-                using (Stream st = new MemoryStream(buffer.Array,buffer.Offset,buffer.Count))
+                using (Stream st = new ReadOnlyMemrotyStream(buffer))
                 {
                     return Serializer.Deserialize(type, st);
                 }

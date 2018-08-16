@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MMONET;
 using MMONET.Message;
+using MMONET.Message.TestMessage;
 using MMONET.Remote;
-using MMONET.Remote.Test;
 using Network.Remote;
 
 namespace UnitFunc
@@ -119,9 +119,6 @@ namespace UnitFunc
 
         private static void PrepareEnvironment(CancellationTokenSource cancellation)
         {
-            MessageLUT.AddFormatter(typeof(TestPacket1), 1000, (Seiralizer<TestPacket1>)TestPacket1.S, TestPacket1.D);
-            MessageLUT.AddFormatter(typeof(TestPacket2), 1001, (Seiralizer<TestPacket2>)TestPacket2.S, TestPacket2.D);
-
             Task.Factory.StartNew(() =>
             {
                 while (true)

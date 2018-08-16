@@ -33,7 +33,7 @@ namespace MMONET.Remote
             while (IsListening)
             {
                 var res = await ReceiveAsync();
-                var (Size, MessageID, RpcID) = headerReader.ReadPacketHeader(res.Buffer, 0);
+                var (Size, MessageID, RpcID) = headerReader.ReadPacketHeader(res.Buffer);
                 if (MessageID == FrameworkConst.UdpConnectMessageID)
                 {
                     ReMappingAsync(res);

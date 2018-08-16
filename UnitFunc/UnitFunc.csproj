@@ -62,7 +62,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestMessage.cs" />
     <Compile Include="UnitTestUDPClient.cs" />
     <Compile Include="UnitTestRemote.cs" />
     <Compile Include="UnitTestEx.cs" />

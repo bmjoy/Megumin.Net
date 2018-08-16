@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -160,7 +163,7 @@ namespace MMONET.Remote
                 while (true)
                 {
                     var recv = await udpClient.ReceiveAsync();
-                    var (Size, MessageID, RpcID) = ReadPacketHeader(recv.Buffer, 0);
+                    var (Size, MessageID, RpcID) = ReadPacketHeader(recv.Buffer);
                     if (MessageID == FrameworkConst.UdpConnectMessageID)
                     {
                         var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);
@@ -251,26 +254,27 @@ namespace MMONET.Remote
 
         static (int SYN, int ACK, int seq, int ack) ReadConnectMessage(byte[] buffer)
         {
-            int tempOffset = 9;
-            int SYN = BitConverter.ToInt32(buffer, tempOffset);
-            int ACK = BitConverter.ToInt32(buffer, tempOffset + 4);
-            int seq = BitConverter.ToInt32(buffer, tempOffset + 8);
-            int ack = BitConverter.ToInt32(buffer, tempOffset + 12);
+            ReadOnlySpan<byte> bf = buffer.AsSpan(9);
+
+            int SYN = bf.ReadInt();
+            int ACK = bf.Slice(4).ReadInt();
+            int seq = bf.Slice(8).ReadInt();
+            int ack = bf.Slice(12).ReadInt();
             return (SYN, ACK, seq, ack);
         }
 
         static byte[] MakeUDPConnectMessage(int SYN, int ACT, int seq, int ack)
         {
             var bf = BufferPool.Pop(32);
-            16.WriteToByte(bf, 0);
-            FrameworkConst.UdpConnectMessageID.WriteToByte(bf, 2);
-            ((short)0).WriteToByte(bf, 6);
+            ((ushort)25).WriteTo(bf);
+            FrameworkConst.UdpConnectMessageID.WriteTo(bf.AsSpan(2));
+            ((short)0).WriteTo(bf.AsSpan(6));
             bf[8] = 0;
             int tempOffset = 9;
-            BitConverter.GetBytes(SYN).CopyTo(bf, tempOffset);
-            BitConverter.GetBytes(ACT).CopyTo(bf, tempOffset + 4);
-            BitConverter.GetBytes(seq).CopyTo(bf, tempOffset + 8);
-            BitConverter.GetBytes(ack).CopyTo(bf, tempOffset + 12);
+            SYN.WriteTo(bf.AsSpan(tempOffset));
+            ACT.WriteTo(bf.AsSpan(tempOffset + 4));
+            seq.WriteTo(bf.AsSpan(tempOffset + 8 ));
+            ack.WriteTo(bf.AsSpan(tempOffset + 12));
             return bf;
         }
     }
@@ -278,26 +282,20 @@ namespace MMONET.Remote
     /// 发送
     partial class UDPRemote
     {
-        protected override void SendByteBufferAsync(ArraySegment<byte> bufferMsg)
+        protected override void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
         {
             try
             {
                 Task.Run(() =>
                         {
-                            byte[] buffer = default;
-                            if (bufferMsg.Offset > 0)
+                            if (MemoryMarshal.TryGetArray<byte>(bufferMsg.Memory,out var sbuffer))
                             {
-                                buffer = BufferPool.Pop(bufferMsg.Count);
-                                Buffer.BlockCopy(bufferMsg.Array, bufferMsg.Offset, buffer, 0, bufferMsg.Count);
-                                BufferPool.Push(bufferMsg.Array);
+                                udpClient.Send(sbuffer.Array,sbuffer.Offset);
                             }
                             else
                             {
-                                buffer = bufferMsg.Array;
+                                throw new Exception();
                             }
-
-                            udpClient.Send(buffer, bufferMsg.Count);
-                            BufferPool.Push(buffer);
                         });
             }
             catch (SocketException e)
@@ -395,7 +393,7 @@ namespace MMONET.Remote
         /// <param name="byteUserMessage"></param>
         /// <returns></returns>
         protected override (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage) 
-            WhenNoExtra(int messageID, short rpcID, ArraySegment<byte> byteUserMessage)
+            WhenNoExtra(int messageID, short rpcID, ReadOnlyMemory<byte> byteUserMessage)
         {
             if (messageID == FrameworkConst.HeartbeatsMessageID)
             {
@@ -425,22 +423,21 @@ namespace MMONET.Remote
         public int ACT;
         public int seq;
         public int ack;
-        static UdpConnectMessage Deserialize(ArraySegment<byte> buffer)
+        static UdpConnectMessage Deserialize(ReadOnlyMemory<byte> buffer)
         {
-            int tempoffset = buffer.Offset;
-            int SYN = buffer.Array.ReadInt(tempoffset);
-            int ACT = buffer.Array.ReadInt(tempoffset + 4);
-            int seq = buffer.Array.ReadInt(tempoffset + 8);
-            int ack = buffer.Array.ReadInt(tempoffset + 12);
+            int SYN = buffer.Span.ReadInt();
+            int ACT = buffer.Span.Slice(4).ReadInt();
+            int seq = buffer.Span.Slice(8).ReadInt();
+            int ack = buffer.Span.Slice(12).ReadInt();
             return new UdpConnectMessage() { SYN = SYN, ACT = ACT, seq = seq, ack = ack };
         }
 
-        static ushort Serialize(UdpConnectMessage connectMessage, byte[] bf)
+        static ushort Serialize(UdpConnectMessage connectMessage, Span<byte> bf)
         {
-            connectMessage.SYN.WriteToByte(bf, 0);
-            connectMessage.ACT.WriteToByte(bf, 4);
-            connectMessage.seq.WriteToByte(bf, 8);
-            connectMessage.ack.WriteToByte(bf, 12);
+            connectMessage.SYN.WriteTo(bf);
+            connectMessage.ACT.WriteTo(bf.Slice(4));
+            connectMessage.seq.WriteTo(bf.Slice(8));
+            connectMessage.ack.WriteTo(bf.Slice(12));
             return 16;
         }
 

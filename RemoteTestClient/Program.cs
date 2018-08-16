@@ -5,10 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using MMONET.Remote;
 using System.Diagnostics;
-using MMONET.Remote.Test;
 using MMONET;
 using MMONET.Message;
 using Network.Remote;
+using MMONET.Message.TestMessage;
 
 namespace RemoteTestClient
 {
@@ -25,8 +25,8 @@ namespace RemoteTestClient
         static int RemoteCount = 100;
         private static async void ConAsync()
         {
-            MessageLUT.AddFormatter(typeof(TestPacket1), 1000, (Seiralizer<TestPacket1>)TestPacket1.S, TestPacket1.D);
-            MessageLUT.AddFormatter(typeof(TestPacket2), 1001, (Seiralizer<TestPacket2>)TestPacket2.S, TestPacket2.D);
+            MessageLUT.AddFormatter<TestPacket1>(-101, TestPacket1.S, TestPacket1.D);
+            MessageLUT.AddFormatter<TestPacket2>(-102, TestPacket2.S, TestPacket2.D);
 
             ThreadPool.QueueUserWorkItem((A) =>
             {

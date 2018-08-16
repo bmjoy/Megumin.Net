@@ -7,8 +7,12 @@ using Network.Remote;
 
 namespace MMONET.Remote
 {
+    using MMONET.Message;
+    using System.Buffers;
+    using System.Collections.Concurrent;
     using System.Net;
-    using ByteMessageList = ListPool<ArraySegment<byte>>;
+    using System.Runtime.InteropServices;
+    using ByteMessageList = ListPool<System.Buffers.IMemoryOwner<byte>>;
     using ExtraMessage = System.ValueTuple<int?, int?, int?, int?>;
 
     /// <summary>
@@ -87,16 +91,10 @@ namespace MMONET.Remote
                 IsVaild = false;
                 lock (sendlock)
                 {
-                    foreach (var item in sendWaitList)
+                    while (sendWaitList.TryDequeue(out var owner))
                     {
-                        BufferPool.Push(item.Array);
+                        owner?.Dispose();
                     }
-                    sendWaitList.Clear();
-                    foreach (var item in dealList)
-                    {
-                        BufferPool.Push(item.Array);
-                    }
-                    dealList.Clear();
                 }
 
                 disposedValue = true;
@@ -190,10 +188,9 @@ namespace MMONET.Remote
     /// 发送字节消息
     partial class TCPRemote
     {
-        List<ArraySegment<byte>> sendWaitList = new List<ArraySegment<byte>>(13);
-        List<ArraySegment<byte>> dealList = new List<ArraySegment<byte>>(13);
+        ConcurrentQueue<IMemoryOwner<byte>> sendWaitList = new ConcurrentQueue<IMemoryOwner<byte>>();
         bool isSending;
-        protected SocketAsyncEventArgs sendArgs;
+        private MemoryArgs sendArgs;
         protected readonly object sendlock = new object();
 
         /// <summary>
@@ -201,11 +198,11 @@ namespace MMONET.Remote
         /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
         /// </summary>
         /// <param name="bufferMsg"></param>
-        protected override void SendByteBufferAsync(ArraySegment<byte> bufferMsg)
+        protected override void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
         {
             lock (sendlock)
             {
-                sendWaitList.Add(bufferMsg);
+                sendWaitList.Enqueue(bufferMsg);
             }
             SendStart();
         }
@@ -227,12 +224,6 @@ namespace MMONET.Remote
                 if (sendWaitList.Count > 0 && !manualDisconnecting && isSending == false)
                 {
                     isSending = true;
-
-
-                    ///交换等待发送队列
-                    var temp = dealList;
-                    dealList = sendWaitList;
-                    sendWaitList = temp;
                     return true;
                 }
             }
@@ -249,33 +240,30 @@ namespace MMONET.Remote
 
             if (sendArgs == null)
             {
-                sendArgs = new SocketAsyncEventArgs();
+                sendArgs = new MemoryArgs();
                 sendArgs.Completed += SendComplete;
             }
 
-            sendArgs.BufferList = dealList;
-            if (!Client.SendAsync(sendArgs))
+            if (sendWaitList.TryDequeue(out var owner))
             {
-                SendComplete(this, sendArgs);
+                if (owner != null)
+                {
+                    sendArgs.SetMemoryOwner(owner);
+                    if (!Client.SendAsync(sendArgs))
+                    {
+                        SendComplete(this, sendArgs);
+                    }
+                }
             }
-
         }
 
         void SendComplete(object sender, SocketAsyncEventArgs args)
         {
             ///这个方法由IOCP线程调用。需要尽快结束。
 
-            ///无论成功失败，都要清理发送列表
-            if (dealList.Count > 0)
-            {
-                ///((框架约定1)发送字节数组发送完成后由发送逻辑回收)
-                ///归还buffer,重置BufferList 
-                foreach (var item in dealList)
-                {
-                    BufferPool.Push(item.Array);
-                }
-                dealList.Clear();
-            }
+            ///无论成功失败，都要清理发送缓冲
+            sendArgs.owner.Dispose();
+
             isSending = false;
 
             if (args.SocketError == SocketError.Success)
@@ -308,65 +296,6 @@ namespace MMONET.Remote
         /// 不是严格的测试，但是隐约表明异步task方法不适合性能敏感区域。
         /// </remarks>
         protected override void ReceiveStart() => ReceiveStart2();
-        //{
-        //    if (!Client.Connected || isReceiving || disposedValue)
-        //    {
-        //        return;
-        //    }
-        //    ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
-        //}
-
-        async void ReceiveAsync(ArraySegment<byte> buffer)
-        {
-            if (!Client.Connected || disposedValue)
-            {
-                return;
-            }
-
-            try
-            {
-                isReceiving = true;
-                ///本次接收的长度
-                var length = await Client.ReceiveAsync(buffer, SocketFlags.None);
-                if (length == 0)
-                {
-                    OnSocketException(SocketError.Shutdown);
-                    isReceiving = false;
-                    return;
-                }
-
-                LastReceiveTime = DateTime.Now;
-                //////有效消息长度
-                int totalValidLength = length + buffer.Offset;
-                var list = ByteMessageList.Pop();
-                ///分包
-                var residual = CutOff(totalValidLength, buffer.Array, list);
-
-                var newBuffer = BufferPool.Pop(MaxBufferLength);
-                if (residual.Count > 0)
-                {
-                    ///半包复制
-                    Buffer.BlockCopy(residual.Array, residual.Offset, newBuffer, 0, residual.Count);
-                }
-
-                ///这里先处理消息在继续接收，处理消息是异步的，耗时并不长，下N次继续接收消息都可能是同步完成，
-                ///先接收可能导致比较大的消息时序错位。
-
-                ///处理消息
-                DealMessageAsync(list);
-
-                ///继续接收
-                ReceiveAsync(new ArraySegment<byte>(newBuffer, residual.Count, MaxBufferLength - residual.Count));
-            }
-            catch (SocketException e)
-            {
-                if (!manualDisconnecting)
-                {
-                    OnSocketException(e.SocketErrorCode);
-                }
-                isReceiving = false;
-            }
-        }
 
         SocketAsyncEventArgs receiveArgs;
         void ReceiveStart2()
@@ -385,8 +314,18 @@ namespace MMONET.Remote
             if (receiveArgs == null)
             {
                 receiveArgs = new SocketAsyncEventArgs();
-                receiveArgs.SetBuffer(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength);
-                receiveArgs.Completed += ReceiveComplete;
+                var bfo = System.Buffers.MemoryPool<byte>.Shared.Rent(MaxBufferLength);
+
+                if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var buffer))
+                {
+                    receiveArgs.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
+                    receiveArgs.Completed += ReceiveComplete;
+                    receiveArgs.UserToken = bfo;
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
             }
 
             if (!Client.ReceiveAsync(receiveArgs))
@@ -397,55 +336,76 @@ namespace MMONET.Remote
 
         void ReceiveComplete(object sender, SocketAsyncEventArgs args)
         {
-            if (args.SocketError == SocketError.Success)
-            {
-                ///本次接收的长度
-                int length = args.BytesTransferred;
+            IMemoryOwner<byte> owner = args.UserToken as IMemoryOwner<byte>;
 
-                if (length == 0)
+            try
+            {
+                if (args.SocketError == SocketError.Success)
                 {
-                    OnSocketException(SocketError.Shutdown);
+                    ///本次接收的长度
+                    int length = args.BytesTransferred;
+
+                    if (length == 0)
+                    {
+                        OnSocketException(SocketError.Shutdown);
+                        isReceiving = false;
+                        return;
+                    }
+
+                    LastReceiveTime = DateTime.Now;
+                    //////有效消息长度
+                    int totalValidLength = length + args.Offset;
+
+                    var list = ByteMessageList.Pop();
+                    ///分包
+                    var residual = CutOff(totalValidLength, args.Buffer, list);
+
+                    ///租用新内存
+                    var bfo = MemoryPool<byte>.Shared.Rent(MaxBufferLength);
+
+                    if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var newBuffer))
+                    {
+                        args.UserToken = bfo;
+                    }
+                    else
+                    {
+                        throw new ArgumentException();
+                    }
+
+                    if (residual.Length > 0)
+                    {
+                        ///半包复制
+                        residual.CopyTo(bfo.Memory.Span);
+                    }
+
+                    args.SetBuffer(newBuffer.Array, residual.Length, newBuffer.Count - residual.Length);
+
+
+                    ///这里先处理消息在继续接收，处理消息是异步的，耗时并不长，下N次继续接收消息都可能是同步完成，
+                    ///先接收可能导致比较大的消息时序错位。
+
+                    ///处理消息
+                    DealMessageAsync(list);
+
+                    ///继续接收
+                    InnerReveiveStart();
+                }
+                else
+                {
+                    if (!manualDisconnecting)
+                    {
+                        OnSocketException(args.SocketError);
+                    }
                     isReceiving = false;
-                    return;
                 }
-
-                LastReceiveTime = DateTime.Now;
-                //////有效消息长度
-                int totalValidLength = length + args.Offset;
-
-                var list = ByteMessageList.Pop();
-                ///分包
-                var residual = CutOff(totalValidLength, args.Buffer, list);
-
-                var newBuffer = BufferPool.Pop(MaxBufferLength);
-                if (residual.Count > 0)
-                {
-                    ///半包复制
-                    Buffer.BlockCopy(residual.Array, residual.Offset, newBuffer, 0, residual.Count);
-                }
-
-                args.SetBuffer(newBuffer, residual.Count, MaxBufferLength - residual.Count);
-
-                ///这里先处理消息在继续接收，处理消息是异步的，耗时并不长，下N次继续接收消息都可能是同步完成，
-                ///先接收可能导致比较大的消息时序错位。
-
-                ///处理消息
-                DealMessageAsync(list);
-
-                ///继续接收
-                InnerReveiveStart();
             }
-            else
+            finally
             {
-                if (!manualDisconnecting)
-                {
-                    OnSocketException(args.SocketError);
-                }
-                isReceiving = false;
+                owner.Dispose();
             }
         }
 
-        private void DealMessageAsync(List<ArraySegment<byte>> list)
+        private void DealMessageAsync(List<IMemoryOwner<byte>> list)
         {
             if (list.Count == 0)
             {
@@ -456,24 +416,28 @@ namespace MMONET.Remote
             {
                 var res = Parallel.ForEach(list, (item) =>
                 {
-                    ///解包
-                    var unpackedMessage = UnPacketBuffer(item);
+                    try
+                    {
+                        ///解包
+                        var unpackedMessage = UnPacketBuffer(item.Memory);
 
-                    ///处理字节消息
-                    (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
-                        = DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
-                                            unpackedMessage.extraType, unpackedMessage.extraMessage,
-                                            unpackedMessage.byteUserMessage);
+                        ///处理字节消息
+                        (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+                            = DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
+                                                unpackedMessage.extraType, unpackedMessage.extraMessage,
+                                                unpackedMessage.byteUserMessage);
 
-                    DealObjectMessage(IsContinue, SwitchThread, rpcID, objectMessage);
-
+                        DealObjectMessage(IsContinue, SwitchThread, rpcID, objectMessage);
+                    }
+                    finally
+                    {
+                        item.Dispose();
+                    }
                 });
 
                 if (res.IsCompleted)
                 {
                     ///回收池对象
-                    var buffer = list[0].Array;
-                    BufferPool.Push(buffer);
                     list.Clear();
                     ByteMessageList.Push(list);
                 }
@@ -492,30 +456,55 @@ namespace MMONET.Remote
         /// <param name="source"></param>
         /// <param name="pushCompleteMessage"></param>
         /// <returns>剩余的半包。</returns>
-        public virtual ArraySegment<byte> CutOff(int length, byte[] source, IList<ArraySegment<byte>> pushCompleteMessage)
+        public virtual ReadOnlySpan<byte> CutOff(int length, ReadOnlySpan<byte> source, IList<IMemoryOwner<byte>> pushCompleteMessage)
         {
             ///已经完整读取消息包的长度
             int offset = 0;
             ///长度至少要大于2（2个字节表示消息总长度）
             while (length - offset > 2)
             {
+                
                 ///取得单个消息总长度
-                ushort size = source.ReadUShort(offset);
+                ushort size = source.Slice(offset).ReadUshort();
                 if (length - offset < size)
                 {
                     ///剩余消息长度不是一个完整包
                     break;
                 }
 
-                var newMessage = new ArraySegment<byte>(source, offset, size);
-                pushCompleteMessage.Add(newMessage);
+                /// 使用堆外内存
+                NativeMemory newMsg = new Message.NativeMemory(size);
 
+                source.Slice(offset,size).CopyTo(newMsg.Memory.Span);
+                pushCompleteMessage.Add(newMsg);
 
                 offset += size;
             }
 
             ///返回剩余的半包。
-            return new ArraySegment<byte>(source, offset, length - offset);
+            return source.Slice(offset, length - offset);
+        }
+    }
+
+
+
+    internal class MemoryArgs : SocketAsyncEventArgs
+    {
+        public IMemoryOwner<byte> owner { get; private set; }
+        public byte[] copybuffer = new byte[8192];
+        public void SetMemoryOwner(IMemoryOwner<byte> memoryOwner)
+        {
+            this.owner = memoryOwner;
+            var memory = owner.Memory;
+            if (MemoryMarshal.TryGetArray<byte>(memory,out var sbuffer))
+            {
+                SetBuffer(sbuffer.Array, sbuffer.Offset, sbuffer.Count);
+            }
+            else
+            {
+                memory.CopyTo(copybuffer);
+                SetBuffer(copybuffer, 0, memory.Length);
+            }
         }
     }
 }

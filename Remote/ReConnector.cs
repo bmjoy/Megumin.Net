@@ -133,15 +133,15 @@ namespace MMONET.Remote
         /// </summary>
         public DateTime Time { get; set; }
 
-        public static ushort Seiralizer(HeartBeatsMessage heartBeats, byte[] buffer)
+        public static ushort Seiralizer(HeartBeatsMessage heartBeats, Span<byte> buffer)
         {
-            BitConverter.GetBytes(heartBeats.Time.ToBinary()).CopyTo(buffer, 0);
+            heartBeats.Time.ToBinary().WriteTo(buffer);
             return sizeof(long);
         }
 
-        public static dynamic Deserilizer(ArraySegment<byte> buffer)
+        public static dynamic Deserilizer(ReadOnlyMemory<byte> buffer)
         {
-            long t = BitConverter.ToInt64(buffer.Array, buffer.Offset);
+            long t = buffer.Span.ReadLong();
             return new HeartBeatsMessage() { Time = new DateTime(t) };
         }
     }

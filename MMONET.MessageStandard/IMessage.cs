@@ -20,18 +20,18 @@ namespace MMONET.Message
     //}
 
     /// <summary>
-    /// 
+    /// 等待所有框架支持完毕ReadOnlyMemory 切换为ReadOnlySpan，现在需要将ReadOnlyMemory包装成流
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public delegate dynamic Deserilizer(ArraySegment<byte> buffer);
+    public delegate dynamic Deserilizer(ReadOnlyMemory<byte> buffer);
     /// <summary>
     /// 将消息从0位置开始 序列化 到 指定buffer中,返回序列化长度
     /// </summary>
     /// <param name="message">消息实例</param>
     /// <param name="buffer">给定的buffer,长度为16384</param>
     /// <returns>序列化消息的长度</returns>
-    public delegate ushort Seiralizer<in T>(T message,byte[] buffer);
+    public delegate ushort Seiralizer<in T>(T message,Span<byte> buffer);
 
 
 }

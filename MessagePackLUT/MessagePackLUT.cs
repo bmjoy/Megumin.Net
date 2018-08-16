@@ -47,13 +47,11 @@ namespace MMONET.Message
 
     static class MessagePackSerializerEx
     {
-        public static ushort Serialize<T>(T obj, byte[] buffer)
+        public static ushort Serialize<T>(T obj, Span<byte> buffer)
         {
-            var formatter = MessagePackSerializer.DefaultResolver.GetFormatterWithVerify<T>();
-
-            var len = formatter.Serialize(ref buffer, 0, obj, MessagePackSerializer.DefaultResolver);
-
-            return (ushort)len;
+            var sbuffer = MessagePackSerializer.SerializeUnsafe(obj);
+            sbuffer.AsSpan().CopyTo(buffer);
+            return (ushort)sbuffer.Count;
         }
 
         public static Delegate MakeS(Type type)
@@ -66,10 +64,18 @@ namespace MMONET.Message
             return method.CreateDelegate(typeof(Seiralizer<>).MakeGenericType(type));
         }
 
+        public static T Deserilizer<T>(ReadOnlyMemory<byte> buffer)
+        {
+            using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))
+            {
+                return MessagePackSerializer.Deserialize<T>(stream);
+            }
+        }
+
         public static Deserilizer MakeD(Type type)
         {
-            var methodInfo = typeof(MessagePackSerializer).GetMethod(nameof(MessagePackSerializer.Deserialize),
-                new Type[] { typeof(ArraySegment<byte>) });
+            var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(Deserilizer),
+                BindingFlags.Static | BindingFlags.Public);
 
             var method = methodInfo.MakeGenericMethod(type);
 

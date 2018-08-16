@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -51,9 +52,9 @@ namespace MMONET.Remote
         {
             ///序列化用buffer
             var sbuffer = BufferPool.Pop16384();
-            var (messageID, byteMessage) = SerializeMessage(sbuffer, message);
+            var (messageID, length) = SerializeMessage(sbuffer, message);
 
-            var sendbuffer = PacketBuffer(messageID, rpcID, default, byteMessage);
+            var sendbuffer = PacketBuffer(messageID, rpcID, default, sbuffer.AsSpan(0,length));
             BufferPool.Push16384(sbuffer);
 
             SendByteBufferAsync(sendbuffer);
@@ -64,7 +65,7 @@ namespace MMONET.Remote
         /// </summary>
         /// <param name="bufferMsg"></param>
         /// <remarks>个人猜测，此处是性能敏感区域，使用Task可能会影响性能（并没有经过测试）</remarks>
-        protected abstract void SendByteBufferAsync(ArraySegment<byte> bufferMsg);
+        protected abstract void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg);
 
         public Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message)
         {
