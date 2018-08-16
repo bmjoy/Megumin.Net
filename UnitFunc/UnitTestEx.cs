@@ -12,7 +12,7 @@ namespace UnitFunc
     public class UnitTestEx
     {
         [TestMethod]
-        public void TestRemoveAll()
+        public void TestRemoveAllInt()
         {
             Dictionary<int, int> test = new Dictionary<int, int>();
             test.Add(1, 1);
@@ -27,6 +27,24 @@ namespace UnitFunc
 
             test.RemoveAll(predicate);
             Assert.AreEqual(false,test.Any(predicate));
+        }
+
+        [TestMethod]
+        public void TestRemoveAllString()
+        {
+            Dictionary<string, int> test = new Dictionary<string, int>();
+            test.Add("1", 1);
+            test.Add("2", 2);
+            test.Add("3", 2);
+            test.Add("4", 3);
+
+            Func<KeyValuePair<string, int>, bool> predicate = (kv) =>
+              {
+                  return kv.Value >= 2;
+              };
+
+            test.RemoveAll(predicate);
+            Assert.AreEqual(false, test.Any(predicate));
         }
 
         [TestMethod]

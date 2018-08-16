@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using MMONET;
 
@@ -124,30 +125,54 @@ namespace System.Collections.Generic
 
             #endregion
 
-            List<K> klist = null;
-            lock (source)
+            unsafe
             {
-                foreach (var item in source)
+                var rl = stackalloc IntPtr[source.Count];
+                int index = 0;
+                lock (source)
                 {
-                    if (predicate(item))
+                    try
                     {
-                        if (klist == null)
+                        foreach (var item in source)
                         {
-                            klist = ListPool<K>.Pop();
+                            if (predicate(item))
+                            {
+                                rl[index] = (IntPtr)GCHandle.Alloc(item.Key);
+                            }
+                            else
+                            {
+                                rl[index] = IntPtr.Zero;
+                            }
+                            index++;
                         }
-                        klist.Add(item.Key);
+
+                        for (int i = 0; i < index; i++)
+                        {
+                            IntPtr intPtr = rl[i];
+                            if (intPtr != IntPtr.Zero)
+                            {
+                                GCHandle handle = (GCHandle)intPtr;
+                                source.Remove((K)handle.Target);
+                            }
+                        }
                     }
+                    finally
+                    {
+                        for (int i = 0; i < index; i++)
+                        {
+                            IntPtr intPtr = rl[i];
+                            if (intPtr != IntPtr.Zero)
+                            {
+                                GCHandle handle = (GCHandle)intPtr;
+                                if (handle.IsAllocated)
+                                {
+                                    handle.Free();
+                                }
+                            }
+                        }
+                    }
+                    
                 }
-            }
-
-            if (klist != null)
-            {
-                foreach (var item in klist)
-                {
-                    source.Remove(item);
-                }
-
-                ListPool<K>.Push(klist);
             }
         }
 
