@@ -25,9 +25,6 @@ namespace RemoteTestClient
         static int RemoteCount = 1;
         private static async void ConAsync()
         {
-            MessageLUT.AddFormatter<TestPacket1>(-101, TestPacket1.S, TestPacket1.D);
-            MessageLUT.AddFormatter<TestPacket2>(-102, TestPacket2.S, TestPacket2.D);
-
             ThreadPool.QueueUserWorkItem((A) =>
             {
                 while (true)

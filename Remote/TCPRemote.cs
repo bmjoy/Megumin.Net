@@ -314,11 +314,10 @@ namespace MMONET.Remote
             if (receiveArgs == null)
             {
                 receiveArgs = new SocketAsyncEventArgs();
-                var bfo = System.Buffers.MemoryPool<byte>.Shared.Rent(MaxBufferLength);
+                var bfo = BufferPool.Rent(MaxBufferLength);
 
                 if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var buffer))
                 {
-                    bfo.Memory.Span.Clear();
                     receiveArgs.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
                     receiveArgs.Completed += ReceiveComplete;
                     receiveArgs.UserToken = bfo;
@@ -362,11 +361,10 @@ namespace MMONET.Remote
                     var residual = CutOff(totalValidLength, args.Buffer, list);
 
                     ///租用新内存
-                    var bfo = MemoryPool<byte>.Shared.Rent(MaxBufferLength);
+                    var bfo = BufferPool.Rent(MaxBufferLength);
 
                     if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var newBuffer))
                     {
-                        bfo.Memory.Span.Clear();
                         args.UserToken = bfo;
                     }
                     else

@@ -143,7 +143,7 @@ namespace MMONET.Remote
             ushort totolLength = (ushort)(FrameworkConst.HeaderOffset + extralenght + byteUserMessage.Length);
  
             ///申请发送用 buffer ((框架约定1)发送字节数组发送完成后由发送逻辑回收)         额外信息的最大长度17
-            var sendbufferOwner = MemoryPool<byte>.Shared.Rent(totolLength);
+            var sendbufferOwner = BufferPool.Rent(totolLength);
             var span = sendbufferOwner.Memory.Span;
             span.Clear();///保证内存干净
 

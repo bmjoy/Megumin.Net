@@ -34,9 +34,6 @@ namespace RemoteTest
 
         private static async void ListenAsync()
         {
-            MessageLUT.AddFormatter<TestPacket1>(-101, TestPacket1.S, TestPacket1.D);
-            MessageLUT.AddFormatter<TestPacket2>(-102, TestPacket2.S, TestPacket2.D);
-
             ThreadPool.QueueUserWorkItem((A) =>
             {
                 while (true)

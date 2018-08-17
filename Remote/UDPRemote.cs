@@ -329,7 +329,7 @@ namespace MMONET.Remote
             {
                 return;
             }
-            ReceiveAsync(MemoryPool<byte>.Shared.Rent(MaxBufferLength));
+            ReceiveAsync(BufferPool.Rent(MaxBufferLength));
         }
 
         async void ReceiveAsync(IMemoryOwner<byte> buffer)
@@ -344,13 +344,12 @@ namespace MMONET.Remote
                 isReceiving = true;
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory,out var receiveBuffer) )
                 {
-                    buffer.Memory.Span.Clear();
                     var res = await udpClient.ReceiveAsync(receiveBuffer);
                     LastReceiveTime = DateTime.Now;
                     if (IsVaild)
                     {
                         ///递归，继续接收
-                        ReceiveAsync(MemoryPool<byte>.Shared.Rent(MaxBufferLength));
+                        ReceiveAsync(BufferPool.Rent(MaxBufferLength));
                     }
 
                     DealMessageAsync(buffer);
