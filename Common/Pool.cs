@@ -5,11 +5,20 @@ using System.Text;
 
 namespace MMONET
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public static class ListPool<T>
     {
         static ConcurrentQueue<List<T>> pool = new ConcurrentQueue<List<T>>();
 
-        public static List<T> Pop()
+        /// <summary>
+        /// 默认容量3
+        /// </summary>
+        public static int MaxSize { get; set; } = 10;
+
+        public static List<T> Rent()
         {
             if (pool.TryDequeue(out var list))
             {
@@ -21,14 +30,22 @@ namespace MMONET
             }
         }
 
-        public static void Push(List<T> list)
+        /// <summary>
+        /// 调用者保证归还后不在使用当前list
+        /// </summary>
+        /// <param name="list"></param>
+        public static void Return(List<T> list)
         {
             if (list == null)
             {
                 return;
             }
-            list.Clear();
-            pool.Enqueue(list);
+
+            if (pool.Count < MaxSize)
+            {
+                list.Clear();
+                pool.Enqueue(list);
+            }
         }
 
         public static void Clear()
@@ -49,6 +66,6 @@ namespace MMONET
         /// <summary>
         /// 返回对象池中
         /// </summary>
-        void Push2Pool();
+        void Return();
     }
 }

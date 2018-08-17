@@ -21,7 +21,7 @@ namespace MMONET.Remote
         }
 
         static ConcurrentQueue<LazyTask<T>> pool = new ConcurrentQueue<LazyTask<T>>();
-        public static LazyTask<T> Pop()
+        public static LazyTask<T> Rent()
         {
             if (pool.TryDequeue(out var task))
             {
@@ -110,7 +110,7 @@ namespace MMONET.Remote
                 }
 
                 ///处理后续方法结束，归还到池中
-                ((IPoolElement)this).Push2Pool();
+                ((IPoolElement)this).Return();
             }
         }
 
@@ -126,7 +126,7 @@ namespace MMONET.Remote
             TryComplete();
         }
 
-        void IPoolElement.Push2Pool()
+        void IPoolElement.Return()
         {
             Reset();
 

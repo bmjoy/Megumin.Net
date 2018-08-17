@@ -357,7 +357,7 @@ namespace MMONET.Remote
                     //////有效消息长度
                     int totalValidLength = length + args.Offset;
 
-                    var list = ByteMessageList.Pop();
+                    var list = ByteMessageList.Rent();
                     ///分包
                     var residual = CutOff(totalValidLength, args.Buffer, list);
 
@@ -443,7 +443,7 @@ namespace MMONET.Remote
                 {
                     ///回收池对象
                     list.Clear();
-                    ByteMessageList.Push(list);
+                    ByteMessageList.Return(list);
                 }
             });
         }
