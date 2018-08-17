@@ -26,7 +26,7 @@ namespace MMONET.Remote
         protected virtual (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
             DealBytesMessage(int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ReadOnlyMemory<byte> byteUserMessage)
         {
-            if (extraType == 0)
+            if (extraType == byte.MaxValue)
             {
                 ///没有外部消息
                 return WhenNoExtra(messageID, rpcID, byteUserMessage);
@@ -145,7 +145,6 @@ namespace MMONET.Remote
             ///申请发送用 buffer ((框架约定1)发送字节数组发送完成后由发送逻辑回收)         额外信息的最大长度17
             var sendbufferOwner = BufferPool.Rent(totolLength);
             var span = sendbufferOwner.Memory.Span;
-            span.Clear();///保证内存干净
 
             ///写入报头 大端字节序写入
             totolLength.WriteTo(span);
