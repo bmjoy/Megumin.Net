@@ -51,9 +51,9 @@ namespace MMONET.Remote
         protected void SendAsync<T>(short rpcID, T message)
         {
             ///序列化用buffer,使用堆外内存
-            using (NativeMemory nbuffer = new NativeMemory(16384))
+            using (var memoryOwner = BufferPool.NativeRent(16384))
             {
-                var span = nbuffer.Memory.Span;
+                var span = memoryOwner.Memory.Span;
 
                 var (messageID, length) = SerializeMessage(span, message);
                 var sendbuffer = PacketBuffer(messageID, rpcID, default, span.Slice(0, length));

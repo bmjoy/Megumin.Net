@@ -454,7 +454,7 @@ namespace MMONET.Remote
     {
         /// <summary>
         /// 分离粘包
-        /// <para><see cref="CutOff(int, byte[], IList{ArraySegment{byte}})"/> 和 <see cref="RemoteCore.PacketBuffer(int, short, ExtraMessage, ArraySegment{byte})"/> 对应 </para>
+        /// <para><see cref="CutOff(int, ReadOnlySpan{byte}, IList{IMemoryOwner{byte}})"/> 和 <see cref="RemoteCore.PacketBuffer(int, short, ExtraMessage, Span{byte})"/> 对应 </para>
         /// </summary>
         /// <param name="length"></param>
         /// <param name="source"></param>
@@ -477,7 +477,7 @@ namespace MMONET.Remote
                 }
 
                 /// 使用堆外内存
-                NativeMemory newMsg = new NativeMemory(size);
+                var newMsg = BufferPool.NativeRent(size);
 
                 source.Slice(offset,size).CopyTo(newMsg.Memory.Span);
                 pushCompleteMessage.Add(newMsg);
