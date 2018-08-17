@@ -144,17 +144,18 @@ namespace MMONET.Remote
  
             ///申请发送用 buffer ((框架约定1)发送字节数组发送完成后由发送逻辑回收)         额外信息的最大长度17
             var sendbufferOwner = MemoryPool<byte>.Shared.Rent(totolLength);
+            var span = sendbufferOwner.Memory.Span;
+            span.Clear();///保证内存干净
 
             ///写入报头 大端字节序写入
-            var memory = sendbufferOwner.Memory;
-            totolLength.WriteTo(memory.Span);
-            messageID.WriteTo(memory.Span.Slice(2));
-            rpcID.WriteTo(memory.Span.Slice(6));
+            totolLength.WriteTo(span);
+            messageID.WriteTo(span.Slice(2));
+            rpcID.WriteTo(span.Slice(6));
 
             ///拷贝额外消息
-            extrabyte.CopyTo(memory.Span.Slice(FrameworkConst.HeaderOffset));
+            extrabyte.CopyTo(span.Slice(FrameworkConst.HeaderOffset));
             ///拷贝消息正文
-            byteUserMessage.CopyTo(memory.Span.Slice(FrameworkConst.HeaderOffset + extralenght));
+            byteUserMessage.CopyTo(span.Slice(FrameworkConst.HeaderOffset + extralenght));
 
             return sendbufferOwner;
         }

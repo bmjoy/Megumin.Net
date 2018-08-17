@@ -344,6 +344,7 @@ namespace MMONET.Remote
                 isReceiving = true;
                 if (MemoryMarshal.TryGetArray<byte>(buffer.Memory,out var receiveBuffer) )
                 {
+                    buffer.Memory.Span.Clear();
                     var res = await udpClient.ReceiveAsync(receiveBuffer);
                     LastReceiveTime = DateTime.Now;
                     if (IsVaild)

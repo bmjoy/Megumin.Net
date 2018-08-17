@@ -318,6 +318,7 @@ namespace MMONET.Remote
 
                 if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var buffer))
                 {
+                    bfo.Memory.Span.Clear();
                     receiveArgs.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
                     receiveArgs.Completed += ReceiveComplete;
                     receiveArgs.UserToken = bfo;
@@ -365,6 +366,7 @@ namespace MMONET.Remote
 
                     if (MemoryMarshal.TryGetArray<byte>(bfo.Memory, out var newBuffer))
                     {
+                        bfo.Memory.Span.Clear();
                         args.UserToken = bfo;
                     }
                     else
