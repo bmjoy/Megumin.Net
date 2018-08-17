@@ -7,13 +7,16 @@ using System.Text;
 namespace System.Buffers
 {
     /// <summary>
-    /// ReadOnlyMemory的流包装器， 立刻使用，立刻丢弃，不应该保存
+    /// ReadOnlyMemory的流包装器， 立刻使用，立刻丢弃，不应该保存。
+    /// 这个类用于在 不支持Span的第三方API调用过程中转换参数，随着第三方类库的支持完成这类会删除。
     /// <para></para>
     /// https://gist.github.com/GrabYourPitchforks/4c3e1935fd4d9fa2831dbfcab35dffc6
     /// 参考第五条规则
     /// </summary>
     public class ReadOnlyMemrotyStream : Stream
     {
+        /// 事实上，无法支持Span的类库永远都会存在，所以这个类可能永远不会废除……
+
         private ReadOnlyMemory<byte> memory;
 
         public ReadOnlyMemrotyStream(ReadOnlyMemory<byte> memory)
@@ -127,7 +130,7 @@ namespace System.Buffers
         private readonly IntPtr ptr;
 
         /// <summary>
-        /// 不要以任何方式修改长度。
+        /// 不要以任何方式修改长度。有可能导致内存泄漏。
         /// </summary>
         public int Lenght { get; private set; }
 
@@ -147,7 +150,7 @@ namespace System.Buffers
             }
             else
             {
-                this.ptr = default;
+                this.ptr = IntPtr.Zero;
             }
         }
 
@@ -180,13 +183,17 @@ namespace System.Buffers
         }
 
         /// <summary>
-        /// 堆外内存，不清楚指针不会移动。
+        /// 堆外内存，指针不会移动。
         /// </summary>
         /// <param name="elementIndex"></param>
         /// <returns></returns>
         public unsafe override MemoryHandle Pin(int elementIndex = 0)
         {
-            return new MemoryHandle(ptr.ToPointer());
+            if (elementIndex > Lenght)
+            {
+                throw new IndexOutOfRangeException();
+            }
+            return new MemoryHandle(IntPtr.Add(ptr,elementIndex).ToPointer());
         }
 
         public override void Unpin()
