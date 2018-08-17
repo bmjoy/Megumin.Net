@@ -86,7 +86,8 @@ namespace MMONET.Remote
             int offset = 0;
             if (extraMessage.Item1 == null)
             {
-                buffer[offset] = 0;
+                ///255 表示空消息，方便测试
+                buffer[offset] = byte.MaxValue;
                 return 1;
             }
 
@@ -109,7 +110,7 @@ namespace MMONET.Remote
             byte extraType = buffer[0];
             switch (extraType)
             {
-                case 0:
+                case 255:
                     return (1, extraType, default);
                 default:
                     break;
@@ -126,6 +127,7 @@ namespace MMONET.Remote
         /// <summary>
         /// 封装将要发送的字节消息,这个方法控制消息字节的布局。并调用了 SerializeExtraMessage。
         /// <para>框架使用的字节布局 2总长度 + 4消息ID + 2RpcID + (ExtraMessageByte) + UserMessageByte</para>
+        /// 方法内将byteUserMessage从堆外内存，拷贝到托管内存。
         /// </summary>
         /// <param name="messageID"></param>
         /// <param name="rpcID"></param>
@@ -141,19 +143,20 @@ namespace MMONET.Remote
             ushort totolLength = (ushort)(FrameworkConst.HeaderOffset + extralenght + byteUserMessage.Length);
  
             ///申请发送用 buffer ((框架约定1)发送字节数组发送完成后由发送逻辑回收)         额外信息的最大长度17
-            var sendbuffer2 = MemoryPool<byte>.Shared.Rent(totolLength);
+            var sendbufferOwner = MemoryPool<byte>.Shared.Rent(totolLength);
 
             ///写入报头 大端字节序写入
-            BinaryPrimitives.WriteUInt16BigEndian(sendbuffer2.Memory.Span, totolLength);
-            BinaryPrimitives.WriteInt32BigEndian(sendbuffer2.Memory.Span.Slice(2), messageID);
-            BinaryPrimitives.WriteInt16BigEndian(sendbuffer2.Memory.Span.Slice(6), rpcID);
+            var memory = sendbufferOwner.Memory;
+            totolLength.WriteTo(memory.Span);
+            messageID.WriteTo(memory.Span.Slice(2));
+            rpcID.WriteTo(memory.Span.Slice(6));
 
             ///拷贝额外消息
-            extrabyte.CopyTo(sendbuffer2.Memory.Span.Slice(FrameworkConst.HeaderOffset));
+            extrabyte.CopyTo(memory.Span.Slice(FrameworkConst.HeaderOffset));
             ///拷贝消息正文
-            byteUserMessage.CopyTo(sendbuffer2.Memory.Span.Slice(FrameworkConst.HeaderOffset + extralenght));
+            byteUserMessage.CopyTo(memory.Span.Slice(FrameworkConst.HeaderOffset + extralenght));
 
-            return sendbuffer2;
+            return sendbufferOwner;
         }
 
         /// <summary>
@@ -162,6 +165,7 @@ namespace MMONET.Remote
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
+        /// <remarks>分离消息是使用报头描述的长度而不能依赖于Span长度</remarks>
         protected virtual (int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ReadOnlyMemory<byte> byteUserMessage)
             UnPacketBuffer(ReadOnlyMemory<byte> buffer)
         {
@@ -169,7 +173,9 @@ namespace MMONET.Remote
 
             var (length, extratype, extraMessage) = DeserializeExtraMessage(buffer.Span.Slice(FrameworkConst.HeaderOffset));
 
-            return (messageID, rpcID, extratype, extraMessage, buffer.Slice(FrameworkConst.HeaderOffset + length));
+            int start = FrameworkConst.HeaderOffset + length;
+            ///分离消息是使用报头描述的长度而不能依赖于Span长度
+            return (messageID, rpcID, extratype, extraMessage, buffer.Slice(start,totalLenght - start));
         }
 
         /// <summary>

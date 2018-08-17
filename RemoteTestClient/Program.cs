@@ -21,8 +21,8 @@ namespace RemoteTestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 10000;
-        static int RemoteCount = 100;
+        static int MessageCount = 1;
+        static int RemoteCount = 1;
         private static async void ConAsync()
         {
             MessageLUT.AddFormatter<TestPacket1>(-101, TestPacket1.S, TestPacket1.D);

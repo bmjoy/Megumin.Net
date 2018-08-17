@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text;
 using Google.Protobuf;
 using System.IO;
+using System.Buffers;
 
 namespace MMONET.Message
 {

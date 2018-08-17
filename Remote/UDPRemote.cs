@@ -203,7 +203,6 @@ namespace MMONET.Remote
 
 #pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
 
-            BufferPool.Push(buffer);
             return await taskCompletion.Task;
         }
 
@@ -238,8 +237,6 @@ namespace MMONET.Remote
                         udpClient.Send(buffer,buffer.Length);
                         await Task.Delay(800);
                     }
-
-                    BufferPool.Push(buffer);
                 });
 #pragma warning restore CS4014 // 由于此调用不会等待，因此在调用完成前将继续执行当前方法
 
@@ -265,7 +262,7 @@ namespace MMONET.Remote
 
         static byte[] MakeUDPConnectMessage(int SYN, int ACT, int seq, int ack)
         {
-            var bf = BufferPool.Pop(32);
+            var bf = new byte[25];
             ((ushort)25).WriteTo(bf);
             FrameworkConst.UdpConnectMessageID.WriteTo(bf.AsSpan(2));
             ((short)0).WriteTo(bf.AsSpan(6));
@@ -332,10 +329,10 @@ namespace MMONET.Remote
             {
                 return;
             }
-            ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
+            ReceiveAsync(MemoryPool<byte>.Shared.Rent(MaxBufferLength));
         }
 
-        async void ReceiveAsync(ArraySegment<byte> buffer)
+        async void ReceiveAsync(IMemoryOwner<byte> buffer)
         {
             if (!Client.Connected || disposedValue)
             {
@@ -345,15 +342,23 @@ namespace MMONET.Remote
             try
             {
                 isReceiving = true;
-                var res = await udpClient.ReceiveAsync(buffer);
-                LastReceiveTime = DateTime.Now;
-                if (IsVaild)
+                if (MemoryMarshal.TryGetArray<byte>(buffer.Memory,out var receiveBuffer) )
                 {
-                    ///递归，继续接收
-                    ReceiveAsync(new ArraySegment<byte>(BufferPool.Pop(MaxBufferLength), 0, MaxBufferLength));
-                }
+                    var res = await udpClient.ReceiveAsync(receiveBuffer);
+                    LastReceiveTime = DateTime.Now;
+                    if (IsVaild)
+                    {
+                        ///递归，继续接收
+                        ReceiveAsync(MemoryPool<byte>.Shared.Rent(MaxBufferLength));
+                    }
 
-                DealMessageAsync(res.Buffer);
+                    DealMessageAsync(buffer);
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
+                
             }
             catch (SocketException e)
             {
@@ -365,23 +370,23 @@ namespace MMONET.Remote
             }
         }
 
-        private void DealMessageAsync(ArraySegment<byte> byteMessage)
+        private void DealMessageAsync(IMemoryOwner<byte> byteOwner)
         {
             Task.Run(() =>
             {
                 //解包
-                var unpackedMessage = UnPacketBuffer(byteMessage);
+                var unpackedMessage = base.UnPacketBuffer(byteOwner.Memory);
 
                 ///处理字节消息
                 (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
-                    = DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
+                    = base.DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
                                         unpackedMessage.extraType, unpackedMessage.extraMessage,
                                         unpackedMessage.byteUserMessage);
 
                 DealObjectMessage(IsContinue, SwitchThread, rpcID, objectMessage);
 
-                ///回收池对象
-                BufferPool.Push(byteMessage.Array);
+                ///回收缓冲
+                byteOwner.Dispose();
             });
         }
 

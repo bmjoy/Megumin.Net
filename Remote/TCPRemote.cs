@@ -401,6 +401,8 @@ namespace MMONET.Remote
             }
             finally
             {
+                //必须清楚数据，否则下一次使用时读取到长度边界，残留数据可能会被误认为成报头，会出现截断BUG。
+                owner.Memory.Span.Clear();
                 owner.Dispose();
             }
         }
@@ -473,7 +475,7 @@ namespace MMONET.Remote
                 }
 
                 /// 使用堆外内存
-                NativeMemory newMsg = new Message.NativeMemory(size);
+                NativeMemory newMsg = new NativeMemory(size);
 
                 source.Slice(offset,size).CopyTo(newMsg.Memory.Span);
                 pushCompleteMessage.Add(newMsg);

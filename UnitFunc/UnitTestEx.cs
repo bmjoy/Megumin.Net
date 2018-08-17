@@ -62,58 +62,6 @@ namespace UnitFunc
         }
 
         [TestMethod]
-        public void TestBufferPool()
-        {
-            byte[] buffer = null;
-            buffer = BufferPool.Pop(15);
-            Assert.AreEqual(32, buffer.Length);
-            buffer = BufferPool.Pop(16);
-            Assert.AreEqual(32, buffer.Length);
-            buffer = BufferPool.Pop(31);
-            Assert.AreEqual(32, buffer.Length);
-            buffer = BufferPool.Pop(32);
-            Assert.AreEqual(32, buffer.Length);
-            buffer = BufferPool.Pop(63);
-            Assert.AreEqual(64, buffer.Length);
-            buffer = BufferPool.Pop(64);
-            Assert.AreEqual(64, buffer.Length);
-            buffer = BufferPool.Pop(127);
-            Assert.AreEqual(128, buffer.Length);
-            buffer = BufferPool.Pop(128);
-            Assert.AreEqual(128, buffer.Length);
-            buffer = BufferPool.Pop(255);
-            Assert.AreEqual(256, buffer.Length);
-            buffer = BufferPool.Pop(256);
-            Assert.AreEqual(256, buffer.Length);
-            buffer = BufferPool.Pop(511);
-            Assert.AreEqual(512, buffer.Length);
-            buffer = BufferPool.Pop(512);
-            Assert.AreEqual(512, buffer.Length);
-            buffer = BufferPool.Pop(1023);
-            Assert.AreEqual(1024, buffer.Length);
-            buffer = BufferPool.Pop(1024);
-            Assert.AreEqual(1024, buffer.Length);
-            buffer = BufferPool.Pop(2047);
-            Assert.AreEqual(2048, buffer.Length);
-            buffer = BufferPool.Pop(2048);
-            Assert.AreEqual(2048, buffer.Length);
-            buffer = BufferPool.Pop(4095);
-            Assert.AreEqual(4096, buffer.Length);
-            buffer = BufferPool.Pop(4096);
-            Assert.AreEqual(4096, buffer.Length);
-            buffer = BufferPool.Pop(8191);
-            Assert.AreEqual(8192, buffer.Length);
-            buffer = BufferPool.Pop(8192);
-            Assert.AreEqual(8192, buffer.Length);
-            buffer = BufferPool.Pop(16383);
-            Assert.AreEqual(16384, buffer.Length);
-            buffer = BufferPool.Pop(16384);
-            Assert.AreEqual(16384, buffer.Length);
-            buffer = BufferPool.Pop(16385);
-            Assert.AreEqual(16384, buffer.Length);
-        }
-
-        [TestMethod]
         public void TestLazyTask()
         {
             //dynamic task = LazyTask<int>.Pop();

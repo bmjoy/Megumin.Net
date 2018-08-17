@@ -50,14 +50,15 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         protected void SendAsync<T>(short rpcID, T message)
         {
-            ///序列化用buffer
-            var sbuffer = BufferPool.Pop16384();
-            var (messageID, length) = SerializeMessage(sbuffer, message);
+            ///序列化用buffer,使用堆外内存
+            using (NativeMemory nbuffer = new NativeMemory(16384))
+            {
+                var span = nbuffer.Memory.Span;
 
-            var sendbuffer = PacketBuffer(messageID, rpcID, default, sbuffer.AsSpan(0,length));
-            BufferPool.Push16384(sbuffer);
-
-            SendByteBufferAsync(sendbuffer);
+                var (messageID, length) = SerializeMessage(span, message);
+                var sendbuffer = PacketBuffer(messageID, rpcID, default, span.Slice(0, length));
+                SendByteBufferAsync(sendbuffer);
+            }
         }
 
         /// <summary>
