@@ -39,10 +39,11 @@ namespace RemoteTest
                 while (true)
                 {
                     MainThreadScheduler.Update(0);
-                    //Thread.Yield();
+                    Thread.Sleep(1);
                 }
 
             });
+
             IRemoteListener<TCPRemote> remote = new TCPRemoteListener(54321);
             Listen(remote);
         }

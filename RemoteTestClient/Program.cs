@@ -21,8 +21,8 @@ namespace RemoteTestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 1;
-        static int RemoteCount = 1;
+        static int MessageCount = 10000;
+        static int RemoteCount = 100;
         private static async void ConAsync()
         {
             ThreadPool.QueueUserWorkItem((A) =>
@@ -52,7 +52,7 @@ namespace RemoteTestClient
         /// </summary>
         private static void TestSpeed()
         {
-            for (int i = 0; i < RemoteCount; i++)
+            for (int i = 1; i <= RemoteCount; i++)
             {
                 NewRemote(i);
             }
