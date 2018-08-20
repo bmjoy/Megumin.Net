@@ -417,7 +417,7 @@ namespace MMONET.Remote
 
             Task.Run(() =>
             {
-                var res = Parallel.ForEach(list, (item) =>
+                foreach (var item in list)
                 {
                     try
                     {
@@ -436,14 +436,16 @@ namespace MMONET.Remote
                     {
                         item.Dispose();
                     }
-                });
-
-                if (res.IsCompleted)
-                {
-                    ///回收池对象
-                    list.Clear();
-                    ByteMessageList.Return(list);
                 }
+
+                //var res = Parallel.ForEach(list, (item) =>
+                //{
+
+                //});
+
+                ///回收池对象
+                list.Clear();
+                ByteMessageList.Return(list);
             });
         }
     }

@@ -39,7 +39,7 @@ namespace RemoteTest
                 while (true)
                 {
                     MainThreadScheduler.Update(0);
-                    Thread.Sleep(1);
+                    //Thread.Sleep(1);
                 }
 
             });
