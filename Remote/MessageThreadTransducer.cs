@@ -109,6 +109,11 @@ namespace MMONET.Remote
                 ///普通响应onRely
                 var response = await remote.OnReceiveMessage(msg);
 
+                if (response == null)
+                {
+                    return;
+                }
+
                 if (response is Task<object> task)
                 {
                     response = await task;
@@ -117,13 +122,8 @@ namespace MMONET.Remote
                 {
                     response = await vtask;
                 }
-
-                if (response == null)
-                {
-                    return;
-                }
                 ///rpc的返回 
-                remote.SendAsync((short)(rpcID * -1), response);
+                remote.SendAsync((short)(rpcID * -1), response as dynamic);
             }
             else
             {

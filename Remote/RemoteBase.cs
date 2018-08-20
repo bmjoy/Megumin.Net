@@ -30,7 +30,7 @@ namespace MMONET.Remote
     }
 
     /// 发送
-    partial class RemoteBase: ISendMessage,IRpcSendMessage,ILazyRpcSendMessage
+    partial class RemoteBase: ISendMessage,IRpcSendMessage,ISafeAwaitSendMessage
     {
         /// <summary>
         /// 异步发送
@@ -67,7 +67,7 @@ namespace MMONET.Remote
         /// <remarks>个人猜测，此处是性能敏感区域，使用Task可能会影响性能（并没有经过测试）</remarks>
         protected abstract void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg);
 
-        public Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(object message)
+        public Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message)
         {
             ReceiveStart();
 
@@ -85,7 +85,7 @@ namespace MMONET.Remote
             }
         }
 
-        public ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(object message, Action<Exception> OnException = null)
+        public ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null)
         {
             ReceiveStart();
 

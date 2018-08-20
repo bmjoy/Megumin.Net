@@ -71,7 +71,7 @@ namespace RemoteTestClient
                 throw res;
             }
 
-            //await TestRpc(clientIndex, remote);
+            await TestRpc(clientIndex, remote);
 
             remote.Receive((new Receiver() { Index = clientIndex }).TestReceive);
             Stopwatch look1 = new Stopwatch();
@@ -101,7 +101,7 @@ namespace RemoteTestClient
 
         private static async Task TestRpc(int clientIndex, ISuperRemote remote)
         {
-            var res2 = await remote.LazyRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex },
+            var res2 = await remote.SendAsyncSafeAwait<TestPacket2>(new TestPacket2() { Value = clientIndex },
                             (ex) =>
                             {
                                 if (ex is TimeoutException timeout)

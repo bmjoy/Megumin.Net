@@ -6,12 +6,6 @@ namespace MMONET.Message.TestMessage
 {
     public class TestPacket1
     {
-        static TestPacket1()
-        {
-            MessageLUT.AddFormatter<TestPacket1>(-101, S, D);
-        }
-
-
         public int Value { get; set; }
 
         public static ushort S(TestPacket1 message, Span<byte> buffer)
@@ -30,11 +24,6 @@ namespace MMONET.Message.TestMessage
 
     public class TestPacket2
     {
-        static TestPacket2()
-        {
-            MessageLUT.AddFormatter<TestPacket2>(-102, S, D);
-        }
-
         public float Value { get; set; }
 
         public static ushort S(TestPacket2 message, Span<byte> buffer)

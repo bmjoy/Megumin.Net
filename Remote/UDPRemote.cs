@@ -164,7 +164,7 @@ namespace MMONET.Remote
                 {
                     var recv = await udpClient.ReceiveAsync();
                     var (Size, MessageID, RpcID) = ReadPacketHeader(recv.Buffer);
-                    if (MessageID == FrameworkConst.UdpConnectMessageID)
+                    if (MessageID == MSGID.UdpConnectMessageID)
                     {
                         var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);
                         if (SYN == 1 && ACK == 1 && lastseq + 1 == ack)
@@ -264,7 +264,7 @@ namespace MMONET.Remote
         {
             var bf = new byte[25];
             ((ushort)25).WriteTo(bf);
-            FrameworkConst.UdpConnectMessageID.WriteTo(bf.AsSpan(2));
+            MSGID.UdpConnectMessageID.WriteTo(bf.AsSpan(2));
             ((short)0).WriteTo(bf.AsSpan(6));
             bf[8] = 0;
             int tempOffset = 9;
@@ -400,7 +400,7 @@ namespace MMONET.Remote
         protected override (bool IsContinue, bool SwitchThread, short rpcID, object objectMessage) 
             WhenNoExtra(int messageID, short rpcID, ReadOnlyMemory<byte> byteUserMessage)
         {
-            if (messageID == FrameworkConst.HeartbeatsMessageID)
+            if (messageID == MSGID.HeartbeatsMessageID)
             {
                 ///拦截框架心跳包
                 
@@ -413,45 +413,6 @@ namespace MMONET.Remote
             {
                 return base.WhenNoExtra(messageID, rpcID, byteUserMessage);
             }
-        }
-    }
-
-    public class UdpConnectMessage
-    {
-        static UdpConnectMessage()
-        {
-            MessageLUT.AddFormatter<UdpConnectMessage>(FrameworkConst.UdpConnectMessageID,
-                Serialize, Deserialize);
-        }
-
-        public int SYN;
-        public int ACT;
-        public int seq;
-        public int ack;
-        static UdpConnectMessage Deserialize(ReadOnlyMemory<byte> buffer)
-        {
-            int SYN = buffer.Span.ReadInt();
-            int ACT = buffer.Span.Slice(4).ReadInt();
-            int seq = buffer.Span.Slice(8).ReadInt();
-            int ack = buffer.Span.Slice(12).ReadInt();
-            return new UdpConnectMessage() { SYN = SYN, ACT = ACT, seq = seq, ack = ack };
-        }
-
-        static ushort Serialize(UdpConnectMessage connectMessage, Span<byte> bf)
-        {
-            connectMessage.SYN.WriteTo(bf);
-            connectMessage.ACT.WriteTo(bf.Slice(4));
-            connectMessage.seq.WriteTo(bf.Slice(8));
-            connectMessage.ack.WriteTo(bf.Slice(12));
-            return 16;
-        }
-
-        public void Deconstruct(out int SYN, out int ACT, out int seq, out int ack)
-        {
-            SYN = this.SYN;
-            ACT = this.ACT;
-            seq = this.seq;
-            ack = this.ack;
         }
     }
 }

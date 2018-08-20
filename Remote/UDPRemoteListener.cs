@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using MMONET.Message;
 using Network.Remote;
 using static MMONET.Message.MessageLUT;
 
@@ -34,7 +35,7 @@ namespace MMONET.Remote
             {
                 var res = await ReceiveAsync();
                 var (Size, MessageID, RpcID) = headerReader.ReadPacketHeader(res.Buffer);
-                if (MessageID == FrameworkConst.UdpConnectMessageID)
+                if (MessageID == MSGID.UdpConnectMessageID)
                 {
                     ReMappingAsync(res);
                 }

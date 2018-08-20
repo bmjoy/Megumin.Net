@@ -52,7 +52,7 @@ namespace MMONET.Remote
             }
 
             heart.Time = DateTime.Now;
-            var (result, complete) = await Remote.RpcSendAsync<HeartBeatsMessage>(heart).WaitAsync(3000);
+            var (result, complete) = await Remote.SendAsync<HeartBeatsMessage>(heart).WaitAsync(3000);
 
             if (complete)
             {
@@ -114,35 +114,5 @@ namespace MMONET.Remote
 
 
 
-    }
-
-    /// <summary>
-    /// 心跳包消息
-    /// </summary>
-    public class HeartBeatsMessage
-    {
-        static HeartBeatsMessage()
-        {
-            MessageLUT.AddFormatter<HeartBeatsMessage>(
-                FrameworkConst.HeartbeatsMessageID, 
-                Seiralizer, Deserilizer, KeyAlreadyHave.ThrowException);
-        }
-
-        /// <summary>
-        /// 发送时间，服务器收到心跳包原样返回；
-        /// </summary>
-        public DateTime Time { get; set; }
-
-        public static ushort Seiralizer(HeartBeatsMessage heartBeats, Span<byte> buffer)
-        {
-            heartBeats.Time.ToBinary().WriteTo(buffer);
-            return sizeof(long);
-        }
-
-        public static HeartBeatsMessage Deserilizer(ReadOnlyMemory<byte> buffer)
-        {
-            long t = buffer.Span.ReadLong();
-            return new HeartBeatsMessage() { Time = new DateTime(t) };
-        }
     }
 }

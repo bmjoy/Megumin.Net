@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MMONET.Message.TestMessage;
+using System;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Generic;
@@ -32,6 +33,19 @@ namespace MMONET.Message
     /// </summary>
     public class MessageLUT
     {
+        static MessageLUT()
+        {
+            ///注册测试消息和内置消息
+            AddFormatter<TestPacket1>(MSGID.TestPacket1ID, TestPacket1.S, TestPacket1.D);
+            AddFormatter<TestPacket2>(MSGID.TestPacket2ID, TestPacket2.S, TestPacket2.D);
+
+            AddFormatter<HeartBeatsMessage>(MSGID.HeartbeatsMessageID,
+                HeartBeatsMessage.Seiralizer, HeartBeatsMessage.Deserilizer, KeyAlreadyHave.ThrowException);
+
+
+            AddFormatter<UdpConnectMessage>(MSGID.UdpConnectMessageID,
+                UdpConnectMessage.Serialize, UdpConnectMessage.Deserialize);
+        }
 
         static readonly Dictionary<int, Deserilizer> dFormatter = new Dictionary<int, Deserilizer>();
         static readonly Dictionary<Type, (int MessageID, Delegate Seiralizer)> sFormatter = new Dictionary<Type, (int MessageID, Delegate Seiralizer)>();
@@ -179,5 +193,8 @@ namespace MMONET.Message
                 return null;
             }
         }
+
+
+
     }
 }

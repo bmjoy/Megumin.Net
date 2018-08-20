@@ -5,7 +5,8 @@ using System.Text;
 namespace MMONET.Message
 {
     /// <summary>
-    /// 使用MessageID来为每一个消息指定一个唯一ID(-999~999 被框架占用)
+    /// 使用MessageID来为每一个消息指定一个唯一ID(-999~999 被框架占用)。
+    /// 请查看常量。
     /// </summary>
     [AttributeUsage(AttributeTargets.Class|AttributeTargets.Interface|AttributeTargets.Struct|AttributeTargets.Enum)]
     public sealed class MSGID : Attribute
@@ -35,5 +36,16 @@ namespace MMONET.Message
         //{
         //    return new MSGIDAttribute(id);
         //}
+
+        public const int TestPacket1ID = -101;
+        public const int TestPacket2ID = -102;
+        /// <summary>
+        /// Udp握手连接使用的消息ID编号
+        /// </summary>
+        public const int UdpConnectMessageID = 101;
+        /// <summary>
+        /// 心跳包ID，255好识别，buffer[2-5]=[255,0,0,0]
+        /// </summary>
+        public const int HeartbeatsMessageID = 255;
     }
 }

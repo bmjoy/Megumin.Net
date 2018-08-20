@@ -212,7 +212,7 @@ namespace UnitFunc
         private static async Task SafeRpcSendAsync(ISuperRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
-            var res = await remote.LazyRpcSendAsync<TestPacket2>(packet2);
+            var res = await remote.SendAsyncSafeAwait<TestPacket2>(packet2);
             Assert.AreEqual(packet2.Value, res.Value);
         }
 
@@ -220,7 +220,7 @@ namespace UnitFunc
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
-            remote.LazyRpcSendAsync<TestPacket1>(packet2, ex =>
+            remote.SendAsyncSafeAwait<TestPacket1>(packet2, ex =>
              {
                  source.SetResult(ex);
              });
@@ -234,7 +234,7 @@ namespace UnitFunc
         {
             TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
-            remote.LazyRpcSendAsync<TestPacket2>(packet2,ex=>
+            remote.SendAsyncSafeAwait<TestPacket2>(packet2,ex=>
             {
                 source.SetResult(ex);
             });
@@ -247,7 +247,7 @@ namespace UnitFunc
         private static async Task RpcSendAsync(IRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
-            var (result, exception) = await remote.RpcSendAsync<TestPacket2>(packet2);
+            var (result, exception) = await remote.SendAsync<TestPacket2>(packet2);
             Assert.AreEqual(null, exception);
             Assert.AreEqual(packet2.Value, result.Value);
         }
@@ -255,7 +255,7 @@ namespace UnitFunc
         private static async Task RpcSendAsyncTimeOut(IRemote remote)
         {
             TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
-            var (result, exception) = await remote.RpcSendAsync<TestPacket2>(packet2);
+            var (result, exception) = await remote.SendAsync<TestPacket2>(packet2);
             Assert.AreEqual(typeof(TimeoutException), exception.GetType());
             Assert.AreEqual(null, result);
         }
@@ -263,7 +263,7 @@ namespace UnitFunc
         private static async Task RpcSendAsyncTypeError(IRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
-            var (result, exception) = await remote.RpcSendAsync<TestPacket1>(packet2);
+            var (result, exception) = await remote.SendAsync<TestPacket1>(packet2);
             Assert.AreEqual(typeof(InvalidCastException), exception.GetType());
             Assert.AreEqual(null, result);
         }
@@ -273,7 +273,7 @@ namespace UnitFunc
         public async Task TestAsync()
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.LazyRpcSendAsync<TestPacket1>(null);
+            var res = await remote.SendAsyncSafeAwait<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
             res.ToString();
@@ -282,7 +282,7 @@ namespace UnitFunc
         public async void TestAsync2()
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.LazyRpcSendAsync<TestPacket1>(null);
+            var res = await remote.SendAsyncSafeAwait<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
             res.ToString();
@@ -291,7 +291,7 @@ namespace UnitFunc
         public async void TestAsync3()
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.RpcSendAsync<TestPacket1>(null);
+            var res = await remote.SendAsync<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
             res.ToString();
@@ -300,7 +300,7 @@ namespace UnitFunc
         public async Task TestAsync4()
         {
             TCPRemote remote = new TCPRemote();
-            var res = await remote.RpcSendAsync<TestPacket1>(null);
+            var res = await remote.SendAsync<TestPacket1>(null);
             res.ToString();
             await Task.Delay(10);
             res.ToString();

@@ -101,7 +101,7 @@ namespace Network.Remote
         /// <exception cref="NullReferenceException">返回值是空的</exception>
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
-        Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(object message);
+        Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message);
 
     }
 
@@ -111,7 +111,7 @@ namespace Network.Remote
     /// 为什么使用object 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，使用一次dynamic还原参数真实类型。
     /// <para>object导致值类型装箱是可以妥协的。</para>
     /// </summary>
-    public interface ILazyRpcSendMessage
+    public interface ISafeAwaitSendMessage
     {
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -127,7 +127,7 @@ namespace Network.Remote
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
-        ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(object message, Action<Exception> OnException = null);
+        ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null);
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ namespace Network.Remote
     /// <summary>
     /// 应用网络层API封装
     /// </summary>
-    public interface ISuperRemote:IRemote,ILazyRpcSendMessage
+    public interface ISuperRemote:IRemote,ISafeAwaitSendMessage
     {
 
     }
