@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using MMONET;
+using System.Diagnostics;
 
 namespace MMONET.Message
 {
@@ -46,6 +47,8 @@ namespace MMONET.Message
             AddFormatter<float>(MSGID.IntID, BaseType.Serialize,BaseType.FloatDeserialize);
             AddFormatter<double>(MSGID.IntID, BaseType.Serialize,BaseType.DoubleDeserialize);
 
+
+            ///框架用类型
             AddFormatter<HeartBeatsMessage>(MSGID.HeartbeatsMessageID,
                 HeartBeatsMessage.Seiralizer, HeartBeatsMessage.Deserilizer, KeyAlreadyHave.ThrowException);
 
@@ -167,6 +170,12 @@ namespace MMONET.Message
 
                 Seiralizer<T> seiralizer = Seiralizer as Seiralizer<T>;
 
+                if (seiralizer == null)
+                {
+                    OnMissSeiralizer?.Invoke(typeof(T));
+                    return (-1, default);
+                }
+
                 ushort length = seiralizer(message, buffer16384);
 
                 if (length > 8192 - 25)
@@ -179,8 +188,11 @@ namespace MMONET.Message
 
                 return (MessageID, length);
             }
-
-            return (-1,default);
+            else
+            {
+                OnMissSeiralizer?.Invoke(typeof(T));
+                return (-1, default);
+            }
         }
 
         /// <summary>
@@ -197,11 +209,13 @@ namespace MMONET.Message
             }
             else
             {
+                OnMissDeserializer?.Invoke(messageID);
                 return null;
             }
         }
 
 
-
+        public static event Action<int> OnMissDeserializer;
+        public static event Action<Type> OnMissSeiralizer;
     }
 }
