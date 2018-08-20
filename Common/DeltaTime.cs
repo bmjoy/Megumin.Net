@@ -27,6 +27,17 @@ namespace MMONET
                 }
             }
         }
+
+        /// <summary>
+        /// 是否冷却完毕
+        /// </summary>
+        /// <param name="time"></param>
+        public static implicit operator bool(CoolDownTime time)
+        {
+            return time.CoolDown;
+        }
+
+
         /// <summary>
         /// 上次返回冷却完毕的时间
         /// </summary>

@@ -21,7 +21,7 @@ namespace RemoteTestClient
             Console.ReadLine();
         }
 
-        static int MessageCount = 10000;
+        static int MessageCount = 1;
         static int RemoteCount = 100;
         private static async void ConAsync()
         {

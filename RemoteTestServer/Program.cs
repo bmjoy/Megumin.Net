@@ -36,10 +36,15 @@ namespace RemoteTest
         {
             ThreadPool.QueueUserWorkItem((A) =>
             {
+                CoolDownTime coolDown = new CoolDownTime() {  MinDelta = TimeSpan.FromSeconds(30) };
                 while (true)
                 {
                     MainThreadScheduler.Update(0);
                     //Thread.Sleep(1);
+                    if (coolDown)
+                    {
+                        GC.Collect();
+                    }
                 }
 
             });

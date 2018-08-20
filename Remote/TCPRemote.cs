@@ -241,14 +241,16 @@ namespace MMONET.Remote
             if (sendArgs == null)
             {
                 sendArgs = new MemoryArgs();
-                sendArgs.Completed += SendComplete;
             }
+
 
             if (sendWaitList.TryDequeue(out var owner))
             {
                 if (owner != null)
                 {
                     sendArgs.SetMemoryOwner(owner);
+
+                    sendArgs.Completed += SendComplete;
                     if (!Client.SendAsync(sendArgs))
                     {
                         SendComplete(this, sendArgs);
@@ -260,11 +262,11 @@ namespace MMONET.Remote
         void SendComplete(object sender, SocketAsyncEventArgs args)
         {
             ///这个方法由IOCP线程调用。需要尽快结束。
+            args.Completed -= SendComplete;
+            isSending = false;
 
             ///无论成功失败，都要清理发送缓冲
             sendArgs.owner.Dispose();
-
-            isSending = false;
 
             if (args.SocketError == SocketError.Success)
             {
@@ -275,10 +277,12 @@ namespace MMONET.Remote
             }
             else
             {
+                SocketError socketError = args.SocketError;
+                args = null;
                 if (!manualDisconnecting)
                 {
                     ///遇到错误
-                    OnSocketException(args.SocketError);
+                    OnSocketException(socketError);
                 }
             }
         }
@@ -347,6 +351,8 @@ namespace MMONET.Remote
 
                     if (length == 0)
                     {
+                        args.Completed -= ReceiveComplete;
+                        args = null;
                         OnSocketException(SocketError.Shutdown);
                         isReceiving = false;
                         return;
@@ -392,9 +398,13 @@ namespace MMONET.Remote
                 }
                 else
                 {
+                    args.Completed -= ReceiveComplete;
+                    SocketError socketError = args.SocketError;
+                    args = null;
                     if (!manualDisconnecting)
                     {
-                        OnSocketException(args.SocketError);
+
+                        OnSocketException(socketError);
                     }
                     isReceiving = false;
                 }
