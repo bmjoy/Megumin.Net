@@ -292,17 +292,15 @@ namespace MMONET.Remote
     partial class TCPRemote : IReceiveMessage, IDealMessage
     {
         bool isReceiving;
+        SocketAsyncEventArgs receiveArgs;
         /// <summary>
         /// 线程安全的，多次调用不应该发生错误
         /// </summary>
-        /// <remarks> ReceiveStart 的本地Loopback 接收峰值能达到60,000,000 字节每秒。
-        /// ReceiveStart2 的本地Loopback 接收峰值能达到200,000,000 字节每秒。可以稳定在每秒6000 0000字节每秒。
+        /// <remarks> 使用TaskAPI 的本地Loopback 接收峰值能达到60,000,000 字节每秒。
+        /// 不使用TaskAPI 的本地Loopback 接收峰值能达到200,000,000 字节每秒。可以稳定在每秒6000 0000字节每秒。
         /// 不是严格的测试，但是隐约表明异步task方法不适合性能敏感区域。
         /// </remarks>
-        protected override void ReceiveStart() => ReceiveStart2();
-
-        SocketAsyncEventArgs receiveArgs;
-        void ReceiveStart2()
+        protected override void ReceiveStart()
         {
             if (!Client.Connected || isReceiving || disposedValue)
             {
