@@ -44,7 +44,7 @@ namespace Network.Remote
     }
 
     /// <summary>
-    /// <see cref="SendAsync{T}(T)"/>不会自动开始Receive。
+    /// 发送任意对象，只要它能被MessageLUT解析。
     /// </summary>
     public interface ISendMessage
     {
@@ -53,10 +53,9 @@ namespace Network.Remote
         /// <para>调用方 无法了解发送情况</para>
         /// 序列化过程同步执行，方法返回表示序列化已结束，修改message内容不影响发送数据。
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="message"></param>
         /// <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
-        void SendAsync<T>(T message);
+        void SendAsync(object message);
     }
 
     /// <summary>
@@ -64,7 +63,7 @@ namespace Network.Remote
     /// </summary>
     /// <param name="message"></param>
     /// <param name="exception"></param>
-    public delegate void RpcCallback(dynamic message, Exception exception);
+    public delegate void RpcCallback(object message, Exception exception);
 
     /// <summary>
     /// 更新Rpc结果，框架调用，协助处理Rpc封装
@@ -81,15 +80,15 @@ namespace Network.Remote
         bool TryGetValue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         bool TryDequeue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
         void Remove(short rpcID);
-        bool TrySetResult(short rpcID, dynamic msg);
+        bool TrySetResult(short rpcID, object msg);
         bool TrySetException(short rpcID, Exception exception);
     }
 
     /// <summary>
     /// RpcSend会自动开始Receive。
     /// <para></para>
-    /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
-    /// <para>dynamic导致值类型装箱是可以妥协的。</para>
+    /// 为什么使用object 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，使用一次dynamic还原参数真实类型。
+    /// <para>object导致值类型装箱是可以妥协的。</para>
     /// </summary>
     public interface IRpcSendMessage
     {
@@ -102,15 +101,15 @@ namespace Network.Remote
         /// <exception cref="NullReferenceException">返回值是空的</exception>
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
-        Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message);
+        Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(object message);
 
     }
 
     /// <summary>
     /// RpcSend会自动开始Receive。
     /// <para></para>
-    /// 为什么使用dynamic 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，必须使用一次dynamic还原参数真实类型，所以省不掉。
-    /// <para>dynamic导致值类型装箱是可以妥协的。</para>
+    /// 为什么使用object 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，使用一次dynamic还原参数真实类型。
+    /// <para>object导致值类型装箱是可以妥协的。</para>
     /// </summary>
     public interface ILazyRpcSendMessage
     {
@@ -128,7 +127,7 @@ namespace Network.Remote
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
-        ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null);
+        ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(object message, Action<Exception> OnException = null);
     }
 
     /// <summary>
@@ -239,6 +238,6 @@ namespace Network.Remote
     /// </summary>
     /// <param name="message"></param>
     /// <returns></returns>
-    public delegate ValueTask<dynamic> OnReceiveMessage(dynamic message);
+    public delegate ValueTask<object> OnReceiveMessage(object message);
 
 }

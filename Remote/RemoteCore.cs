@@ -23,7 +23,7 @@ namespace MMONET.Remote
         /// <param name="extraMessage"></param>
         /// <param name="byteUserMessage"></param>
         /// <returns></returns>
-        protected virtual (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+        protected virtual (bool IsContinue, bool SwitchThread, short rpcID, object objectMessage)
             DealBytesMessage(int messageID, short rpcID, byte extraType, ExtraMessage extraMessage, ReadOnlyMemory<byte> byteUserMessage)
         {
             if (extraType == byte.MaxValue)
@@ -42,10 +42,10 @@ namespace MMONET.Remote
         /// <param name="rpcID"></param>
         /// <param name="byteUserMessage"></param>
         /// <returns></returns>
-        protected virtual (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+        protected virtual (bool IsContinue, bool SwitchThread, short rpcID, object objectMessage)
             WhenNoExtra(int messageID, short rpcID, ReadOnlyMemory<byte> byteUserMessage)
         {
-            var message = DeserializeMessage(messageID, byteUserMessage);
+            object message = DeserializeMessage(messageID, byteUserMessage);
             return (true, true, rpcID, message);
         }
     }
@@ -67,7 +67,7 @@ namespace MMONET.Remote
         /// 反序列化消息阶段
         /// </summary>
         /// <returns></returns>
-        protected virtual dynamic DeserializeMessage(int messageID, ReadOnlyMemory<byte> byteUserMessage)
+        protected virtual object DeserializeMessage(int messageID, ReadOnlyMemory<byte> byteUserMessage)
             => MessageLUT.Deserialize(messageID, byteUserMessage);
     }
 

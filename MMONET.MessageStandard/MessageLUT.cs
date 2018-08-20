@@ -168,7 +168,7 @@ namespace MMONET.Message
         /// <param name="messageID"></param>
         /// <param name="body"></param>
         /// <returns></returns>
-        public static dynamic Deserialize(int messageID,ReadOnlyMemory<byte> body)
+        public static object Deserialize(int messageID,ReadOnlyMemory<byte> body)
         {
             if (dFormatter.ContainsKey(messageID))
             {

@@ -24,7 +24,7 @@ namespace MMONET.Message
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public delegate dynamic Deserilizer(ReadOnlyMemory<byte> buffer);
+    public delegate object Deserilizer(ReadOnlyMemory<byte> buffer);
     /// <summary>
     /// 将消息从0位置开始 序列化 到 指定buffer中,返回序列化长度
     /// </summary>

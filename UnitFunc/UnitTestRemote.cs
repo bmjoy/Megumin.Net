@@ -166,7 +166,7 @@ namespace UnitFunc
             Task.Delay(200).Wait();
         }
 
-        private static async ValueTask<dynamic> Receive(dynamic message)
+        private static async ValueTask<object> Receive(object message)
         {
             switch (message)
             {

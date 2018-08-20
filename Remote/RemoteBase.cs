@@ -35,11 +35,10 @@ namespace MMONET.Remote
         /// <summary>
         /// 异步发送
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="message"></param>
-        public void SendAsync<T>(T message)
+        public void SendAsync(object message)
         {
-            SendAsync(0, message);
+            SendAsync(0, message as dynamic);
         }
 
         /// <summary>
@@ -68,7 +67,7 @@ namespace MMONET.Remote
         /// <remarks>个人猜测，此处是性能敏感区域，使用Task可能会影响性能（并没有经过测试）</remarks>
         protected abstract void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg);
 
-        public Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(dynamic message)
+        public Task<(RpcResult result, Exception exception)> RpcSendAsync<RpcResult>(object message)
         {
             ReceiveStart();
 
@@ -76,7 +75,7 @@ namespace MMONET.Remote
 
             try
             {
-                SendAsync(rpcID, message);
+                SendAsync(rpcID, message as dynamic);
                 return source;
             }
             catch (Exception e)
@@ -86,7 +85,7 @@ namespace MMONET.Remote
             }
         }
 
-        public ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(dynamic message, Action<Exception> OnException = null)
+        public ILazyAwaitable<RpcResult> LazyRpcSendAsync<RpcResult>(object message, Action<Exception> OnException = null)
         {
             ReceiveStart();
 
@@ -94,7 +93,7 @@ namespace MMONET.Remote
 
             try
             {
-                SendAsync(rpcID, message);
+                SendAsync(rpcID, message as dynamic);
                 return source;
             }
             catch (Exception e)
@@ -129,7 +128,7 @@ namespace MMONET.Remote
         /// <param name="SwitchThread"></param>
         /// <param name="rpcID"></param>
         /// <param name="objectMessage"></param>
-        protected void DealObjectMessage(bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+        protected void DealObjectMessage(bool IsContinue, bool SwitchThread, short rpcID, object objectMessage)
         {
             if (IsContinue)
             {
@@ -143,11 +142,11 @@ namespace MMONET.Remote
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        public virtual ValueTask<dynamic> OnReceiveMessage(dynamic message)
+        public virtual ValueTask<object> OnReceiveMessage(object message)
         {
             if (OnReceive == null)
             {
-                return new ValueTask<dynamic>(Task.FromResult<dynamic>(null));
+                return new ValueTask<object>(Task.FromResult<object>(null));
             }
             else
             {
@@ -157,6 +156,6 @@ namespace MMONET.Remote
 
         void IDealMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
 
-        bool IDealMessage.TrySetRpcResult(short rpcID, dynamic message) => RpcCallbackPool?.TrySetResult(rpcID, message);
+        bool IDealMessage.TrySetRpcResult(short rpcID, object message) => RpcCallbackPool?.TrySetResult(rpcID, message) ?? false;
     }
 }

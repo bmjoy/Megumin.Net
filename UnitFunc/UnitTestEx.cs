@@ -64,8 +64,7 @@ namespace UnitFunc
         [TestMethod]
         public void TestLazyTask()
         {
-            //dynamic task = LazyTask<int>.Pop();
-            //Assert.AreEqual(1, (int)task.state);
+            
         }
     }
 }

@@ -425,7 +425,7 @@ namespace MMONET.Remote
                         var unpackedMessage = UnPacketBuffer(item.Memory);
 
                         ///处理字节消息
-                        (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+                        (bool IsContinue, bool SwitchThread, short rpcID, var objectMessage)
                             = DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
                                                 unpackedMessage.extraType, unpackedMessage.extraMessage,
                                                 unpackedMessage.byteUserMessage);

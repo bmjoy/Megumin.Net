@@ -71,19 +71,7 @@ namespace RemoteTestClient
                 throw res;
             }
 
-            var res2 = await remote.LazyRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex },
-                (ex) =>
-                {
-                    if (ex is TimeoutException timeout)
-                    {
-                        Console.WriteLine($"Rpc调用超时----------------------------------------- {clientIndex}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Rpc调用异常--------------------{ex}------------- {clientIndex}");
-                    }
-                });
-            Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
+            //await TestRpc(clientIndex, remote);
 
             remote.Receive((new Receiver() { Index = clientIndex }).TestReceive);
             Stopwatch look1 = new Stopwatch();
@@ -109,6 +97,23 @@ namespace RemoteTestClient
 
             //var (Result, Excption) = await remote.SendAsync<Packet2>(new Packet1 { Value = 100 });
             //Console.WriteLine($"RPC接收消息{nameof(Packet2)}--{Result.Value}");
+        }
+
+        private static async Task TestRpc(int clientIndex, ISuperRemote remote)
+        {
+            var res2 = await remote.LazyRpcSendAsync<TestPacket2>(new TestPacket2() { Value = clientIndex },
+                            (ex) =>
+                            {
+                                if (ex is TimeoutException timeout)
+                                {
+                                    Console.WriteLine($"Rpc调用超时----------------------------------------- {clientIndex}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Rpc调用异常--------------------{ex}------------- {clientIndex}");
+                                }
+                            });
+            Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
         }
 
         class Receiver

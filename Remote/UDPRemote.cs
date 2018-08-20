@@ -378,7 +378,7 @@ namespace MMONET.Remote
                 var unpackedMessage = base.UnPacketBuffer(byteOwner.Memory);
 
                 ///处理字节消息
-                (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage)
+                (bool IsContinue, bool SwitchThread, short rpcID, var objectMessage)
                     = base.DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
                                         unpackedMessage.extraType, unpackedMessage.extraMessage,
                                         unpackedMessage.byteUserMessage);
@@ -397,7 +397,7 @@ namespace MMONET.Remote
         /// <param name="rpcID"></param>
         /// <param name="byteUserMessage"></param>
         /// <returns></returns>
-        protected override (bool IsContinue, bool SwitchThread, short rpcID, dynamic objectMessage) 
+        protected override (bool IsContinue, bool SwitchThread, short rpcID, object objectMessage) 
             WhenNoExtra(int messageID, short rpcID, ReadOnlyMemory<byte> byteUserMessage)
         {
             if (messageID == FrameworkConst.HeartbeatsMessageID)

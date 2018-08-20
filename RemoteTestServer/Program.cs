@@ -75,7 +75,7 @@ namespace RemoteTest
             re.Receive(TestReceive);
         }
 
-        private static async ValueTask<dynamic> TestReceive(dynamic message)
+        private static async ValueTask<object> TestReceive(object message)
         {
             return await TestSpeed(message);
         }
@@ -86,7 +86,7 @@ namespace RemoteTest
         /// </summary>
         /// <param name="message"></param>
         /// <returns></returns>
-        private static async ValueTask<dynamic> TestSpeed(dynamic message)
+        private static async ValueTask<object> TestSpeed(object message)
         {
             totalCount++;
             switch (message)

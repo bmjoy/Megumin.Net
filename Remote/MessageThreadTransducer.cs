@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<(short rpcID, dynamic message, MMONET.Remote.IDealMessage remote)>;
+using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<(short rpcID, object message, MMONET.Remote.IDealMessage remote)>;
 
 namespace MMONET.Remote
 {
@@ -24,7 +24,7 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         /// <param name="remote"></param>
         /// <param name="switchThread">是否切换处理线程</param>
-        internal static void Push(short rpcID, dynamic message, IDealMessage remote, bool switchThread)
+        internal static void Push(short rpcID, object message, IDealMessage remote, bool switchThread)
         {
             if (switchThread)
             {
@@ -73,7 +73,7 @@ namespace MMONET.Remote
             }
         }
 
-        static async void ReceiveCallback(IDealMessage remote, short rpcID, dynamic msg)
+        static async void ReceiveCallback(IDealMessage remote, short rpcID, object msg)
         {
             if (remote == null)
             {
@@ -85,20 +85,21 @@ namespace MMONET.Remote
                 ///普通响应onRely
                 var response = await remote.OnReceiveMessage(msg);
 
-                if (response is Task<dynamic> task)
-                {
-                    response = await task ?? null;
-                }
-
-                if (response is ValueTask<dynamic> vtask)
-                {
-                    response = await vtask ?? null;
-                }
-
                 if (response == null)
                 {
                     return;
                 }
+
+                if (response is Task<object> task)
+                {
+                    response = await task ?? null;
+                }
+
+                if (response is ValueTask<object> vtask)
+                {
+                    response = await vtask ?? null;
+                }
+                
                 /// 普通返回
                 remote.SendAsync(response);
             }

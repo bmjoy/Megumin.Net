@@ -139,7 +139,7 @@ namespace MMONET.Remote
             return sizeof(long);
         }
 
-        public static dynamic Deserilizer(ReadOnlyMemory<byte> buffer)
+        public static HeartBeatsMessage Deserilizer(ReadOnlyMemory<byte> buffer)
         {
             long t = buffer.Span.ReadLong();
             return new HeartBeatsMessage() { Time = new DateTime(t) };

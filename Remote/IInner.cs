@@ -8,8 +8,8 @@ namespace MMONET.Remote
 {
     internal interface IDealMessage : ISendMessage
     {
-        ValueTask<dynamic> OnReceiveMessage(dynamic message);
+        ValueTask<object> OnReceiveMessage(object message);
         void SendAsync<T>(short rpcID, T message);
-        bool TrySetRpcResult(short rpcID, dynamic message);
+        bool TrySetRpcResult(short rpcID, object message);
     }
 }

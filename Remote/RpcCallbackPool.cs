@@ -29,7 +29,7 @@ namespace MMONET.Remote
         /// 默认30000ms
         /// </summary>
         public int RpcTimeOutMilliseconds { get; set; } = 30000;
-        delegate void RpcCallback(dynamic message, Exception exception);
+        delegate void RpcCallback(object message, Exception exception);
         /// <summary>
         /// 原子操作 取得RpcId,发送方的的RpcID为1~32767，回复的RpcID为-1~-32767，正负一一对应
         /// <para>0,-32768 为无效值</para>
@@ -94,7 +94,7 @@ namespace MMONET.Remote
                         }
                         else
                         {
-                            source.SetResult((resp, ex));
+                            source.SetResult((default, ex));
                         }
 
                         //todo
@@ -198,7 +198,7 @@ namespace MMONET.Remote
 
         void IRpcCallbackPool.Remove(short rpcID) => Remove(rpcID);
 
-        public bool TrySetResult(short rpcID, dynamic msg)
+        public bool TrySetResult(short rpcID, object msg)
         {
             return TryComplate(rpcID, msg, null);
         }
@@ -208,7 +208,7 @@ namespace MMONET.Remote
             return TryComplate(rpcID, null, exception);
         }
 
-        bool TryComplate(short rpcID, dynamic msg,Exception exception)
+        bool TryComplate(short rpcID, object msg,Exception exception)
         {
             ///rpc响应
             if (TryDequeue(rpcID, out var rpc))
