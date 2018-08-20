@@ -39,6 +39,11 @@ namespace MMONET.Message
 
         public const int TestPacket1ID = -101;
         public const int TestPacket2ID = -102;
+        public const int StringID = 11;
+        public const int IntID = 12;
+        public const int FloatID = 13;
+        public const int LongID = 14;
+        public const int DoubleID = 15;
         /// <summary>
         /// Udp握手连接使用的消息ID编号
         /// </summary>

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MMONET.Message
@@ -60,6 +62,78 @@ namespace MMONET.Message
             ACT = this.ACT;
             seq = this.seq;
             ack = this.ack;
+        }
+    }
+
+    internal static class BaseType
+    {
+        internal static ushort Serialize(string message, Span<byte> bf)
+        {
+            using (var mo = BufferPool.Rent(message.Length * 2))
+            {
+                MemoryMarshal.TryGetArray<byte>(mo.Memory, out var bs);
+                Encoding.UTF8.GetBytes(message,0,message.Length,bs.Array,bs.Offset);
+                mo.Memory.Span.CopyTo(bf);
+                return (ushort)(message.Length * 2);
+            }
+        }
+
+        internal static string StringDeserialize(ReadOnlyMemory<byte> bf)
+        {
+            using (var mo = BufferPool.Rent(bf.Length))
+            {
+                MemoryMarshal.TryGetArray<byte>(mo.Memory, out var bs);
+                bf.Span.CopyTo(mo.Memory.Span);
+                return Encoding.UTF8.GetString(bs.Array);
+            }
+        }
+
+        internal static ushort Serialize(int message, Span<byte> bf)
+        {
+            message.WriteTo(bf);
+            return 4;
+        }
+
+        internal static object IntDeserialize(ReadOnlyMemory<byte> bf)
+        {
+            return bf.Span.ReadInt();
+        }
+
+        internal static ushort Serialize(long message, Span<byte> bf)
+        {
+            message.WriteTo(bf);
+            return 8;
+        }
+
+        internal static object LongDeserialize(ReadOnlyMemory<byte> bf)
+        {
+            return bf.Span.ReadLong();
+        }
+
+        internal static ushort Serialize(float message, Span<byte> bf)
+        {
+            BitConverter.GetBytes(message).AsSpan().CopyTo(bf);
+            return 4;
+        }
+
+        internal static object FloatDeserialize(ReadOnlyMemory<byte> bf)
+        {
+            byte[] temp = new byte[4];
+            bf.Span.Slice(0,4).CopyTo(temp);
+            return BitConverter.ToSingle(temp,0);
+        }
+
+        internal static ushort Serialize(double message, Span<byte> bf)
+        {
+            BitConverter.GetBytes(message).AsSpan().CopyTo(bf);
+            return 8;
+        }
+
+        internal static object DoubleDeserialize(ReadOnlyMemory<byte> bf)
+        {
+            byte[] temp = new byte[8];
+            bf.Span.Slice(0, 8).CopyTo(temp);
+            return BitConverter.ToDouble(temp, 0);
         }
     }
 }

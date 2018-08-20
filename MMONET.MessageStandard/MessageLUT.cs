@@ -5,6 +5,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using MMONET;
 
 namespace MMONET.Message
 {
@@ -38,6 +39,12 @@ namespace MMONET.Message
             ///注册测试消息和内置消息
             AddFormatter<TestPacket1>(MSGID.TestPacket1ID, TestPacket1.S, TestPacket1.D);
             AddFormatter<TestPacket2>(MSGID.TestPacket2ID, TestPacket2.S, TestPacket2.D);
+            ///5个基础类型
+            AddFormatter<string>(MSGID.StringID, BaseType.Serialize, BaseType.StringDeserialize);
+            AddFormatter<int>(MSGID.IntID, BaseType.Serialize,BaseType.IntDeserialize);
+            AddFormatter<long>(MSGID.IntID, BaseType.Serialize,BaseType.LongDeserialize);
+            AddFormatter<float>(MSGID.IntID, BaseType.Serialize,BaseType.FloatDeserialize);
+            AddFormatter<double>(MSGID.IntID, BaseType.Serialize,BaseType.DoubleDeserialize);
 
             AddFormatter<HeartBeatsMessage>(MSGID.HeartbeatsMessageID,
                 HeartBeatsMessage.Seiralizer, HeartBeatsMessage.Deserilizer, KeyAlreadyHave.ThrowException);
