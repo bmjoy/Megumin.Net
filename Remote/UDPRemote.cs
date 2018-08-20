@@ -287,7 +287,7 @@ namespace MMONET.Remote
                         {
                             if (MemoryMarshal.TryGetArray<byte>(bufferMsg.Memory,out var sbuffer))
                             {
-                                udpClient.Send(sbuffer.Array,sbuffer.Offset);
+                                udpClient.Send(sbuffer.Array,sbuffer.Count);
                             }
                             else
                             {
