@@ -81,12 +81,9 @@ namespace MMONET
                 item?.Invoke(delta);
             }
 
-            while (actions.Count > 0)
+            while (actions.TryDequeue(out var callback))
             {
-                if (actions.TryDequeue(out var callback))
-                {
-                    callback?.Invoke();
-                }
+                callback?.Invoke();
             }
         }
 

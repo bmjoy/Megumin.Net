@@ -60,14 +60,8 @@ namespace MMONET.Remote
                 receivePool = dealPoop;
                 dealPoop = temp;
 
-                while (dealPoop.Count > 0)
+                while (dealPoop.TryDequeue(out var res))
                 {
-                    //var (Packet, Remote) = dealPoop.Dequeue();
-                    if (!dealPoop.TryDequeue(out var res))
-                    {
-                        continue;
-                    }
-
                     ReceiveCallback(res.remote, res.rpcID,res.message);
                 }
             }

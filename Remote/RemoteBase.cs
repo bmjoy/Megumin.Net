@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using MMONET.Message;
 using Network.Remote;
-using ExtraMessage = System.ValueTuple<int?, int?, int?, int?>;
 
 namespace MMONET.Remote
 {
