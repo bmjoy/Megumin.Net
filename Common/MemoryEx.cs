@@ -264,9 +264,9 @@ namespace System.Buffers
     }
 
     /// <summary>
-    /// 与内置的池不同，这里保证取出的Memory长度和申请的长度相同，不会比申请的更长。
+    /// 与MemoryPool不同，这里保证取出的Memory长度和申请的长度相同，不会比申请的更长。
     /// <para></para>
-    /// 与内置的池不同，内存申请时已经进行了清零处理，请放心使用。
+    /// 与MemoryPool不同，内存申请时已经进行了清零处理，请放心使用。
     /// </summary>
     public static class BufferPool
     {
@@ -284,6 +284,7 @@ namespace System.Buffers
         /// </summary>
         /// <param name="minBufferSize"></param>
         /// <returns></returns>
-        public static IMemoryOwner<byte> NativeRent(int minBufferSize = -1) => new NativeMemory(minBufferSize);
+        public static IMemoryOwner<byte> NativeRent(int minBufferSize = -1) 
+            => new NativeMemory(minBufferSize);
     }
 }

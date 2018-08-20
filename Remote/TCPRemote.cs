@@ -477,8 +477,8 @@ namespace MMONET.Remote
                     break;
                 }
 
-                /// 使用堆外内存
-                var newMsg = BufferPool.NativeRent(size);
+                /// 使用内存池
+                var newMsg = BufferPool.Rent(size);
 
                 source.Slice(offset,size).CopyTo(newMsg.Memory.Span);
                 pushCompleteMessage.Add(newMsg);

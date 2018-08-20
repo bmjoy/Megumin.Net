@@ -49,8 +49,8 @@ namespace MMONET.Remote
         /// <param name="message"></param>
         protected void SendAsync<T>(short rpcID, T message)
         {
-            ///序列化用buffer,使用堆外内存
-            using (var memoryOwner = BufferPool.NativeRent(16384))
+            ///序列化用buffer,使用内存池
+            using (var memoryOwner = BufferPool.Rent(16384))
             {
                 var span = memoryOwner.Memory.Span;
 
