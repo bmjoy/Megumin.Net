@@ -10,7 +10,7 @@ using Network.Remote;
 
 namespace MMONET.Remote
 {
-    public abstract partial class RemoteBase : RemoteCore
+    public abstract partial class RemoteBase
     {
         public int Guid { get; } = InterlockedID<IRemote>.NewID();
         /// <summary>
@@ -19,7 +19,6 @@ namespace MMONET.Remote
         public int UserToken { get; set; }
         public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        public event OnReceiveMessage OnReceive;
         public DateTime LastReceiveTime { get; protected set; } = DateTime.Now;
         public IRpcCallbackPool RpcCallbackPool { get; } = new RpcCallbackPool(31);
         /// <summary>
@@ -31,6 +30,23 @@ namespace MMONET.Remote
     /// 发送
     partial class RemoteBase: ISendMessage,IRpcSendMessage,ISafeAwaitSendMessage
     {
+        private IPacker<ISuperRemote> packer;
+
+        /// <summary>
+        /// 如果没有设置封包器，使用默认封包器。
+        /// </summary>
+        public IPacker<ISuperRemote> Packer
+        {
+            get
+            {
+                return packer ?? MessagePipline.Default;
+            }
+            set
+            {
+                packer = value;
+            }
+        }
+
         /// <summary>
         /// 异步发送
         /// </summary>
@@ -46,25 +62,7 @@ namespace MMONET.Remote
         /// <typeparam name="T"></typeparam>
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
-        protected void SendAsync<T>(short rpcID, T message)
-        {
-            ///序列化用buffer,使用内存池
-            using (var memoryOwner = BufferPool.Rent(16384))
-            {
-                var span = memoryOwner.Memory.Span;
-
-                var (messageID, length) = SerializeMessage(span, message);
-                var sendbuffer = PacketBuffer(messageID, rpcID, default, span.Slice(0, length));
-                SendByteBufferAsync(sendbuffer);
-            }
-        }
-
-        /// <summary>
-        /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
-        /// </summary>
-        /// <param name="bufferMsg"></param>
-        /// <remarks>个人猜测，此处是性能敏感区域，使用Task可能会影响性能（并没有经过测试）</remarks>
-        protected abstract void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg);
+        protected abstract void SendAsync<T>(short rpcID, T message);
 
         public Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message)
         {
@@ -105,56 +103,86 @@ namespace MMONET.Remote
     }
 
     /// 接收
-    partial class RemoteBase:IDealMessage
+    partial class RemoteBase:IShuntMessage
     {
         protected const int MaxBufferLength = 8192;
 
-        public void Receive(OnReceiveMessage onReceive)
+        private IReceiver<ISuperRemote> receiver;
+        
+        /// <summary>
+        /// 如果没有设置接收器，使用默认接收器。
+        /// </summary>
+        public IReceiver<ISuperRemote> Receiver
         {
-            this.OnReceive = onReceive;
-            ReceiveStart();
+            get
+            {
+                return receiver ?? MessagePipline.Default;
+            }
+            set
+            {
+                receiver = value;
+            }
         }
+
 
         /// <summary>
         /// 应该为线程安全的，多次调用不应该发生错误
         /// </summary>
-        protected abstract void ReceiveStart();
+        public abstract void ReceiveStart();
 
-        /// <summary>
-        /// 处理经过反序列化的消息
-        /// </summary>
-        /// <param name="IsContinue"></param>
-        /// <param name="SwitchThread"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="objectMessage"></param>
-        protected void DealObjectMessage(bool IsContinue, bool SwitchThread, short rpcID, object objectMessage)
+        public async void ShuntMessage(short rpcID, object msg)
         {
-            if (IsContinue)
+            if (rpcID == 0 || rpcID == short.MinValue)
             {
-                ///处理实例消息
-                MessageThreadTransducer.Push(rpcID, objectMessage, this, SwitchThread);
+                ///这个消息是非Rpc请求
+                ///普通响应onRely
+                var response = await Receiver.DealMessage(msg);
+
+                if (response == null)
+                {
+                    return;
+                }
+
+                if (response is Task<object> task)
+                {
+                    response = await task ?? null;
+                }
+
+                if (response is ValueTask<object> vtask)
+                {
+                    response = await vtask ?? null;
+                }
+
+                /// 普通返回
+                SendAsync(response);
             }
-        }
-
-        /// <summary>
-        /// 处理收到的实例消息
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        public virtual ValueTask<object> OnReceiveMessage(object message)
-        {
-            if (OnReceive == null)
+            else if (rpcID > 0)
             {
-                return new ValueTask<object>(Task.FromResult<object>(null));
+                ///这个消息rpc的请求 
+                ///普通响应onRely
+                var response = await Receiver.DealMessage(msg);
+
+                if (response == null)
+                {
+                    return;
+                }
+
+                if (response is Task<object> task)
+                {
+                    response = await task;
+                }
+                else if (response is ValueTask<object> vtask)
+                {
+                    response = await vtask;
+                }
+                ///rpc的返回 
+                SendAsync((short)(rpcID * -1), response as dynamic);
             }
             else
             {
-                return OnReceive(message);
+                ///这个消息是rpc返回（回复的RpcID为-1~-32767）
+                RpcCallbackPool?.TrySetResult(rpcID, msg);
             }
         }
-
-        void IDealMessage.SendAsync<T>(short rpcID, T message) => SendAsync(rpcID, message);
-
-        bool IDealMessage.TrySetRpcResult(short rpcID, object message) => RpcCallbackPool?.TrySetResult(rpcID, message) ?? false;
     }
 }

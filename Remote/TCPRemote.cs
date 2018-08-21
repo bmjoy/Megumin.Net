@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using Network.Remote;
+using MMONET.Message;
+using System.Buffers;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using ByteMessageList = MMONET.ListPool<System.Buffers.IMemoryOwner<byte>>;
 
 namespace MMONET.Remote
 {
-    using MMONET.Message;
-    using System.Buffers;
-    using System.Collections.Concurrent;
-    using System.Net;
-    using System.Runtime.InteropServices;
-    using ByteMessageList = ListPool<System.Buffers.IMemoryOwner<byte>>;
-    using ExtraMessage = System.ValueTuple<int?, int?, int?, int?>;
-
     /// <summary>
     /// <para>TcpChannel内存开销 整体采用内存池优化</para>
     /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>
@@ -30,6 +28,10 @@ namespace MMONET.Remote
 
         }
 
+        /// <summary>
+        /// 使用一个已连接的Socket创建远端
+        /// </summary>
+        /// <param name="client"></param>
         internal TCPRemote(Socket client)
         {
             this.Client = client;
@@ -139,6 +141,7 @@ namespace MMONET.Remote
                 {
                     await Client.ConnectAsync(ConnectIPEndPoint);
                     isConnecting = false;
+                    ReceiveStart();
                     return null;
                 }
                 catch (Exception e)
@@ -179,7 +182,7 @@ namespace MMONET.Remote
         /// <param name="messageBodyBuffer"></param>
         void ZhuanFa(int mappedID, short rpcID, int messageID, ArraySegment<byte> messageBodyBuffer)
         {
-            PacketBuffer(messageID, rpcID, (mappedID, default, default, default), messageBodyBuffer);
+            //PacketBuffer(messageID, rpcID, (mappedID, default, default, default), messageBodyBuffer);
         }
 
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer) => Client.SendAsync(msgBuffer, SocketFlags.None);
@@ -188,17 +191,34 @@ namespace MMONET.Remote
     /// 发送字节消息
     partial class TCPRemote
     {
+        public new ITcpPacker<ISuperRemote> Packer
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => base.Packer as ITcpPacker<ISuperRemote> ?? MessagePipline.Default;
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            set => base.Packer = value;
+        }
+
+
         ConcurrentQueue<IMemoryOwner<byte>> sendWaitList = new ConcurrentQueue<IMemoryOwner<byte>>();
         bool isSending;
         private MemoryArgs sendArgs;
         protected readonly object sendlock = new object();
 
         /// <summary>
+        /// 正常发送入口
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        protected override void SendAsync<T>(short rpcID, T message) => SendByteBufferAsync(Packer.Packet(rpcID, message, this));
+
+        /// <summary>
         /// 注意，发送完成时内部回收了buffer。
         /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
         /// </summary>
         /// <param name="bufferMsg"></param>
-        protected override void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
+        protected virtual void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
         {
             lock (sendlock)
             {
@@ -289,7 +309,7 @@ namespace MMONET.Remote
     }
 
     /// 接收字节消息
-    partial class TCPRemote : IReceiveMessage, IDealMessage
+    partial class TCPRemote : IReceiveMessage, IShuntMessage
     {
         bool isReceiving;
         SocketAsyncEventArgs receiveArgs;
@@ -300,7 +320,7 @@ namespace MMONET.Remote
         /// 不使用TaskAPI 的本地Loopback 接收峰值能达到200,000,000 字节每秒。可以稳定在每秒6000 0000字节每秒。
         /// 不是严格的测试，但是隐约表明异步task方法不适合性能敏感区域。
         /// </remarks>
-        protected override void ReceiveStart()
+        public override void ReceiveStart()
         {
             if (!Client.Connected || isReceiving || disposedValue)
             {
@@ -361,8 +381,8 @@ namespace MMONET.Remote
                     int totalValidLength = length + args.Offset;
 
                     var list = ByteMessageList.Rent();
-                    ///分包
-                    var residual = CutOff(totalValidLength, args.Buffer, list);
+                    ///由打包器处理分包
+                    var residual = Packer.CutOff(args.Buffer.AsSpan(0,totalValidLength), list);
 
                     ///租用新内存
                     var bfo = BufferPool.Rent(MaxBufferLength);
@@ -427,23 +447,7 @@ namespace MMONET.Remote
             {
                 foreach (var item in list)
                 {
-                    try
-                    {
-                        ///解包
-                        var unpackedMessage = UnPacketBuffer(item.Memory);
-
-                        ///处理字节消息
-                        (bool IsContinue, bool SwitchThread, short rpcID, var objectMessage)
-                            = DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
-                                                unpackedMessage.extraType, unpackedMessage.extraMessage,
-                                                unpackedMessage.byteUserMessage);
-
-                        DealObjectMessage(IsContinue, SwitchThread, rpcID, objectMessage);
-                    }
-                    finally
-                    {
-                        item.Dispose();
-                    }
+                    Receiver.Receive(item, this);
                 }
 
                 //var res = Parallel.ForEach(list, (item) =>
@@ -457,49 +461,6 @@ namespace MMONET.Remote
             });
         }
     }
-
-    ///可由继承修改的关键部分
-    partial class TCPRemote
-    {
-        /// <summary>
-        /// 分离粘包
-        /// <para><see cref="CutOff(int, ReadOnlySpan{byte}, IList{IMemoryOwner{byte}})"/> 和 <see cref="RemoteCore.PacketBuffer(int, short, ExtraMessage, Span{byte})"/> 对应 </para>
-        /// </summary>
-        /// <param name="length"></param>
-        /// <param name="source"></param>
-        /// <param name="pushCompleteMessage"></param>
-        /// <returns>剩余的半包。</returns>
-        public virtual ReadOnlySpan<byte> CutOff(int length, ReadOnlySpan<byte> source, IList<IMemoryOwner<byte>> pushCompleteMessage)
-        {
-            ///已经完整读取消息包的长度
-            int offset = 0;
-            ///长度至少要大于2（2个字节表示消息总长度）
-            while (length - offset > 2)
-            {
-                
-                ///取得单个消息总长度
-                ushort size = source.Slice(offset).ReadUshort();
-                if (length - offset < size)
-                {
-                    ///剩余消息长度不是一个完整包
-                    break;
-                }
-
-                /// 使用内存池
-                var newMsg = BufferPool.Rent(size);
-
-                source.Slice(offset,size).CopyTo(newMsg.Memory.Span);
-                pushCompleteMessage.Add(newMsg);
-
-                offset += size;
-            }
-
-            ///返回剩余的半包。
-            return source.Slice(offset, length - offset);
-        }
-    }
-
-
 
     internal class MemoryArgs : SocketAsyncEventArgs
     {

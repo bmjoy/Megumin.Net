@@ -61,52 +61,16 @@ namespace RemoteTest
             var re = await remote.ListenAsync();
             Console.WriteLine($"接收到连接{connectCount++}");
             Listen(remote);
-
-            //TestConnect(re);
-            TestSpeed(re);
+            re.Receiver = MessagePipline.TestReceiver;
         }
 
         private static void TestConnect(IRemote re)
         {
             re.UserToken = connectCount;
-            re.Receive(null);
             re.OnDisConnect += (er) =>
             {
                 Console.WriteLine($"连接断开{re.UserToken}");
             };
-        }
-
-        private static void TestSpeed(IRemote re)
-        {
-            re.Receive(TestReceive);
-        }
-
-        private static async ValueTask<object> TestReceive(object message)
-        {
-            return await TestSpeed(message);
-        }
-
-        static int totalCount = 0;
-        /// <summary>
-        /// 性能测试
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        private static async ValueTask<object> TestSpeed(object message)
-        {
-            totalCount++;
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}");
-                    return null;
-                case TestPacket2 packet2:
-                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                    return new TestPacket2 { Value = packet2.Value };
-                default:
-                    break;
-            }
-            return null;
         }
     }
 }

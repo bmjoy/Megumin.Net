@@ -58,9 +58,10 @@ namespace RemoteTestClient
             }
         }
 
+        static readonly Receiver receiver = new Receiver();
         private static async void NewRemote(int clientIndex)
         {
-            ISuperRemote remote = new TCPRemote();
+            ISuperRemote remote = new TCPRemote() { Receiver = receiver};
             var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
             {
@@ -73,7 +74,6 @@ namespace RemoteTestClient
 
             await TestRpc(clientIndex, remote);
 
-            remote.Receive((new Receiver() { Index = clientIndex }).TestReceive);
             Stopwatch look1 = new Stopwatch();
             var msg = new TestPacket1 { Value = 0 };
             look1.Start();
@@ -116,7 +116,7 @@ namespace RemoteTestClient
             Console.WriteLine($"Rpc调用返回----------------------------------------- {res2.Value}");
         }
 
-        class Receiver
+        class Receiver:MessagePipline
         {
             public int Index { get; set; }
             Stopwatch stopwatch = new Stopwatch();

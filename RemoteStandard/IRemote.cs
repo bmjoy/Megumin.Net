@@ -168,23 +168,31 @@ namespace Network.Remote
         event Action<IReConnectable> ReConnectSuccess;
     }
 
-
+    /// <summary>
+    /// 分流消息，区分是否为RPC
+    /// </summary>
+    public interface IShuntMessage
+    {
+        /// <summary>
+        /// 分拣Rpc消息
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="msg"></param>
+        void ShuntMessage(short rpcID, object msg);
+    }
 
     /// <summary>
     /// 接收消息
     /// </summary>
-    public interface IReceiveMessage
+    public interface IReceiveMessage:IShuntMessage
     {
         /// <summary>
         /// 最后一次收到消息的时间
         /// </summary>
         DateTime LastReceiveTime { get; }
-        /// <summary>
-        /// 异步接受消息包
-        /// </summary>
-        /// <param name="onReceive">处理消息方法，如果远端为RPC调用，那么应该返回一个合适的结果，否则返回null</param>
-        void Receive(OnReceiveMessage onReceive);
     }
+
+
 
     /// <summary>
     /// 应用网络层API封装
@@ -233,11 +241,16 @@ namespace Network.Remote
         Task<T> ListenAsync();
     }
 
+    #region 转发
+
     /// <summary>
-    /// 处理收到消息委托
+    /// 接入点/转发器/路由
     /// </summary>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    public delegate ValueTask<object> OnReceiveMessage(object message);
+    public interface IRouter
+    {
+
+    }
+
+    #endregion
 
 }

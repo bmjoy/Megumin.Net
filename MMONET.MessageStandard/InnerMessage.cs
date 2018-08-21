@@ -6,8 +6,6 @@ using System.Text;
 
 namespace MMONET.Message
 {
-
-
     /// <summary>
     /// 心跳包消息
     /// </summary>

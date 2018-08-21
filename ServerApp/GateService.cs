@@ -22,26 +22,28 @@ namespace ServerApp
             var remote = await listener.ListenAsync();
             Console.WriteLine($"建立连接");
             StartListenAsync();
-            remote.Receive(OnReceiveAsync);
+            remote.Receiver = new Receiver();
         }
 
-        private async ValueTask<object> OnReceiveAsync(object message)
+        class Receiver:MMONET.Message.MessagePipline
         {
-            switch (message)
+            public async override ValueTask<object> DealMessage(object message)
             {
-                case Login2Gate login:
+                switch (message)
+                {
+                    case Login2Gate login:
 
-                    Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
+                        Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
 
-                    Login2GateResult resp = new Login2GateResult();
-                    resp.IsSuccess = true;
-                    return resp;
-                default:
-                    break;
+                        Login2GateResult resp = new Login2GateResult();
+                        resp.IsSuccess = true;
+                        return resp;
+                    default:
+                        break;
+                }
+                return null;
             }
-            return null;
         }
-
         public void Update(double deltaTime)
         {
             throw new System.NotImplementedException();

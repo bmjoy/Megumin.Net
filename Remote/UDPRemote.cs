@@ -119,6 +119,7 @@ namespace MMONET.Remote
                     if (res)
                     {
                         isConnecting = false;
+                        ReceiveStart();
                         return null;
                     }
                 }
@@ -163,7 +164,7 @@ namespace MMONET.Remote
                 while (true)
                 {
                     var recv = await udpClient.ReceiveAsync();
-                    var (Size, MessageID, RpcID) = ReadPacketHeader(recv.Buffer);
+                    var (Size, MessageID, RpcID) = MessagePipline.Default.ParsePacketHeader(recv.Buffer);
                     if (MessageID == MSGID.UdpConnectMessageID)
                     {
                         var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);
@@ -279,19 +280,39 @@ namespace MMONET.Remote
     /// 发送
     partial class UDPRemote
     {
-        protected override void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
+
+        /// <summary>
+        /// 正常发送入口
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        protected override void SendAsync<T>(short rpcID, T message)
+        {
+            SendByteBufferAsync(Packer.Packet(rpcID, message, this));
+        }
+
+        /// <summary>
+        /// 注意，发送完成时内部回收了buffer。
+        /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
+        /// </summary>
+        /// <param name="bufferMsg"></param>
+        protected void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
         {
             try
             {
                 Task.Run(() =>
                         {
-                            if (MemoryMarshal.TryGetArray<byte>(bufferMsg.Memory,out var sbuffer))
+                            try
                             {
-                                udpClient.Send(sbuffer.Array,sbuffer.Count);
+                                if (MemoryMarshal.TryGetArray<byte>(bufferMsg.Memory, out var sbuffer))
+                                {
+                                    udpClient.Send(sbuffer.Array, sbuffer.Count);
+                                }
                             }
-                            else
+                            finally
                             {
-                                throw new Exception();
+                                bufferMsg.Dispose();
                             }
                         });
             }
@@ -323,7 +344,7 @@ namespace MMONET.Remote
     partial class UDPRemote
     {
         public bool isReceiving = false;
-        protected override void ReceiveStart()
+        public override void ReceiveStart()
         {
             if (!Client.Connected || isReceiving)
             {
@@ -374,45 +395,8 @@ namespace MMONET.Remote
         {
             Task.Run(() =>
             {
-                //解包
-                var unpackedMessage = base.UnPacketBuffer(byteOwner.Memory);
-
-                ///处理字节消息
-                (bool IsContinue, bool SwitchThread, short rpcID, var objectMessage)
-                    = base.DealBytesMessage(unpackedMessage.messageID, unpackedMessage.rpcID,
-                                        unpackedMessage.extraType, unpackedMessage.extraMessage,
-                                        unpackedMessage.byteUserMessage);
-
-                DealObjectMessage(IsContinue, SwitchThread, rpcID, objectMessage);
-
-                ///回收缓冲
-                byteOwner.Dispose();
+                Receiver.Receive(byteOwner, this);
             });
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="messageID"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="byteUserMessage"></param>
-        /// <returns></returns>
-        protected override (bool IsContinue, bool SwitchThread, short rpcID, object objectMessage) 
-            WhenNoExtra(int messageID, short rpcID, ReadOnlyMemory<byte> byteUserMessage)
-        {
-            if (messageID == MSGID.HeartbeatsMessageID)
-            {
-                ///拦截框架心跳包
-                
-                //todo
-
-
-                return (false, false, default, default);
-            }
-            else
-            {
-                return base.WhenNoExtra(messageID, rpcID, byteUserMessage);
-            }
         }
     }
 }

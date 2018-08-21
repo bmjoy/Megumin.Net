@@ -44,6 +44,7 @@ namespace MMONET.Remote
                 ListenAsync();
             }
             TCPRemote remote = new TCPRemote(remoteSocket);
+            remote.ReceiveStart();
             return remote;
         }
 

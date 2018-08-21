@@ -161,7 +161,7 @@ namespace MMONET.Message
         /// <exception cref="ArgumentOutOfRangeException"> 消息长度大于8192 - 25(框架用长度),请拆分发送。"</exception>
         /// <remarks>框架中TCP接收最大支持8192，所以发送也不能大于8192，为了安全起见，框架提供的字节数组长度是16384的。</remarks>
         public static (int messageID, ushort length)
-            Serialize<T>(Span<byte> buffer16384, T message)
+            Serialize<T>(T message,Span<byte> buffer16384)
         {
             if (sFormatter.TryGetValue(message.GetType(),out var sf))
             {
@@ -218,4 +218,5 @@ namespace MMONET.Message
         public static event Action<int> OnMissDeserializer;
         public static event Action<Type> OnMissSeiralizer;
     }
+
 }

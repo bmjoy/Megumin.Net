@@ -58,6 +58,7 @@ namespace UnitFunc
             TCPRemote remote = new TCPRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
+            remote.Receiver = MessagePipline.TestReceiver;
             TestSendAsync(remote).Wait();
             cancellation.Cancel();
         }
@@ -73,7 +74,7 @@ namespace UnitFunc
             UDPRemote remote = new UDPRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
-            //remote.Receive(null);
+            remote.Receiver = MessagePipline.TestReceiver;
             TestSendAsync(remote).Wait();
             cancellation.Cancel();
         }
@@ -96,7 +97,7 @@ namespace UnitFunc
         [TestMethod]
         public void TestLazyUdpSend()
         {
-            const int Port = 44323;
+            const int Port = 44324;
             CancellationTokenSource cancellation = new CancellationTokenSource();
             PrepareEnvironment(cancellation);
             StartUdpListen(Port, cancellation);
@@ -109,13 +110,25 @@ namespace UnitFunc
             cancellation.Cancel();
         }
 
+        [TestMethod]
+        public void TestBridgeTcp()
+        {
+            const int Port = 54325;
+            var (a, b) = CreatePair(Port);
 
+            TCPRemote x = new TCPRemote();
+        }
 
-
-
-
-
-
+        private (IRouter a,IRouter b) CreatePair(int port)
+        {
+            TCPRemoteListener listener = new TCPRemoteListener(port);
+            var res = listener.ListenAsync();
+            TCPRemote a = new TCPRemote();
+            a.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
+            var b = res.Result;
+            Assert.AreEqual(true, b.Client.Connected);
+            return (default, default);
+        }
 
         private static void PrepareEnvironment(CancellationTokenSource cancellation)
         {
@@ -146,7 +159,7 @@ namespace UnitFunc
                 while (!cancellation.Token.IsCancellationRequested)
                 {
                     var r = await listener.ListenAsync();
-                    r.Receive(Receive);
+                    r.Receiver = MessagePipline.TestReceiver;
                 }
             });
             Task.Delay(50).Wait();
@@ -160,27 +173,13 @@ namespace UnitFunc
                 while (!cancellation.Token.IsCancellationRequested)
                 {
                     var r = await listener.ListenAsync();
-                    r.Receive(Receive);
+                    r.Receiver = MessagePipline.TestReceiver;
                 }
             });
             Task.Delay(200).Wait();
         }
 
-        private static async ValueTask<object> Receive(object message)
-        {
-            switch (message)
-            {
-                case TestPacket1 packet1:
-                    Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}");
-                    return null;
-                case TestPacket2 packet2:
-                    Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                    return new TestPacket2 { Value = packet2.Value };
-                default:
-                    break;
-            }
-            return null;
-        }
+
 
         async Task TestConnect(IList<IRemote> remotes,int port)
         {
