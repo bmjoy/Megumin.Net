@@ -227,20 +227,6 @@ namespace Network.Remote
 
     }
 
-    /// <summary>
-    /// 连接监听接口
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public interface IRemoteListener<T> : IRemoteEndPoint
-        where T: IRemote
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        Task<T> ListenAsync();
-    }
-
     #region 转发
 
     /// <summary>

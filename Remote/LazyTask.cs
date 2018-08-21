@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Network.Remote;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace MMONET.Remote
 {
@@ -128,7 +129,13 @@ namespace MMONET.Remote
 
         void IPoolElement.Return()
         {
-            Reset();
+            #region Reset
+
+            alreadyEnterAsync = false;
+            Result = default;
+            continuation = null;
+
+            #endregion
 
             if (state != State.InPool)
             {
@@ -139,13 +146,6 @@ namespace MMONET.Remote
 
                 }
             }
-        }
-
-        void Reset()
-        {
-            alreadyEnterAsync = false;
-            Result = default;
-            continuation = null;
         }
     }
 }

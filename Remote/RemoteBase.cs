@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using MMONET.Message;
@@ -62,6 +63,7 @@ namespace MMONET.Remote
         /// <typeparam name="T"></typeparam>
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected abstract void SendAsync<T>(short rpcID, T message);
 
         public Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message)

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using MMONET;
 
 namespace System
 {
@@ -17,6 +15,7 @@ namespace System
         /// <typeparam name="T"></typeparam>
         /// <param name="type"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T GetFirstCustomAttribute<T>(this Type type)
             where T : Attribute
         {
@@ -63,12 +62,14 @@ namespace System.Threading.Tasks
 {
     public static class Task_49A548505C7242BEBD1AD43D876BC1B0
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async static Task<(T result, bool complete)> WaitAsync<T>(this Task<T> task, int millisecondsTimeout)
         {
             var complete = await Task.Run(() => task.Wait(millisecondsTimeout));
             return (complete ? task.Result : default, complete);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public async static Task<bool> WaitAsync(this Task task, int millisecondsTimeout)
         {
             return await Task.Run(() => task.Wait(millisecondsTimeout));

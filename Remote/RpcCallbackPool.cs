@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Network.Remote;
+using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Network.Remote;
 
 namespace MMONET.Remote
 {
@@ -36,6 +36,7 @@ namespace MMONET.Remote
         /// 最多同时维持32767个Rpc调用
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         short GetRpcID()
         {
             lock (rpcCursorLock)
@@ -162,6 +163,7 @@ namespace MMONET.Remote
         /// 创建超时检查
         /// </summary>
         /// <param name="rpcID"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CreateCheckTimeout(short rpcID)
         {
             ///超时检查

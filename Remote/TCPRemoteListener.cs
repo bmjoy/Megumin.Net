@@ -1,25 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using MMONET.Message;
+using Network.Remote;
+using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Network.Remote;
 
 namespace MMONET.Remote
 {
-    public class TCPRemoteListener : IRemoteListener<TCPRemote>
+    public class TCPRemoteListener
     {
         private TcpListener tcpListener;
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
+        public EndPoint RemappedEndPoint { get; }
 
         public TCPRemoteListener(int port)
         {
             this.ConnectIPEndPoint = new IPEndPoint(IPAddress.None,port);
         }
 
-        public async Task<TCPRemote> ListenAsync()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Task<Socket> Accept()
         {
             if (tcpListener == null)
             {
@@ -34,16 +35,39 @@ namespace MMONET.Remote
             try
             {
                 ///此处有远程连接拒绝异常
-                remoteSocket = await tcpListener.AcceptSocketAsync();
+                return tcpListener.AcceptSocketAsync();
             }
             catch (InvalidOperationException e)
             {
                 Console.WriteLine(e);
                 ///出现异常重新开始监听
                 tcpListener = null;
-                ListenAsync();
+                return Accept();
             }
-            TCPRemote remote = new TCPRemote(remoteSocket);
+        }
+
+        /// <summary>
+        ///创建TCPRemote并ReceiveStart
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TCPRemote> ListenAsync()
+        {
+            var remoteSocket = await Accept();
+            var remote = new TCPRemote(remoteSocket);
+            remote.ReceiveStart();
+            return remote;
+        }
+
+        /// <summary>
+        /// 创建TCPRemote并ReceiveStart.在ReceiveStart调用之前设置Receiver,以免设置Receiver不及时漏掉消息.
+        /// </summary>
+        /// <param name="receiver"></param>
+        /// <returns></returns>
+        public async Task<TCPRemote> ListenAsync(IReceiver<ISuperRemote> receiver)
+        {
+            var remoteSocket = await Accept();
+            var remote = new TCPRemote(remoteSocket);
+            remote.Receiver = receiver;
             remote.ReceiveStart();
             return remote;
         }

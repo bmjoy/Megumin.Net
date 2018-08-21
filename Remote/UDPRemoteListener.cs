@@ -1,23 +1,20 @@
-﻿using System;
+﻿using MMONET.Message;
+using Network.Remote;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
-using MMONET.Message;
-using Network.Remote;
-using static MMONET.Message.MessageLUT;
 
 namespace MMONET.Remote
 {
     /// <summary>
     /// IPV4 IPV6 udp中不能混用
     /// </summary>
-    public class UDPRemoteListener : UdpClient, IRemoteListener<UDPRemote>
+    public class UDPRemoteListener : UdpClient
     {
         public IPEndPoint ConnectIPEndPoint { get; set; }
-        EndPoint IRemoteEndPoint.RemappedEndPoint { get; }
+        public EndPoint RemappedEndPoint { get; }
 
         public UDPRemoteListener(int port,AddressFamily addressFamily = AddressFamily.InterNetworkV6)
             : base(port, addressFamily)
@@ -92,8 +89,6 @@ namespace MMONET.Remote
             }
         }
 
-
-
         public async Task<UDPRemote> ListenAsync()
         {
             IsListening = true;
@@ -117,6 +112,40 @@ namespace MMONET.Remote
 
             var res = await TaskCompletionSource.Task;
             TaskCompletionSource = null;
+            res.ReceiveStart();
+            return res;
+        }
+
+        /// <summary>
+        /// 在ReceiveStart调用之前设置Receiver.
+        /// </summary>
+        /// <param name="receiver"></param>
+        /// <returns></returns>
+        public async Task<UDPRemote> ListenAsync(IReceiver<ISuperRemote> receiver)
+        {
+            IsListening = true;
+            System.Threading.ThreadPool.QueueUserWorkItem(state =>
+            {
+                AcceptAsync();
+            });
+
+            if (connected.TryDequeue(out var remote))
+            {
+                if (remote != null)
+                {
+                    remote.Receiver = receiver;
+                    remote.ReceiveStart();
+                    return remote;
+                }
+            }
+            if (TaskCompletionSource == null)
+            {
+                TaskCompletionSource = new TaskCompletionSource<UDPRemote>();
+            }
+
+            var res = await TaskCompletionSource.Task;
+            TaskCompletionSource = null;
+            res.Receiver = receiver;
             res.ReceiveStart();
             return res;
         }

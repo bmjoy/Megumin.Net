@@ -158,8 +158,7 @@ namespace UnitFunc
                 TCPRemoteListener listener = new TCPRemoteListener(port);
                 while (!cancellation.Token.IsCancellationRequested)
                 {
-                    var r = await listener.ListenAsync();
-                    r.Receiver = MessagePipline.TestReceiver;
+                    var r = await listener.ListenAsync(MessagePipline.TestReceiver);
                 }
             });
             Task.Delay(50).Wait();
@@ -172,8 +171,7 @@ namespace UnitFunc
                 UDPRemoteListener listener = new UDPRemoteListener(port);
                 while (!cancellation.Token.IsCancellationRequested)
                 {
-                    var r = await listener.ListenAsync();
-                    r.Receiver = MessagePipline.TestReceiver;
+                    var r = await listener.ListenAsync(MessagePipline.TestReceiver);
                 }
             });
             Task.Delay(200).Wait();

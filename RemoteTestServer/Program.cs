@@ -49,19 +49,18 @@ namespace RemoteTest
 
             });
 
-            IRemoteListener<TCPRemote> remote = new TCPRemoteListener(54321);
+            TCPRemoteListener remote = new TCPRemoteListener(54321);
             Listen(remote);
         }
 
         static int connectCount;
 
-        private static async void Listen(IRemoteListener<TCPRemote> remote)
+        private static async void Listen(TCPRemoteListener remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync();
+            var re = await remote.ListenAsync(MessagePipline.TestReceiver);
             Console.WriteLine($"接收到连接{connectCount++}");
             Listen(remote);
-            re.Receiver = MessagePipline.TestReceiver;
         }
 
         private static void TestConnect(IRemote re)

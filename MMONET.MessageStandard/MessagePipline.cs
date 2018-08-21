@@ -1,11 +1,9 @@
-﻿using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using MMONET.Message.TestMessage;
+﻿using MMONET.Message.TestMessage;
 using Network.Remote;
+using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MMONET.Message
 {
