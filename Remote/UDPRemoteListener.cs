@@ -1,5 +1,6 @@
 ﻿using MMONET.Message;
 using Network.Remote;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
@@ -30,7 +31,7 @@ namespace MMONET.Remote
             while (IsListening)
             {
                 var res = await ReceiveAsync();
-                var (Size, MessageID, RpcID) = MessagePipline.Default.ParsePacketHeader(res.Buffer);
+                var (Size, MessageID) = MessagePipeline.Default.ParsePacketHeader(res.Buffer);
                 if (MessageID == MSGID.UdpConnectMessageID)
                 {
                     ReMappingAsync(res);
@@ -89,7 +90,7 @@ namespace MMONET.Remote
             }
         }
 
-        public async Task<UDPRemote> ListenAsync()
+        public async Task<UDPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle)
         {
             IsListening = true;
             System.Threading.ThreadPool.QueueUserWorkItem(state =>
@@ -112,16 +113,18 @@ namespace MMONET.Remote
 
             var res = await TaskCompletionSource.Task;
             TaskCompletionSource = null;
+            res.MessagePipeline = MessagePipeline.Default;
+            res.ReceiveHandle += receiveHandle;
             res.ReceiveStart();
             return res;
         }
 
         /// <summary>
-        /// 在ReceiveStart调用之前设置Receiver.
+        /// 在ReceiveStart调用之前设置pipline.
         /// </summary>
-        /// <param name="receiver"></param>
+        /// <param name="pipline"></param>
         /// <returns></returns>
-        public async Task<UDPRemote> ListenAsync(IReceiver<ISuperRemote> receiver)
+        public async Task<UDPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle,IMessagePipeline pipline)
         {
             IsListening = true;
             System.Threading.ThreadPool.QueueUserWorkItem(state =>
@@ -133,7 +136,7 @@ namespace MMONET.Remote
             {
                 if (remote != null)
                 {
-                    remote.Receiver = receiver;
+                    remote.MessagePipeline = pipline;
                     remote.ReceiveStart();
                     return remote;
                 }
@@ -145,7 +148,8 @@ namespace MMONET.Remote
 
             var res = await TaskCompletionSource.Task;
             TaskCompletionSource = null;
-            res.Receiver = receiver;
+            res.MessagePipeline = pipline;
+            res.ReceiveHandle += receiveHandle;
             res.ReceiveStart();
             return res;
         }

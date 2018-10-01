@@ -1,6 +1,7 @@
 ﻿using MMONET.Message.TestMessage;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace MMONET.Message
 {
@@ -66,7 +67,7 @@ namespace MMONET.Message
                 UdpConnectMessage.Serialize, UdpConnectMessage.Deserialize);
         }
 
-        static readonly Dictionary<int, Deserilizer> dFormatter = new Dictionary<int, Deserilizer>();
+        static readonly Dictionary<int, (Type type,Deserilizer deserilizer)> dFormatter = new Dictionary<int, (Type type,Deserilizer deserilizer)>();
         static readonly Dictionary<Type, (int MessageID, Delegate Seiralizer)> sFormatter = new Dictionary<Type, (int MessageID, Delegate Seiralizer)>();
         ///序列化方法第二个参数必须为 byte[]
         static Type args2type = typeof(Span<byte>);
@@ -119,7 +120,7 @@ namespace MMONET.Message
             }
         }
 
-        protected static void AddDFormatter(int messageID, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        protected static void AddDFormatter(int messageID,Type type, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             if (deserilizer == null)
             {
@@ -129,7 +130,7 @@ namespace MMONET.Message
             switch (key)
             {
                 case KeyAlreadyHave.Replace:
-                    dFormatter[messageID] = deserilizer;
+                    dFormatter[messageID] = (type, deserilizer);
                     return;
                 case KeyAlreadyHave.Skip:
                     if (dFormatter.ContainsKey(messageID))
@@ -138,12 +139,12 @@ namespace MMONET.Message
                     }
                     else
                     {
-                        dFormatter.Add(messageID, deserilizer);
+                        dFormatter.Add(messageID, (type, deserilizer));
                     }
                     break;
                 case KeyAlreadyHave.ThrowException:
                 default:
-                    dFormatter.Add(messageID, deserilizer);
+                    dFormatter.Add(messageID, (type, deserilizer));
                     break;
             }
         }
@@ -151,13 +152,13 @@ namespace MMONET.Message
         public static void AddFormatter(Type type, int messageID, Delegate seiralizer, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             AddSFormatter(type, messageID, seiralizer, key);
-            AddDFormatter(messageID, deserilizer, key);
+            AddDFormatter(messageID,type, deserilizer, key);
         }
 
         public static void AddFormatter<T>(int messageID, Seiralizer<T> seiralizer, Deserilizer deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             AddSFormatter(typeof(T), messageID, seiralizer, key);
-            AddDFormatter(messageID, deserilizer, key);
+            AddDFormatter(messageID,typeof(T), deserilizer, key);
         }
 
         /// <summary>
@@ -210,11 +211,12 @@ namespace MMONET.Message
         /// <param name="messageID"></param>
         /// <param name="body"></param>
         /// <returns></returns>
-        public static object Deserialize(int messageID,ReadOnlyMemory<byte> body)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static object Deserialize(int messageID,in ReadOnlyMemory<byte> body)
         {
             if (dFormatter.ContainsKey(messageID))
             {
-                return dFormatter[messageID](body);
+                return dFormatter[messageID].deserilizer(body);
             }
             else
             {
@@ -226,6 +228,27 @@ namespace MMONET.Message
 
         public static event Action<int> OnMissDeserializer;
         public static event Action<Type> OnMissSeiralizer;
+
+        public static Type GetMessageType(int messageID)
+        {
+            if (dFormatter.TryGetValue(messageID,out var res))
+            {
+                return res.type;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static int? GetMsgID<T>()
+        {
+            if (sFormatter.TryGetValue(typeof(T),out var res))
+            {
+                return res.MessageID;
+            }
+            return null;
+        }
     }
 
 }

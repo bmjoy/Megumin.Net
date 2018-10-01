@@ -19,6 +19,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="RemoteBase.cs~RF16df24af.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\MMONET.MessageStandard\MMONET.MessageStandard.csproj" />
     <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj" />

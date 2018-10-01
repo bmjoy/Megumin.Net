@@ -23,7 +23,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj" />
   </ItemGroup>
 
 </Project>

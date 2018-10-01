@@ -12,10 +12,23 @@ namespace Network.Remote
     /// <typeparam name="T"></typeparam>
     public interface ILazyAwaitable<T>
     {
+        /// <summary>
+        /// 
+        /// </summary>
         bool IsCompleted { get; }
+        /// <summary>
+        /// 
+        /// </summary>
         T Result { get; }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="continuation"></param>
         void UnsafeOnCompleted(Action continuation);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="continuation"></param>
         void OnCompleted(Action continuation);
         /// <summary>
         /// 通过设定结果值触发后续方法

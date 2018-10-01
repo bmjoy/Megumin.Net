@@ -21,6 +21,8 @@ namespace MMONET.Remote
             Faild,
         }
 
+        public static int MaxCount { get; set; } = 512;
+
         static ConcurrentQueue<LazyTask<T>> pool = new ConcurrentQueue<LazyTask<T>>();
         public static LazyTask<T> Rent()
         {
@@ -43,6 +45,7 @@ namespace MMONET.Remote
                 while (pool.Count > 0)
                 {
                     pool.TryDequeue(out var task);
+                    task?.Reset();
                 }
             }
         }
@@ -129,23 +132,24 @@ namespace MMONET.Remote
 
         void IPoolElement.Return()
         {
-            #region Reset
-
-            alreadyEnterAsync = false;
-            Result = default;
-            continuation = null;
-
-            #endregion
+            Reset();
 
             if (state != State.InPool)
             {
-                if (pool.Count < 150)
+                if (pool.Count < MaxCount)
                 {
                     pool.Enqueue(this);
                     state = State.InPool;
 
                 }
             }
+        }
+
+        void Reset()
+        {
+            alreadyEnterAsync = false;
+            Result = default;
+            continuation = null;
         }
     }
 }

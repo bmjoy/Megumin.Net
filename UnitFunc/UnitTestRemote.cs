@@ -58,7 +58,6 @@ namespace UnitFunc
             TCPRemote remote = new TCPRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, Port)).Wait();
-            remote.Receiver = MessagePipline.TestReceiver;
             TestSendAsync(remote).Wait();
             cancellation.Cancel();
         }
@@ -74,7 +73,6 @@ namespace UnitFunc
             UDPRemote remote = new UDPRemote();
             remote.RpcCallbackPool.RpcTimeOutMilliseconds = 2000;
             remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback, Port)).Wait();
-            remote.Receiver = MessagePipline.TestReceiver;
             TestSendAsync(remote).Wait();
             cancellation.Cancel();
         }
@@ -113,21 +111,18 @@ namespace UnitFunc
         [TestMethod]
         public void TestBridgeTcp()
         {
-            const int Port = 54325;
-            var (a, b) = CreatePair(Port);
+            //客户端-----[  网关服务器进程 ]-------[ 转发服务器进程 ]------[     游戏服务器进程    ]
+            //Remote----[Router --- Router]-----[Router --- Router]------[Remote]
+            //x----------a-----------b------------c-----------d------------y------------
+            //x发送消息到a，如果消息是TestPacket1，将消息发送到y,然后将收到的值+1，返回给x.
 
-            TCPRemote x = new TCPRemote();
-        }
 
-        private (IRouter a,IRouter b) CreatePair(int port)
-        {
-            TCPRemoteListener listener = new TCPRemoteListener(port);
-            var res = listener.ListenAsync();
-            TCPRemote a = new TCPRemote();
-            a.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
-            var b = res.Result;
-            Assert.AreEqual(true, b.Client.Connected);
-            return (default, default);
+
+            //const int Port = 54325;
+            //var (a, b) = CreatePair(Port);
+
+            //TCPRemote x = new TCPRemote();
+
         }
 
         private static void PrepareEnvironment(CancellationTokenSource cancellation)
@@ -158,7 +153,7 @@ namespace UnitFunc
                 TCPRemoteListener listener = new TCPRemoteListener(port);
                 while (!cancellation.Token.IsCancellationRequested)
                 {
-                    var r = await listener.ListenAsync(MessagePipline.TestReceiver);
+                    var r = await listener.ListenAsync(TestFunction.DealMessage);
                 }
             });
             Task.Delay(50).Wait();
@@ -171,7 +166,7 @@ namespace UnitFunc
                 UDPRemoteListener listener = new UDPRemoteListener(port);
                 while (!cancellation.Token.IsCancellationRequested)
                 {
-                    var r = await listener.ListenAsync(MessagePipline.TestReceiver);
+                    var r = await listener.ListenAsync(TestFunction.DealMessage);
                 }
             });
             Task.Delay(200).Wait();

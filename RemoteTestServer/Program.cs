@@ -58,7 +58,7 @@ namespace RemoteTest
         private static async void Listen(TCPRemoteListener remote)
         {
             /// 最近一次测试本机同时运行客户端服务器16000+连接时，服务器拒绝连接。
-            var re = await remote.ListenAsync(MessagePipline.TestReceiver);
+            var re = await remote.ListenAsync(TestFunction.DealMessage);
             Console.WriteLine($"接收到连接{connectCount++}");
             Listen(remote);
         }

@@ -5,6 +5,11 @@
     <AssemblyName>RemoteStandard</AssemblyName>
     <RootNamespace>Network.Remote</RootNamespace>
     <Version>0.0.1</Version>
+    <Description>设计目的：为应用程序网络层提供一致API接口。</Description>
+    <Authors>云却</Authors>
+    <Company>RemoteStandard</Company>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Copyright></Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -19,6 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.1" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1" />
   </ItemGroup>
 

@@ -55,6 +55,32 @@ namespace MMONET
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long ReadLong(this ReadOnlySpan<byte> span)
             => BinaryPrimitives.ReadInt64BigEndian(span);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ReadInt(this Span<byte> span)
+            => BinaryPrimitives.ReadInt32BigEndian(span);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ReadUshort(this Span<byte> span)
+            => BinaryPrimitives.ReadUInt16BigEndian(span);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ReadShort(this Span<byte> span)
+            => BinaryPrimitives.ReadInt16BigEndian(span);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ReadLong(this Span<byte> span)
+            => BinaryPrimitives.ReadInt64BigEndian(span);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ReadInt(this Memory<byte> span)
+            => BinaryPrimitives.ReadInt32BigEndian(span.Span);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ushort ReadUshort(this Memory<byte> span)
+            => BinaryPrimitives.ReadUInt16BigEndian(span.Span);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static short ReadShort(this Memory<byte> span)
+            => BinaryPrimitives.ReadInt16BigEndian(span.Span);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long ReadLong(this Memory<byte> span)
+            => BinaryPrimitives.ReadInt64BigEndian(span.Span);
     }
 }
 

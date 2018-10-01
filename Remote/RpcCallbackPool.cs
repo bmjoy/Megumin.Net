@@ -11,9 +11,9 @@ namespace MMONET.Remote
     /// <summary>
     /// Rpc回调注册池
     /// </summary>
-    public class RpcCallbackPool : Dictionary<short, (DateTime startTime, RpcCallback rpcCallback)>, IRpcCallbackPool
+    public class RpcCallbackPool : Dictionary<int, (DateTime startTime, RpcCallback rpcCallback)>, IRpcCallbackPool
     {
-        short rpcCursor = 0;
+        int rpcCursor = 0;
         readonly object rpcCursorLock = new object();
 
         public RpcCallbackPool()
@@ -37,11 +37,11 @@ namespace MMONET.Remote
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        short GetRpcID()
+        int GetRpcID()
         {
             lock (rpcCursorLock)
             {
-                if (rpcCursor <= 0 || rpcCursor == short.MaxValue)
+                if (rpcCursor <= 0 || rpcCursor == int.MaxValue)
                 {
                     rpcCursor = 1;
                 }
@@ -54,9 +54,9 @@ namespace MMONET.Remote
             }
         }
 
-        public (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>()
+        public (int rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>()
         {
-            short rpcID = GetRpcID();
+            int rpcID = GetRpcID();
 
             TaskCompletionSource<(RpcResult Result, Exception Excption)> source
                 = new TaskCompletionSource<(RpcResult Result, Exception Excption)>();
@@ -88,7 +88,7 @@ namespace MMONET.Remote
                                 else
                                 {
                                     ///转换类型错误
-                                    source.SetResult((default, new InvalidCastException($"返回类型错误，无法转换")));
+                                    source.SetResult((default, new InvalidCastException($"返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}")));
                                 }
 
                             }
@@ -109,9 +109,9 @@ namespace MMONET.Remote
             return (rpcID, source.Task);
         }
 
-        public (short rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
+        public (int rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
         {
-            short rpcID = GetRpcID();
+            int rpcID = GetRpcID();
             ILazyAwaitable<RpcResult> source = LazyTask<RpcResult>.Rent();
             short key = (short)(rpcID * -1);
             if (TryDequeue(key, out var callback))
@@ -141,7 +141,7 @@ namespace MMONET.Remote
                                 else
                                 {
                                     ///转换类型错误
-                                    OnException?.Invoke(new InvalidCastException($"返回类型错误，无法转换"));
+                                    OnException?.Invoke(new InvalidCastException($"返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}"));
                                 }
                             }
                         }
@@ -184,7 +184,7 @@ namespace MMONET.Remote
         }
 
         readonly object dequeueLocker = new object();
-        public bool TryDequeue(short rpcID, out (DateTime startTime, Network.Remote.RpcCallback rpcCallback) rpc)
+        public bool TryDequeue(int rpcID, out (DateTime startTime, Network.Remote.RpcCallback rpcCallback) rpc)
         {
             lock (dequeueLocker)
             {
@@ -198,19 +198,19 @@ namespace MMONET.Remote
             return false;
         }
 
-        void IRpcCallbackPool.Remove(short rpcID) => Remove(rpcID);
+        void IRpcCallbackPool.Remove(int rpcID) => Remove(rpcID);
 
-        public bool TrySetResult(short rpcID, object msg)
+        public bool TrySetResult(int rpcID, object msg)
         {
             return TryComplate(rpcID, msg, null);
         }
 
-        public bool TrySetException(short rpcID, Exception exception)
+        public bool TrySetException(int rpcID, Exception exception)
         {
             return TryComplate(rpcID, null, exception);
         }
 
-        bool TryComplate(short rpcID, object msg,Exception exception)
+        bool TryComplate(int rpcID, object msg,Exception exception)
         {
             ///rpc响应
             if (TryDequeue(rpcID, out var rpc))

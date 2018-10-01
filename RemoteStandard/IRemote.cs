@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -6,6 +7,28 @@ using System.Threading.Tasks;
 
 namespace Network.Remote
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IToken
+    {
+        /// <summary>
+        /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
+        /// </summary>
+        int UserToken { get; set; }
+    }
+
+    /// <summary>
+    ///
+    /// </summary>
+    public interface IPID
+    {
+        /// <summary>
+        /// 进程唯一。
+        /// </summary>
+        int PID { get; }
+    }
+
     /// <summary>
     /// 末端
     /// </summary>
@@ -56,6 +79,11 @@ namespace Network.Remote
         /// <param name="message"></param>
         /// <remarks>序列化开销不大，放在调用线程执行比使用单独的序列化线程更好</remarks>
         void SendAsync(object message);
+        /// <summary>
+        /// 发送消息，无阻塞立刻返回
+        /// </summary>
+        /// <param name="byteMessage"></param>
+        void SendAsync(IMemoryOwner<byte> byteMessage);
     }
 
     /// <summary>
@@ -75,13 +103,52 @@ namespace Network.Remote
         /// Rpc超时毫秒数
         /// </summary>
         int RpcTimeOutMilliseconds { get; set; }
-        (short rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
-        (short rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
-        bool TryGetValue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
-        bool TryDequeue(short rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
-        void Remove(short rpcID);
-        bool TrySetResult(short rpcID, object msg);
-        bool TrySetException(short rpcID, Exception exception);
+        /// <summary>
+        /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <returns></returns>
+        (int rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
+        /// <summary>
+        /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <param name="OnException"></param>
+        /// <returns></returns>
+        (int rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
+        /// <summary>
+        /// 取得rpc回调函数
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="rpc"></param>
+        /// <returns></returns>
+        bool TryGetValue(int rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
+        /// <summary>
+        /// 取得rpc回调函数，并从rpc回调池中移除
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="rpc"></param>
+        /// <returns></returns>
+        bool TryDequeue(int rpcID, out (DateTime startTime, RpcCallback rpcCallback) rpc);
+        /// <summary>
+        /// 从rpc回调池中移除
+        /// </summary>
+        /// <param name="rpcID"></param>
+        void Remove(int rpcID);
+        /// <summary>
+        /// 触发rpc回调
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        bool TrySetResult(int rpcID, object msg);
+        /// <summary>
+        /// 触发rpc回调
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="exception"></param>
+        /// <returns></returns>
+        bool TrySetException(int rpcID, Exception exception);
     }
 
     /// <summary>
@@ -169,41 +236,27 @@ namespace Network.Remote
     }
 
     /// <summary>
-    /// 分流消息，区分是否为RPC
-    /// </summary>
-    public interface IShuntMessage
-    {
-        /// <summary>
-        /// 分拣Rpc消息
-        /// </summary>
-        /// <param name="rpcID"></param>
-        /// <param name="msg"></param>
-        void ShuntMessage(short rpcID, object msg);
-    }
-
-    /// <summary>
     /// 接收消息
     /// </summary>
-    public interface IReceiveMessage:IShuntMessage
+    public interface IReceiveMessage
     {
         /// <summary>
         /// 最后一次收到消息的时间
         /// </summary>
         DateTime LastReceiveTime { get; }
+        /// <summary>
+        /// 
+        /// </summary>
+        event Func<object, ValueTask<object>> ReceiveHandle;
     }
-
-
 
     /// <summary>
     /// 应用网络层API封装
     /// </summary>
     public interface IRemote : IRemoteEndPoint, ISendMessage, IReceiveMessage,
-        IConnectable, IRpcSendMessage, IBroadCastSend, IDisposable
+        IConnectable, IRpcSendMessage, IBroadCastSend, IDisposable,IToken,IPID
     {
-        /// <summary>
-        /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
-        /// </summary>
-        int UserToken { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -213,10 +266,6 @@ namespace Network.Remote
         /// </summary>
         bool IsVaild { get; }
 
-        /// <summary>
-        /// 这个是框架全局分配的ID。进程唯一。
-        /// </summary>
-        int Guid { get; }
     }
 
     /// <summary>
@@ -227,16 +276,33 @@ namespace Network.Remote
 
     }
 
-    #region 转发
-
     /// <summary>
-    /// 接入点/转发器/路由
+    /// 转发器
     /// </summary>
-    public interface IRouter
+    public interface IForwarder:IPID,ISendMessage
     {
-
+        /// <summary>
+        /// 转发发送
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="identifier"></param>
+        void SendAsync(object message,int identifier);
+        /// <summary>
+        /// 转发发送
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <param name="message"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message,int identifier);
+        /// <summary>
+        /// 转发发送
+        /// </summary>
+        /// <typeparam name="RpcResult"></typeparam>
+        /// <param name="message"></param>
+        /// <param name="identifier"></param>
+        /// <param name="OnException"></param>
+        /// <returns></returns>
+        ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message,int identifier, Action<Exception> OnException = null);
     }
-
-    #endregion
-
 }

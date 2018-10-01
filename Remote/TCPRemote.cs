@@ -28,6 +28,11 @@ namespace MMONET.Remote
 
         }
 
+        public TCPRemote(IMessagePipeline messagePipeline) : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        {
+            MessagePipeline = messagePipeline;
+        }
+
         /// <summary>
         /// 使用一个已连接的Socket创建远端
         /// </summary>
@@ -173,52 +178,23 @@ namespace MMONET.Remote
     /// 发送实例消息
     partial class TCPRemote
     {
-        /// <summary>
-        /// 转发入口
-        /// </summary>
-        /// <param name="mappedID"></param>
-        /// <param name="rpcID"></param>
-        /// <param name="messageID"></param>
-        /// <param name="messageBodyBuffer"></param>
-        void ZhuanFa(int mappedID, short rpcID, int messageID, ArraySegment<byte> messageBodyBuffer)
-        {
-            //PacketBuffer(messageID, rpcID, (mappedID, default, default, default), messageBodyBuffer);
-        }
-
         public Task BroadCastSendAsync(ArraySegment<byte> msgBuffer) => Client.SendAsync(msgBuffer, SocketFlags.None);
     }
 
     /// 发送字节消息
     partial class TCPRemote
     {
-        public new ITcpPacker<ISuperRemote> Packer
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => base.Packer as ITcpPacker<ISuperRemote> ?? MessagePipline.Default;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => base.Packer = value;
-        }
-
-
         ConcurrentQueue<IMemoryOwner<byte>> sendWaitList = new ConcurrentQueue<IMemoryOwner<byte>>();
         bool isSending;
         private MemoryArgs sendArgs;
         protected readonly object sendlock = new object();
-
-        /// <summary>
-        /// 正常发送入口
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        protected override void SendAsync<T>(short rpcID, T message) => SendByteBufferAsync(Packer.Packet(rpcID, message, this));
-
+        
         /// <summary>
         /// 注意，发送完成时内部回收了buffer。
         /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
         /// </summary>
         /// <param name="bufferMsg"></param>
-        protected virtual void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
+        public override void SendAsync(IMemoryOwner<byte> bufferMsg)
         {
             lock (sendlock)
             {
@@ -309,7 +285,7 @@ namespace MMONET.Remote
     }
 
     /// 接收字节消息
-    partial class TCPRemote : IReceiveMessage, IShuntMessage
+    partial class TCPRemote : IReceiveMessage
     {
         bool isReceiving;
         SocketAsyncEventArgs receiveArgs;
@@ -382,7 +358,7 @@ namespace MMONET.Remote
 
                     var list = ByteMessageList.Rent();
                     ///由打包器处理分包
-                    var residual = Packer.CutOff(args.Buffer.AsSpan(0,totalValidLength), list);
+                    var residual = MessagePipeline.CutOff(args.Buffer.AsSpan(0,totalValidLength), list);
 
                     ///租用新内存
                     var bfo = BufferPool.Rent(MaxBufferLength);
@@ -436,24 +412,20 @@ namespace MMONET.Remote
             }
         }
 
+        
         private void DealMessageAsync(List<IMemoryOwner<byte>> list)
         {
             if (list.Count == 0)
             {
                 return;
             }
-
+            //todo 排序
             Task.Run(() =>
             {
                 foreach (var item in list)
                 {
-                    Receiver.Receive(item, this);
+                    ReceiveByteMessage(item);
                 }
-
-                //var res = Parallel.ForEach(list, (item) =>
-                //{
-
-                //});
 
                 ///回收池对象
                 list.Clear();

@@ -19,15 +19,14 @@ namespace ServerApp
 
         public async void StartListenAsync()
         {
-            var remote = await listener.ListenAsync();
+            var remote = await listener.ListenAsync(Receiver.DealMessage);
             Console.WriteLine($"建立连接");
             StartListenAsync();
-            remote.Receiver = new Receiver();
         }
 
-        class Receiver:MMONET.Message.MessagePipline
+        class Receiver
         {
-            public async override ValueTask<object> DealMessage(object message)
+            public static async ValueTask<object> DealMessage(object message)
             {
                 switch (message)
                 {

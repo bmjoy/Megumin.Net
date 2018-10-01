@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace MMONET.Remote
 {
     /// <summary>
-    /// 不支持多播地址 每包大小最好不要大于 523（548 - 框架报头8+17）
+    /// 不支持多播地址 每包大小最好不要大于 537（548 - 框架报头11）
     /// </summary>
     public partial class UDPRemote : RemoteBase, IRemote, ISuperRemote
     {
@@ -161,7 +161,7 @@ namespace MMONET.Remote
                 while (true)
                 {
                     var recv = await udpClient.ReceiveAsync();
-                    var (Size, MessageID, RpcID) = MessagePipline.Default.ParsePacketHeader(recv.Buffer);
+                    var (Size, MessageID) = Message.MessagePipeline.Default.ParsePacketHeader(recv.Buffer);
                     if (MessageID == MSGID.UdpConnectMessageID)
                     {
                         var (SYN, ACK, seq, ack) = ReadConnectMessage(recv.Buffer);
@@ -277,24 +277,12 @@ namespace MMONET.Remote
     /// 发送
     partial class UDPRemote
     {
-
-        /// <summary>
-        /// 正常发送入口
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="rpcID"></param>
-        /// <param name="message"></param>
-        protected override void SendAsync<T>(short rpcID, T message)
-        {
-            SendByteBufferAsync(Packer.Packet(rpcID, message, this));
-        }
-
         /// <summary>
         /// 注意，发送完成时内部回收了buffer。
         /// ((框架约定1)发送字节数组发送完成后由发送逻辑回收)
         /// </summary>
         /// <param name="bufferMsg"></param>
-        protected void SendByteBufferAsync(IMemoryOwner<byte> bufferMsg)
+        public override void SendAsync(IMemoryOwner<byte> bufferMsg)
         {
             try
             {
@@ -392,7 +380,7 @@ namespace MMONET.Remote
         {
             Task.Run(() =>
             {
-                Receiver.Receive(byteOwner, this);
+                ReceiveByteMessage(byteOwner);
             });
         }
     }

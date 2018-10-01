@@ -124,6 +124,27 @@ namespace AsyncTest
         }
     }
 
+    public class Test4
+    {
+        public Task<int> Test1()
+        {
+            return Task.FromResult(1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async Task<int> Test2()
+        {
+            int v = await Test1();
+            return v;
+        }
+
+        public async void Test3()
+        {
+            int v = await Test2();
+            Console.WriteLine(v);
+        }
+    }
+
 
     public class SocketTest
     {

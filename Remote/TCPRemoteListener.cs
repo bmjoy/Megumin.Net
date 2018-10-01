@@ -50,24 +50,27 @@ namespace MMONET.Remote
         ///创建TCPRemote并ReceiveStart
         /// </summary>
         /// <returns></returns>
-        public async Task<TCPRemote> ListenAsync()
+        public async Task<TCPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle)
         {
             var remoteSocket = await Accept();
             var remote = new TCPRemote(remoteSocket);
+            remote.MessagePipeline = MessagePipeline.Default;
+            remote.ReceiveHandle += receiveHandle;
             remote.ReceiveStart();
             return remote;
         }
 
         /// <summary>
-        /// 创建TCPRemote并ReceiveStart.在ReceiveStart调用之前设置Receiver,以免设置Receiver不及时漏掉消息.
+        /// 创建TCPRemote并ReceiveStart.在ReceiveStart调用之前设置pipline,以免设置不及时漏掉消息.
         /// </summary>
-        /// <param name="receiver"></param>
+        /// <param name="pipline"></param>
         /// <returns></returns>
-        public async Task<TCPRemote> ListenAsync(IReceiver<ISuperRemote> receiver)
+        public async Task<TCPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle, IMessagePipeline pipline)
         {
             var remoteSocket = await Accept();
             var remote = new TCPRemote(remoteSocket);
-            remote.Receiver = receiver;
+            remote.MessagePipeline = pipline;
+            remote.ReceiveHandle += receiveHandle;
             remote.ReceiveStart();
             return remote;
         }
