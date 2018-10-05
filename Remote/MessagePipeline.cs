@@ -430,7 +430,10 @@ namespace MMONET.Message
             switch (message)
             {
                 case TestPacket1 packet1:
-                    Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}");
+                    if (totalCount % 100 == 0)
+                    {
+                        Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}------总消息数{totalCount}"); 
+                    }
                     return null;
                 case TestPacket2 packet2:
                     Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
