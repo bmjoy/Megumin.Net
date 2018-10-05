@@ -68,7 +68,7 @@ namespace MMONET.Remote
                 callback.rpcCallback?.Invoke(null, new TimeoutException());
             }
 
-            lock (dequeueLocker)
+            lock (dequeueLock)
             {
                 this[key] = (DateTime.Now,
                     (resp, ex) =>
@@ -120,7 +120,7 @@ namespace MMONET.Remote
                 callback.rpcCallback?.Invoke(null, new TimeoutException());
             }
 
-            lock (dequeueLocker)
+            lock (dequeueLock)
             {
                 this[key] = (DateTime.Now,
                     (resp, ex) =>
@@ -183,10 +183,10 @@ namespace MMONET.Remote
             });
         }
 
-        readonly object dequeueLocker = new object();
+        readonly object dequeueLock = new object();
         public bool TryDequeue(int rpcID, out (DateTime startTime, Network.Remote.RpcCallback rpcCallback) rpc)
         {
-            lock (dequeueLocker)
+            lock (dequeueLock)
             {
                 if (TryGetValue(rpcID, out rpc))
                 {

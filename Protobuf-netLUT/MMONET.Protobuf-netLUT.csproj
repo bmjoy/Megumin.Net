@@ -9,11 +9,14 @@
     <DocumentationFile>bin\Debug\netstandard2.0\MMONET.Protobuf-netLUT.xml</DocumentationFile>
     <LangVersion>7.2</LangVersion>
     <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DocumentationFile>bin\Release\netstandard2.0\MMONET.Protobuf-netLUT.xml</DocumentationFile>
     <LangVersion>7.2</LangVersion>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

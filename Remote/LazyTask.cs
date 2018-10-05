@@ -60,45 +60,54 @@ namespace MMONET.Remote
 
         public bool IsCompleted => state == State.Success || state == State.Faild;
         public T Result { get; protected set; }
+        readonly object innerlock = new object();
 
         public void UnsafeOnCompleted(Action continuation)
         {
-            if (state == State.InPool)
+            lock (innerlock)
             {
-                ///这里被触发一定是是类库BUG。
-                throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
-            }
+                if (state == State.InPool)
+                {
+                    ///这里被触发一定是是类库BUG。
+                    throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
+                }
 
-            alreadyEnterAsync = true;
-            this.continuation -= continuation;
-            this.continuation += continuation;
-            TryComplete();
+                alreadyEnterAsync = true;
+                this.continuation -= continuation;
+                this.continuation += continuation;
+                TryComplete(); 
+            }
         }
 
         public void OnCompleted(Action continuation)
         {
-            if (state == State.InPool)
+            lock (innerlock)
             {
-                ///这里被触发一定是是类库BUG。
-                throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
-            }
+                if (state == State.InPool)
+                {
+                    ///这里被触发一定是是类库BUG。
+                    throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
+                }
 
-            alreadyEnterAsync = true;
-            this.continuation -= continuation;
-            this.continuation += continuation;
-            TryComplete();
+                alreadyEnterAsync = true;
+                this.continuation -= continuation;
+                this.continuation += continuation;
+                TryComplete();
+            }
         }
 
         public void SetResult(T result)
         {
-            if (state == State.InPool)
+            lock (innerlock)
             {
-                throw new InvalidOperationException($"任务不存在");
+                if (state == State.InPool)
+                {
+                    throw new InvalidOperationException($"任务不存在");
+                }
+                this.Result = result;
+                state = State.Success;
+                TryComplete();
             }
-            this.Result = result;
-            state = State.Success;
-            TryComplete();
-
         }
 
         private void TryComplete()
@@ -122,14 +131,17 @@ namespace MMONET.Remote
 
         public void CancelWithNotExceptionAndContinuation()
         {
-            if (state == State.InPool)
+            lock (innerlock)
             {
-                throw new InvalidOperationException($"任务不存在");
-            }
+                if (state == State.InPool)
+                {
+                    throw new InvalidOperationException($"任务不存在");
+                }
 
-            Result = default;
-            state = State.Faild;
-            TryComplete();
+                Result = default;
+                state = State.Faild;
+                TryComplete();
+            }
         }
 
 #if DEBUG
@@ -142,17 +154,19 @@ namespace MMONET.Remote
 
             if (state != State.InPool)
             {
+                ///state = State.InPool;必须在pool.Enqueue(this);之前。
+                ///因为当pool为空的时候，放入池的元素会被立刻取出。并将状态设置为Waiting。
+                ///如果state = State.InPool;在pool.Enqueue(this)后，那么会导致Waiting 状态被错误的设置为InPool;
+                /// **** 我在这里花费了4个小时（sad）。
+                state = State.InPool;
+
+#if DEBUG
+                lastThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId;
+#endif
+
                 if (pool.Count < MaxCount)
                 {
-                    ///state = State.InPool;必须在pool.Enqueue(this);之前。
-                    ///因为当pool为空的时候，放入池的元素会被立刻取出。并将状态设置为Waiting。
-                    ///如果state = State.InPool;在pool.Enqueue(this)后，那么会导致Waiting 状态被错误的设置为InPool;
-                    /// **** 我在这里花费了4个小时（sad）。
-                    state = State.InPool;
                     pool.Enqueue(this);
-#if DEBUG
-                    lastThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId; 
-#endif
                 }
             }
         }

@@ -10,11 +10,14 @@
     <DocumentationFile>bin\Debug\netstandard2.0\MMONET.MessagePackLUT.xml</DocumentationFile>
     <LangVersion>7.2</LangVersion>
     <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>7.2</LangVersion>
     <DocumentationFile>bin\Release\netstandard2.0\MMONET.MessagePackLUT.xml</DocumentationFile>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

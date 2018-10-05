@@ -18,6 +18,8 @@
     <LangVersion>7.3</LangVersion>
     <DocumentationFile>bin\Release\netstandard2.0\MMONET.Common.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
