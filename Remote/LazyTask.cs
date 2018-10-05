@@ -65,6 +65,7 @@ namespace MMONET.Remote
         {
             if (state == State.InPool)
             {
+                ///这里被触发一定是是类库BUG。
                 throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
             }
 
@@ -78,6 +79,7 @@ namespace MMONET.Remote
         {
             if (state == State.InPool)
             {
+                ///这里被触发一定是是类库BUG。
                 throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
             }
 
@@ -130,6 +132,10 @@ namespace MMONET.Remote
             TryComplete();
         }
 
+#if DEBUG
+        int lastThreadID;
+#endif
+
         void IPoolElement.Return()
         {
             Reset();
@@ -138,9 +144,15 @@ namespace MMONET.Remote
             {
                 if (pool.Count < MaxCount)
                 {
-                    pool.Enqueue(this);
+                    ///state = State.InPool;必须在pool.Enqueue(this);之前。
+                    ///因为当pool为空的时候，放入池的元素会被立刻取出。并将状态设置为Waiting。
+                    ///如果state = State.InPool;在pool.Enqueue(this)后，那么会导致Waiting 状态被错误的设置为InPool;
+                    /// **** 我在这里花费了4个小时（sad）。
                     state = State.InPool;
-
+                    pool.Enqueue(this);
+#if DEBUG
+                    lastThreadID = System.Threading.Thread.CurrentThread.ManagedThreadId; 
+#endif
                 }
             }
         }

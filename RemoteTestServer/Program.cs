@@ -41,10 +41,10 @@ namespace RemoteTest
                 {
                     MainThreadScheduler.Update(0);
                     //Thread.Sleep(1);
-                    if (coolDown)
-                    {
-                        GC.Collect();
-                    }
+                    //if (coolDown)
+                    //{
+                    //    GC.Collect();
+                    //}
                 }
 
             });
