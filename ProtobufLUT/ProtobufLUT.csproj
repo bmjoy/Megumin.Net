@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MMONET.MessageStandard\MessageStandard.csproj" />
+    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
   </ItemGroup>
 
 </Project>

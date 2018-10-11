@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Remote\Remote.csproj" />
+    <ProjectReference Include="..\..\Remote\Remote.csproj" />
   </ItemGroup>
 
 </Project>

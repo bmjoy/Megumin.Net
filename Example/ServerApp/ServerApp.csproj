@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DCSContainer\DCSContainer.csproj" />
-    <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
+    <ProjectReference Include="..\..\DCSContainer\DCSContainer.csproj" />
+    <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
     <ProjectReference Include="..\Message\Message.csproj" />
   </ItemGroup>
 

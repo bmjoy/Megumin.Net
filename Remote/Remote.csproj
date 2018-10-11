@@ -35,8 +35,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\MMONET.MessageStandard\MessageStandard.csproj" />
-    <ProjectReference Include="..\RemoteStandard\NetRemoteStandard.csproj" />
+    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
+    <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>
 
 </Project>
