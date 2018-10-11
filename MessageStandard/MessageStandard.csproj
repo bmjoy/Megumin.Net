@@ -13,6 +13,8 @@
     <PackageLicenseUrl>https://github.com/KumoKyaku/MeguminNet/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/KumoKyaku/MeguminNet</PackageProjectUrl>
     <PackageTags>net</PackageTags>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
