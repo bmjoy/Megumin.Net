@@ -2,10 +2,10 @@
 using System.Net;
 using System.Threading;
 using Message;
-using MMONET;
-using MMONET.Message;
-using MMONET.Remote;
-using Network.Remote;
+using Megumin;
+using Megumin.Message;
+using Megumin.Remote;
+using Net.Remote;
 
 namespace TestClient
 {

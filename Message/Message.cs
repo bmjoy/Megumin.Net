@@ -1,6 +1,6 @@
 ﻿using System;
 using MessagePack;
-using MMONET.Message;
+using Megumin.Message;
 
 namespace Message
 {

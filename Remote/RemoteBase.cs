@@ -6,10 +6,10 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using MMONET.Message;
-using Network.Remote;
+using Megumin.Message;
+using Net.Remote;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     public abstract partial class RemoteBase:IToken
     {

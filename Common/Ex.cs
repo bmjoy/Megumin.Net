@@ -26,7 +26,7 @@ namespace System
 
 }
 
-namespace MMONET
+namespace Megumin
 {
     public static class SpanByteEX_3451DB8C29134366946FF9D778779EEC
     {

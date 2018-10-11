@@ -81,13 +81,13 @@
       <Project>{57c73e23-8887-4518-bab2-6bb6c04e44b2}</Project>
       <Name>Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MMONET.MessageStandard\MMONET.MessageStandard.csproj">
+    <ProjectReference Include="..\MMONET.MessageStandard\MessageStandard.csproj">
       <Project>{9AC83E99-E45B-4966-A7B5-866DC8E83D8B}</Project>
-      <Name>MMONET.MessageStandard</Name>
+      <Name>MessageStandard</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RemoteStandard\RemoteStandard.csproj">
+    <ProjectReference Include="..\RemoteStandard\NetRemoteStandard.csproj">
       <Project>{BFE44004-0D60-458B-9F0C-889EF37392D0}</Project>
-      <Name>RemoteStandard</Name>
+      <Name>NetRemoteStandard</Name>
     </ProjectReference>
     <ProjectReference Include="..\Remote\Remote.csproj">
       <Project>{91932506-f6c9-481a-b6cf-cde7adf2f38b}</Project>

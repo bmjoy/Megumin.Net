@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using MMONET.Remote;
+using Megumin.Remote;
 using System.Diagnostics;
-using MMONET;
-using MMONET.Message;
-using Network.Remote;
-using MMONET.Message.TestMessage;
+using Megumin;
+using Megumin.Message;
+using Net.Remote;
+using Megumin.Message.TestMessage;
 
 namespace RemoteTestClient
 {

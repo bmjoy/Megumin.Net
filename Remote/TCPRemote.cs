@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using Network.Remote;
-using MMONET.Message;
+using Net.Remote;
+using Megumin.Message;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ByteMessageList = MMONET.ListPool<System.Buffers.IMemoryOwner<byte>>;
+using ByteMessageList = Megumin.ListPool<System.Buffers.IMemoryOwner<byte>>;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     /// <summary>
     /// <para>TcpChannel内存开销 整体采用内存池优化</para>

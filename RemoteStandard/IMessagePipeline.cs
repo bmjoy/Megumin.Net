@@ -5,9 +5,9 @@ using System.Text;
 using System.Buffers;
 using System.Buffers.Binary;
 using System.Threading.Tasks;
-using Network.Remote;
+using Net.Remote;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     public interface ITcpPacker
     {

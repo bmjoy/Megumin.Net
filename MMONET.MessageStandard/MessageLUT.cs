@@ -1,9 +1,9 @@
-﻿using MMONET.Message.TestMessage;
+﻿using Megumin.Message.TestMessage;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     /// <summary>
     /// Key冲突改怎么做

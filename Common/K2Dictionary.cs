@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MMONET
+namespace Megumin
 {
     /// <summary>
     /// 不是线程安全的

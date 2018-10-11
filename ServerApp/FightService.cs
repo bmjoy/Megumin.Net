@@ -1,5 +1,5 @@
 ﻿
-using MMONET.DCS;
+using Megumin.DCS;
 
 namespace ServerApp
 {

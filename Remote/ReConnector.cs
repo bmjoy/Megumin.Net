@@ -4,10 +4,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using MMONET.Message;
-using Network.Remote;
+using Megumin.Message;
+using Net.Remote;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     /// <summary>
     /// 断线重连

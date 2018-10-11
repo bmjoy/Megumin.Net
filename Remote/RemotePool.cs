@@ -5,11 +5,11 @@ using System.Data;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using MMONET.Message;
-using Network.Remote;
-using IRemoteDic = MMONET.IDictionary<int, System.Net.EndPoint, Network.Remote.IRemote>;
+using Megumin.Message;
+using Net.Remote;
+using IRemoteDic = Megumin.IDictionary<int, System.Net.EndPoint, Net.Remote.IRemote>;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     ///// <summary>
     ///// 客户端不使用这个类，会发生Key冲突

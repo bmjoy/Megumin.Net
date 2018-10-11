@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace MMONET
+namespace Megumin
 {
     /// <summary>
     /// 线程安全ID生成器

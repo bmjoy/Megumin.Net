@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Message;
-using MMONET.DCS;
-using MMONET.Remote;
+using Megumin.DCS;
+using Megumin.Remote;
 
 namespace ServerApp
 {

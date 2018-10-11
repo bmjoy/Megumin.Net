@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MMONET
+namespace Megumin
 {
     public interface IDictionary<TKey1, TKey2, TValue> : ICollection<(TKey1 Key1, TKey2 Key2, TValue Value)>, IEnumerable<(TKey1 Key1, TKey2 Key2, TValue Value)>, IEnumerable
     {

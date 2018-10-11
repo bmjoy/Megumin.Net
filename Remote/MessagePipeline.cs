@@ -1,13 +1,13 @@
-﻿using MMONET.Message.TestMessage;
-using MMONET.Remote;
-using Network.Remote;
+﻿using Megumin.Message.TestMessage;
+using Megumin.Remote;
+using Net.Remote;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     public partial class MessagePipeline:IMessagePipeline
     {

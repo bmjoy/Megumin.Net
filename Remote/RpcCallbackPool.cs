@@ -1,10 +1,10 @@
-﻿using Network.Remote;
+﻿using Net.Remote;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
 
 
@@ -184,7 +184,7 @@ namespace MMONET.Remote
         }
 
         readonly object dequeueLock = new object();
-        public bool TryDequeue(int rpcID, out (DateTime startTime, Network.Remote.RpcCallback rpcCallback) rpc)
+        public bool TryDequeue(int rpcID, out (DateTime startTime, Net.Remote.RpcCallback rpcCallback) rpc)
         {
             lock (dequeueLock)
             {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     /// <summary>
     /// 心跳包消息

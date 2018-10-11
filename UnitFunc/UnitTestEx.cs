@@ -3,8 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MMONET;
-using MMONET.Remote;
+using Megumin;
+using Megumin.Remote;
 
 namespace UnitFunc
 {

@@ -1,5 +1,5 @@
-﻿using MMONET.Message;
-using Network.Remote;
+﻿using Megumin.Message;
+using Net.Remote;
 using System;
 using System.Buffers;
 using System.Net;
@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     /// <summary>
     /// 不支持多播地址 每包大小最好不要大于 537（548 - 框架报头11）

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Network.Remote;
+using Net.Remote;
 
-namespace Network.Remote
+namespace Net.Remote
 {
     /// <summary>
     /// 可异步等待的

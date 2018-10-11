@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MMONET.Message.TestMessage
+namespace Megumin.Message.TestMessage
 {
     public class TestPacket1
     {

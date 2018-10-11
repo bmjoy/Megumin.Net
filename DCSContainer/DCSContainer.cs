@@ -3,10 +3,10 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using MMONET.Remote;
-using Network.Remote;
+using Megumin.Remote;
+using Net.Remote;
 
-namespace MMONET.DCS
+namespace Megumin.DCS
 {
     public partial class DCSContainer
     {

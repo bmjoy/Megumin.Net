@@ -5,7 +5,7 @@ using System.Text;
 using MessagePack;
 using System.Buffers;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     /// <summary>
     /// 适用于MessagePack协议的查找表

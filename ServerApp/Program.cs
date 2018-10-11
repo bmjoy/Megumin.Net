@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading;
 using Message;
-using MMONET;
-using MMONET.DCS;
-using MMONET.Message;
+using Megumin;
+using Megumin.DCS;
+using Megumin.Message;
 
 namespace ServerApp
 {

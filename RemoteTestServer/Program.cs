@@ -4,11 +4,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using MMONET;
-using MMONET.Message;
-using MMONET.Message.TestMessage;
-using MMONET.Remote;
-using Network.Remote;
+using Megumin;
+using Megumin.Message;
+using Megumin.Message.TestMessage;
+using Megumin.Remote;
+using Net.Remote;
 
 namespace RemoteTest
 {

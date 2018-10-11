@@ -2,12 +2,23 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>MMONET.Common</AssemblyName>
-    <RootNamespace>MMONET</RootNamespace>
+    <AssemblyName>Megumin.Common</AssemblyName>
+    <RootNamespace>Megumin</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>0.0.1.0</AssemblyVersion>
+    <FileVersion>0.0.1.0</FileVersion>
+    <Version>0.0.1</Version>
+    <Description>Megumin 类库的公共基础库，包括基础类和扩展函数。</Description>
+    <PackageProjectUrl>https://github.com/KumoKyaku/MeguminNet</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/KumoKyaku/MeguminNet/blob/master/LICENSE</PackageLicenseUrl>
+    <Authors>云却</Authors>
+    <Product>MeguminNet</Product>
+    <PackageTags>net</PackageTags>
+    <Copyright>Copyright (c) 2018 云却不是雀</Copyright>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\MMONET.Common.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\Megumin.Common.xml</DocumentationFile>
     <LangVersion>7.3</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
@@ -16,7 +27,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>7.3</LangVersion>
-    <DocumentationFile>bin\Release\netstandard2.0\MMONET.Common.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\Megumin.Common.xml</DocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>

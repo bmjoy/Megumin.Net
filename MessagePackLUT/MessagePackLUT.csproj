@@ -2,41 +2,42 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>Megumin.Remote</AssemblyName>
-    <RootNamespace>Megumin.Remote</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyName>Megumin.MessagePackLUT</AssemblyName>
+    <RootNamespace>Megumin.Message</RootNamespace>
     <Authors>云却</Authors>
     <Version>0.0.1</Version>
     <Product>MeguminNet</Product>
-    <Description>NetRemoteStandard的一个实现。</Description>
+    <Description>MeguminNet中的消息序列化部分。</Description>
     <Copyright>Copyright (c) 2018 云却不是雀</Copyright>
     <PackageLicenseUrl>https://github.com/KumoKyaku/MeguminNet/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/KumoKyaku/MeguminNet</PackageProjectUrl>
     <PackageTags>net</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netstandard2.0\Megumin.Remote.xml</DocumentationFile>
-    <LangVersion>7.3</LangVersion>
+    <DocumentationFile>bin\Debug\netstandard2.0\Megumin.MessagePackLUT.xml</DocumentationFile>
+    <LangVersion>7.2</LangVersion>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>7.3</LangVersion>
-    <DocumentationFile>bin\Release\netstandard2.0\Megumin.Remote.xml</DocumentationFile>
+    <LangVersion>7.2</LangVersion>
+    <DocumentationFile>bin\Release\netstandard2.0\Megumin.MessagePackLUT.xml</DocumentationFile>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="RemoteBase.cs~RF16df24af.TMP" />
+    <PackageReference Include="MessagePack" Version="1.7.3.4" />
+    <PackageReference Include="MessagePack.UnityShims" Version="1.7.3.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\MMONET.MessageStandard\MessageStandard.csproj" />
-    <ProjectReference Include="..\RemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>
 
 </Project>

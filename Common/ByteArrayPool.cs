@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MMONET
+namespace Megumin
 {
     /// <summary>
     /// 内部 在ConcurrentQueue 和 HashSet之间做了很多取舍，最终使用ConcurrentQueue。所以请千万小心，不要将同一个

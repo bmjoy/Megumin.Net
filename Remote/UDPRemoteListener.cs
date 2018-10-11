@@ -1,5 +1,5 @@
-﻿using MMONET.Message;
-using Network.Remote;
+﻿using Megumin.Message;
+using Net.Remote;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     /// <summary>
     /// IPV4 IPV6 udp中不能混用

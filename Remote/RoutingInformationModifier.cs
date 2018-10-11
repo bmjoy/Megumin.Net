@@ -1,11 +1,11 @@
-﻿using Network.Remote;
+﻿using Net.Remote;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     /// <summary>
     /// 不懂别动，这里有坑

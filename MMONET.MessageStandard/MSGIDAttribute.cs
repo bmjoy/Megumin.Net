@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     /// <summary>
     /// 使用MessageID来为每一个消息指定一个唯一ID(-999~999 被框架占用)。

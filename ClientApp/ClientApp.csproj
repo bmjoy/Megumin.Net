@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\MessagePackLUT\MMONET.MessagePackLUT.csproj" />
+    <ProjectReference Include="..\MessagePackLUT\MessagePackLUT.csproj" />
     <ProjectReference Include="..\Message\Message.csproj" />
     <ProjectReference Include="..\Remote\Remote.csproj" />
   </ItemGroup>

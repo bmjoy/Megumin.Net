@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using ProtoBuf;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     /// <summary>
     /// 适用于Protobuf-net协议的查找表    没有测试

@@ -1,12 +1,12 @@
-﻿using MMONET.Message;
-using MMONET.Remote;
-using Network.Remote;
+﻿using Megumin.Message;
+using Megumin.Remote;
+using Net.Remote;
 using System;
 using System.Buffers;
 using System.Threading.Tasks;
 using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<System.Action>;
 
-namespace MMONET.Message
+namespace Megumin.Message
 {
     /// <summary>
     /// 接收消息池

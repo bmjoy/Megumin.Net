@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Network.Remote;
+using Net.Remote;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-namespace MMONET.Remote
+namespace Megumin.Remote
 {
     /// <summary>
     /// 一个异步任务实现，特点是可以取消任务不会触发异常和后续方法。

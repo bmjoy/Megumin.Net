@@ -1,4 +1,4 @@
-﻿namespace MMONET.DCS
+﻿namespace Megumin.DCS
 {
     public interface IService
     {

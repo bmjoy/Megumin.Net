@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
-using MMONET.Remote;
-using Network.Remote;
+using Megumin.Remote;
+using Net.Remote;
 
-namespace MMONET.DCS
+namespace Megumin.DCS
 {
     public interface IContainer
     {
