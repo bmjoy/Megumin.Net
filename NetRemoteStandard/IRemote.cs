@@ -115,7 +115,7 @@ namespace Net.Remote
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        (int rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
+        (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException);
         /// <summary>
         /// 取得rpc回调函数
         /// </summary>
@@ -194,7 +194,7 @@ namespace Net.Remote
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         /// <remarks>可能会有内存泄漏，参考具体实现。也许这个方法应该叫UnSafe。</remarks>
-        ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null);
+        IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null);
     }
 
     /// <summary>
@@ -303,6 +303,6 @@ namespace Net.Remote
         /// <param name="identifier"></param>
         /// <param name="OnException"></param>
         /// <returns></returns>
-        ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message,int identifier, Action<Exception> OnException = null);
+        IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message,int identifier, Action<Exception> OnException = null);
     }
 }

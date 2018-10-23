@@ -33,9 +33,9 @@ namespace Megumin.Message
             }
         }
 
-        internal static ILazyAwaitable<object> Push(int rpcID, object message, IObjectMessageReceiver r)
+        internal static IMiniAwaitable<object> Push(int rpcID, object message, IObjectMessageReceiver r)
         {
-            LazyTask<object> task1 = LazyTask<object>.Rent();
+            MiniTask<object> task1 = MiniTask<object>.Rent();
             Action action = async () =>
             {
                 ///此处可以忽略异常处理

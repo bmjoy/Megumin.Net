@@ -10,7 +10,7 @@ namespace Net.Remote
     /// 可异步等待的
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public interface ILazyAwaitable<T>
+    public interface IMiniAwaitable<T>
     {
         /// <summary>
         /// 
@@ -41,9 +41,9 @@ namespace Net.Remote
         void CancelWithNotExceptionAndContinuation();
     }
 
-    public struct LazyTaskAwaiter<T> : ICriticalNotifyCompletion
+    public struct MiniTaskAwaiter<T> : ICriticalNotifyCompletion
     {
-        private ILazyAwaitable<T> CanAwaiter;
+        private IMiniAwaitable<T> CanAwaiter;
 
         public bool IsCompleted => CanAwaiter.IsCompleted;
 
@@ -52,7 +52,7 @@ namespace Net.Remote
             return CanAwaiter.Result;
         }
 
-        public LazyTaskAwaiter(ILazyAwaitable<T> canAwait)
+        public MiniTaskAwaiter(IMiniAwaitable<T> canAwait)
         {
             this.CanAwaiter = canAwait;
         }
@@ -70,8 +70,8 @@ namespace Net.Remote
 
 public static class ICanAwaitableEx_D248AE7ECAD0420DAF1BCEA2801012FF
 {
-    public static LazyTaskAwaiter<T> GetAwaiter<T>(this ILazyAwaitable<T> canAwaitable)
+    public static MiniTaskAwaiter<T> GetAwaiter<T>(this IMiniAwaitable<T> canAwaitable)
     {
-        return new LazyTaskAwaiter<T>(canAwaitable);
+        return new MiniTaskAwaiter<T>(canAwaitable);
     }
 }

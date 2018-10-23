@@ -11,7 +11,7 @@ namespace Megumin.Remote
     /// 一个异步任务实现，特点是可以取消任务不会触发异常和后续方法。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class LazyTask<T> : ILazyAwaitable<T>,IPoolElement
+    public class MiniTask<T> : IMiniAwaitable<T>,IPoolElement
     {
         enum State
         {
@@ -23,8 +23,8 @@ namespace Megumin.Remote
 
         public static int MaxCount { get; set; } = 512;
 
-        static ConcurrentQueue<LazyTask<T>> pool = new ConcurrentQueue<LazyTask<T>>();
-        public static LazyTask<T> Rent()
+        static ConcurrentQueue<MiniTask<T>> pool = new ConcurrentQueue<MiniTask<T>>();
+        public static MiniTask<T> Rent()
         {
             if (pool.TryDequeue(out var task))
             {
@@ -35,7 +35,7 @@ namespace Megumin.Remote
                 }
             }
 
-            return new LazyTask<T>() { state = State.Waiting };
+            return new MiniTask<T>() { state = State.Waiting };
         }
 
         public static void ClearPool()
@@ -50,7 +50,7 @@ namespace Megumin.Remote
             }
         }
 
-        State state = State.InPool;
+        volatile State state = State.InPool;
 
         private Action continuation;
         /// <summary>
@@ -69,7 +69,7 @@ namespace Megumin.Remote
                 if (state == State.InPool)
                 {
                     ///这里被触发一定是是类库BUG。
-                    throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
+                    throw new ArgumentException($"{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者");
                 }
 
                 alreadyEnterAsync = true;
@@ -86,7 +86,7 @@ namespace Megumin.Remote
                 if (state == State.InPool)
                 {
                     ///这里被触发一定是是类库BUG。
-                    throw new ArgumentException($"{nameof(LazyTask<T>)}任务冲突，底层错误，请联系框架作者");
+                    throw new ArgumentException($"{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者");
                 }
 
                 alreadyEnterAsync = true;

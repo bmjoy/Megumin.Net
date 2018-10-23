@@ -79,7 +79,7 @@ namespace Megumin.Remote
             }
         }
 
-        public ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null)
+        public IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null)
         {
             ReceiveStart();
 
@@ -199,7 +199,7 @@ namespace Megumin.Remote
             }
         }
 
-        public ILazyAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, int identifier, Action<Exception> OnException = null)
+        public IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, int identifier, Action<Exception> OnException = null)
         {
             ReceiveStart();
 

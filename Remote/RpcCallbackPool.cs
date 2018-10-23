@@ -109,10 +109,10 @@ namespace Megumin.Remote
             return (rpcID, source.Task);
         }
 
-        public (int rpcID, ILazyAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
+        public (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
         {
             int rpcID = GetRpcID();
-            ILazyAwaitable<RpcResult> source = LazyTask<RpcResult>.Rent();
+            IMiniAwaitable<RpcResult> source = MiniTask<RpcResult>.Rent();
             short key = (short)(rpcID * -1);
             if (TryDequeue(key, out var callback))
             {
