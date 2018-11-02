@@ -3,6 +3,8 @@
 
   **简单来说：NetRemoteStandard是标准，Megumin.Remote是实现。类比于dotnetStandard和dotnetCore的关系。**
 
+  **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG可能不是最佳选择。** 在遥远的未来也许会针对不用游戏类型写出NetRemoteStandard的不同实现。
+
 ## [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
 
 # 核心方法2个
