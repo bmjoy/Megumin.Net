@@ -424,7 +424,7 @@ namespace Megumin.Message
     public class TestFunction
     {
         static int totalCount = 0;
-        public static async ValueTask<object> DealMessage(object message)
+        public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
         {
             totalCount++;
             switch (message)

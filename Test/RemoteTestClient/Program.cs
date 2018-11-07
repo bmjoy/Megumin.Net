@@ -62,7 +62,7 @@ namespace RemoteTestClient
         private static async void NewRemote(int clientIndex)
         {
             IRemote remote = new TCPRemote() { };
-            remote.ReceiveHandle += receiver.TestReceive;
+            remote.OnReceiveCallback += receiver.TestReceive;
             var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
             {
@@ -122,7 +122,7 @@ namespace RemoteTestClient
             public int Index { get; set; }
             Stopwatch stopwatch = new Stopwatch();
 
-            public async ValueTask<object> TestReceive(object message)
+            public async ValueTask<object> TestReceive(object message,IReceiveMessage receiver)
             {
                 switch (message)
                 {

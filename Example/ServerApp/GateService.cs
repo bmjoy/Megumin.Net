@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Message;
 using Megumin.DCS;
 using Megumin.Remote;
+using Net.Remote;
 
 namespace ServerApp
 {
@@ -19,33 +20,31 @@ namespace ServerApp
 
         public async void StartListenAsync()
         {
-            var remote = await listener.ListenAsync(Receiver.DealMessage);
+            var remote = await listener.ListenAsync(DealMessage);
             Console.WriteLine($"建立连接");
             StartListenAsync();
         }
 
-        class Receiver
+        public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
         {
-            public static async ValueTask<object> DealMessage(object message)
+            switch (message)
             {
-                switch (message)
-                {
-                    case Login2Gate login:
+                case Login2Gate login:
 
-                        Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
+                    Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
 
-                        Login2GateResult resp = new Login2GateResult();
-                        resp.IsSuccess = true;
-                        return resp;
-                    default:
-                        break;
-                }
-                return null;
+                    Login2GateResult resp = new Login2GateResult();
+                    resp.IsSuccess = true;
+                    return resp;
+                default:
+                    break;
             }
+            return null;
         }
+
         public void Update(double deltaTime)
         {
-            throw new System.NotImplementedException();
+            
         }
     }
 }

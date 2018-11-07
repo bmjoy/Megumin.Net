@@ -90,7 +90,7 @@ namespace Megumin.Remote
             }
         }
 
-        public async Task<UDPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle)
+        public async Task<UDPRemote> ListenAsync(ReceiveCallback receiveHandle)
         {
             IsListening = true;
             System.Threading.ThreadPool.QueueUserWorkItem(state =>
@@ -114,7 +114,7 @@ namespace Megumin.Remote
             var res = await TaskCompletionSource.Task;
             TaskCompletionSource = null;
             res.MessagePipeline = MessagePipeline.Default;
-            res.ReceiveHandle += receiveHandle;
+            res.OnReceiveCallback += receiveHandle;
             res.ReceiveStart();
             return res;
         }
@@ -124,7 +124,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="pipline"></param>
         /// <returns></returns>
-        public async Task<UDPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle,IMessagePipeline pipline)
+        public async Task<UDPRemote> ListenAsync(ReceiveCallback receiveHandle,IMessagePipeline pipline)
         {
             IsListening = true;
             System.Threading.ThreadPool.QueueUserWorkItem(state =>
@@ -149,7 +149,7 @@ namespace Megumin.Remote
             var res = await TaskCompletionSource.Task;
             TaskCompletionSource = null;
             res.MessagePipeline = pipline;
-            res.ReceiveHandle += receiveHandle;
+            res.OnReceiveCallback += receiveHandle;
             res.ReceiveStart();
             return res;
         }

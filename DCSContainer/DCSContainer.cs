@@ -10,7 +10,7 @@ namespace Megumin.DCS
 {
     public partial class DCSContainer
     {
-        public readonly static DCSContainer Instance = new DCSContainer();
+        protected readonly static DCSContainer Instance = new DCSContainer();
 
         public static IContainer MainContainer;
 
@@ -22,42 +22,43 @@ namespace Megumin.DCS
 
         List<IPAddress> iPAddresses = new List<IPAddress>();
         Dictionary<int, IService> serviceDic = new Dictionary<int, IService>();
-        public async void AddService(IService service)
+        public static async void AddService(IService service)
         {
-            service.GUID = await GetNewSeviceIDAsync();
-            serviceDic.Add(service.GUID, service);
+            service.GUID = await Instance.GetNewSeviceIDAsync();
+            Instance.serviceDic.Add(service.GUID, service);
             service.Start();
             //await Sockets.BroadCastAsync(new Login(), MainContainer.Sockets);
         }
 
-        public void Init()
+        public static void Init()
         {
-            iPAddresses.Add(IPAddress.IPv6Loopback);
+            
         }
 
-        public async Task Start()
+        public static async Task Start()
         {
-            IPAddress my = Remote.ConnectIPEndPoint.Address;
-            if (my == MainIP)
-            {
-                //if (CheckSocketPort(MainPort))
-                //{
-                //    ///本机第一个进程
-                //    Sockets.StartListen(MainPort);
-                //    //Sockets.StopListen(MainPort);
-                //}
-                //else
-                //{
-                //    ///本机其他进程，尝试分布间通讯
-                //    var ex = await Sockets.ConnectAsync(MainIP,MainPort);
-                //    if (ex == null)
-                //    {
-                //        ///成功连接，开始注册
-                //        ///
-                //        await Sockets.Send<TestMessage>(new byte[10]);
-                //    }
-                //}
-            }
+            Instance.iPAddresses.Add(IPAddress.IPv6Loopback);
+            //IPAddress my = Instance.Remote.ConnectIPEndPoint.Address;
+            //if (my == Instance.MainIP)
+            //{
+            //    if (CheckSocketPort(MainPort))
+            //    {
+            //        ///本机第一个进程
+            //        Sockets.StartListen(MainPort);
+            //        //Sockets.StopListen(MainPort);
+            //    }
+            //    else
+            //    {
+            //        ///本机其他进程，尝试分布间通讯
+            //        var ex = await Sockets.ConnectAsync(MainIP, MainPort);
+            //        if (ex == null)
+            //        {
+            //            ///成功连接，开始注册
+            //            ///
+            //            await Sockets.Send<TestMessage>(new byte[10]);
+            //        }
+            //    }
+            //}
         }
 
         /// <summary>

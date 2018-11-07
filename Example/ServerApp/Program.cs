@@ -20,9 +20,6 @@ namespace ServerApp
         {
             MessagePackLUT.Regist(typeof(Login).Assembly);
 
-            DCSContainer.Instance.Init();
-            await DCSContainer.Instance.Start();
-
             ThreadPool.QueueUserWorkItem((A) =>
             {
                 while (true)
@@ -33,10 +30,12 @@ namespace ServerApp
 
             });
 
+            await DCSContainer.Start();
+
             //FightService service = new FightService();
             //BusinessContainer.Instance.AddService(service);
             GateService gateService = new GateService();
-            DCSContainer.Instance.AddService(gateService);
+            DCSContainer.AddService(gateService);
         }
     }
 

@@ -93,6 +93,7 @@ namespace Net.Remote
     /// <param name="exception"></param>
     public delegate void RpcCallback(object message, Exception exception);
 
+
     /// <summary>
     /// 更新Rpc结果，框架调用，协助处理Rpc封装
     /// </summary>
@@ -225,6 +226,14 @@ namespace Net.Remote
     }
 
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="receiver"></param>
+    /// <returns></returns>
+    public delegate ValueTask<object> ReceiveCallback (object message,IReceiveMessage receiver);
+    
+    /// <summary>
     /// 接收消息
     /// </summary>
     public interface IReceiveMessage
@@ -236,7 +245,7 @@ namespace Net.Remote
         /// <summary>
         /// 
         /// </summary>
-        event Func<object, ValueTask<object>> ReceiveHandle;
+        event ReceiveCallback OnReceiveCallback;
     }
 
     /// <summary>

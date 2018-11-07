@@ -115,7 +115,7 @@ namespace Megumin.Remote
         }
     }
 
-    partial class RemoteBase : IObjectMessageReceiver
+    partial class RemoteBase : IObjectMessageReceiver,IReceiveMessage
     {
         public ValueTask<object> Deal(int rpcID, object message)
         {
@@ -141,30 +141,30 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual ValueTask<object> DealMessage(object message)
         {
-            if (receiveHandle == null)
+            if (onReceive == null)
             {
                 return new ValueTask<object>(result: null);
             }
             else
             {
-                return receiveHandle.Invoke(message);
+                return onReceive.Invoke(message,this);
             }
         }
 
-        protected Func<object, ValueTask<object>> receiveHandle;
+        protected ReceiveCallback onReceive;
 
         /// <summary>
         /// 注意： 重写了注册函数，只能保存一个委托
         /// </summary>
-        public virtual event Func<object, ValueTask<object>> ReceiveHandle
+        public virtual event ReceiveCallback OnReceiveCallback
         {
             add
             {
-                receiveHandle = value;
+                onReceive = value;
             }
             remove
             {
-                receiveHandle -= value;
+                onReceive -= value;
             }
         }
     }

@@ -50,12 +50,12 @@ namespace Megumin.Remote
         ///创建TCPRemote并ReceiveStart
         /// </summary>
         /// <returns></returns>
-        public async Task<TCPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle)
+        public async Task<TCPRemote> ListenAsync(ReceiveCallback receiveHandle)
         {
             var remoteSocket = await Accept();
             var remote = new TCPRemote(remoteSocket);
             remote.MessagePipeline = MessagePipeline.Default;
-            remote.ReceiveHandle += receiveHandle;
+            remote.OnReceiveCallback += receiveHandle;
             remote.ReceiveStart();
             return remote;
         }
@@ -65,12 +65,12 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="pipline"></param>
         /// <returns></returns>
-        public async Task<TCPRemote> ListenAsync(Func<object, ValueTask<object>> receiveHandle, IMessagePipeline pipline)
+        public async Task<TCPRemote> ListenAsync(ReceiveCallback receiveHandle, IMessagePipeline pipline)
         {
             var remoteSocket = await Accept();
             var remote = new TCPRemote(remoteSocket);
             remote.MessagePipeline = pipline;
-            remote.ReceiveHandle += receiveHandle;
+            remote.OnReceiveCallback += receiveHandle;
             remote.ReceiveStart();
             return remote;
         }
