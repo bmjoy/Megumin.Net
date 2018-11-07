@@ -10,27 +10,27 @@ namespace Net.Remote
     /// <summary>
     /// 
     /// </summary>
-    public interface IToken
+    public interface IUID
     {
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
         /// </summary>
-        int UserToken { get; set; }
+        int UID { get; set; }
     }
 
     /// <summary>
-    ///
+    /// 实例ID
     /// </summary>
-    public interface IPID
+    public interface IRemoteID
     {
         /// <summary>
         /// 进程唯一。
         /// </summary>
-        int PID { get; }
+        int ID { get; }
     }
 
     /// <summary>
-    /// 末端
+    /// 末端地址
     /// </summary>
     public interface IRemoteEndPoint
     {
@@ -95,7 +95,6 @@ namespace Net.Remote
 
     /// <summary>
     /// 更新Rpc结果，框架调用，协助处理Rpc封装
-    /// 每个session大约每秒30个包，超时时间默认为30秒；
     /// </summary>
     public interface IRpcCallbackPool
     {
@@ -152,12 +151,12 @@ namespace Net.Remote
     }
 
     /// <summary>
-    /// RpcSend会自动开始Receive。
+    /// 
     /// <para></para>
     /// 为什么使用object 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，使用一次dynamic还原参数真实类型。
     /// <para>object导致值类型装箱是可以妥协的。</para>
     /// </summary>
-    public interface IRpcSendMessage
+    public interface IAsyncSendMessage
     {
         /// <summary>
         /// 异步发送消息，封装Rpc过程。
@@ -170,16 +169,6 @@ namespace Net.Remote
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
         Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message);
 
-    }
-
-    /// <summary>
-    /// RpcSend会自动开始Receive。
-    /// <para></para>
-    /// 为什么使用object 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，使用一次dynamic还原参数真实类型。
-    /// <para>object导致值类型装箱是可以妥协的。</para>
-    /// </summary>
-    public interface ISafeAwaitSendMessage
-    {
         /// <summary>
         /// 异步发送消息，封装Rpc过程
         /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
@@ -254,7 +243,8 @@ namespace Net.Remote
     /// 应用网络层API封装
     /// </summary>
     public interface IRemote : IRemoteEndPoint, ISendMessage, IReceiveMessage,
-        IConnectable, IRpcSendMessage, IBroadCastSend, IDisposable,IToken,IPID
+        IConnectable, IBroadCastSend, IDisposable,IUID,IRemoteID
+        ,IAsyncSendMessage
     {
 
         /// <summary>
@@ -269,17 +259,9 @@ namespace Net.Remote
     }
 
     /// <summary>
-    /// 应用网络层API封装
-    /// </summary>
-    public interface ISuperRemote:IRemote,ISafeAwaitSendMessage
-    {
-
-    }
-
-    /// <summary>
     /// 转发器
     /// </summary>
-    public interface IForwarder:IPID,ISendMessage
+    public interface IForwarder:IRemoteID,ISendMessage
     {
         /// <summary>
         /// 转发发送

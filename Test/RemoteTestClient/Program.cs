@@ -29,7 +29,7 @@ namespace RemoteTestClient
             {
                 while (true)
                 {
-                    MainThreadScheduler.Update(0);
+                    ThreadScheduler.Update(0);
                     //Thread.Yield();
                 }
 
@@ -61,7 +61,7 @@ namespace RemoteTestClient
         static readonly Receiver receiver = new Receiver();
         private static async void NewRemote(int clientIndex)
         {
-            ISuperRemote remote = new TCPRemote() { };
+            IRemote remote = new TCPRemote() { };
             remote.ReceiveHandle += receiver.TestReceive;
             var res = await remote.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 54321));
             if (res == null)
@@ -100,7 +100,7 @@ namespace RemoteTestClient
             //Console.WriteLine($"RPC接收消息{nameof(Packet2)}--{Result.Value}");
         }
 
-        private static async Task TestRpc(int clientIndex, ISuperRemote remote)
+        private static async Task TestRpc(int clientIndex, IRemote remote)
         {
             var res2 = await remote.SendAsyncSafeAwait<TestPacket2>(new TestPacket2() { Value = clientIndex },
                             (ex) =>

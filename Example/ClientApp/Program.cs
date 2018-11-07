@@ -17,12 +17,12 @@ namespace TestClient
             MessagePackLUT.Regist(typeof(Login).Assembly);
 
             ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
-            ///MainThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
+            ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
             ThreadPool.QueueUserWorkItem((A) =>
             {
                 while (true)
                 {
-                    MainThreadScheduler.Update(0);
+                    ThreadScheduler.Update(0);
                     Thread.Yield();
                 }
 
@@ -37,7 +37,7 @@ namespace TestClient
         /// </summary>
         private static async void ConnectAsync()
         {
-            ISuperRemote remote = new TCPRemote();
+            IRemote remote = new TCPRemote();
             var ex = await remote.ConnectAsync(new IPEndPoint(IPAddress.IPv6Loopback,54321));
 
             if (ex == null)

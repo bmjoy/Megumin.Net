@@ -41,14 +41,14 @@ namespace Megumin.Message
         /// <summary>
         /// 默认开启线程转换
         /// </summary>
-        public bool IsMainThread { get; set; } = true;
+        public bool Post2ThreadScheduler { get; set; } = true;
         public readonly static MessagePipeline Default = new MessagePipeline();
 
 
 
         /// <summary>
         /// 分离粘包
-        /// <para> <see cref="Packet(short, object, ISuperRemote)"/> 对应 </para>
+        /// <para> <see cref="Packet(short, object, IRemote)"/> 对应 </para>
         /// </summary>
         /// <param name="source"></param>
         /// <param name="pushCompleteMessage"></param>
@@ -84,7 +84,7 @@ namespace Megumin.Message
         }
 
         public async void Push<T>(IMemoryOwner<byte> packet, T bufferReceiver)
-            where T:ISendMessage,IPID,IToken,IObjectMessageReceiver
+            where T:ISendMessage,IRemoteID,IUID,IObjectMessageReceiver
         {
             try
             {
@@ -98,7 +98,7 @@ namespace Megumin.Message
 
                     if (PostDeserialize(messageID, extraMessage, messageBody, bufferReceiver))
                     {
-                        if (IsMainThread)
+                        if (Post2ThreadScheduler)
                         {
                             var resp = await MessageThreadTransducer.Push(rpcID, message, bufferReceiver);
 
@@ -129,7 +129,7 @@ namespace Megumin.Message
             }
         }
 
-        private void Reply<T>(T bufferReceiver, ReadOnlyMemory<byte> extraMessage, int rpcID, object resp) where T : ISendMessage, IPID, IToken, IObjectMessageReceiver
+        private void Reply<T>(T bufferReceiver, ReadOnlyMemory<byte> extraMessage, int rpcID, object resp) where T : ISendMessage, IRemoteID, IUID, IObjectMessageReceiver
         {
             if (resp != null)
             {
@@ -151,12 +151,12 @@ namespace Megumin.Message
         /// <param name="messageBody"></param>
         /// <param name="forwarder"></param>
         public virtual void Forward<T>(T bufferReceiver, int messageID, ReadOnlyMemory<byte> extraMessage, ReadOnlyMemory<byte> messageBody, IForwarder forwarder) 
-            where T : IPID,IToken
+            where T : IRemoteID,IUID
         {
             RoutingInformationModifier modifier = extraMessage;
             if (modifier.Mode == RouteMode.Null)
             {
-                modifier.Identifier = bufferReceiver.UserToken;
+                modifier.Identifier = bufferReceiver.UID;
             }
             else if (modifier.Mode == RouteMode.Find)
             {
@@ -187,7 +187,7 @@ namespace Megumin.Message
         /// <returns></returns>
         public virtual bool PreDeserialize<T>(int messageID,in ReadOnlyMemory<byte> extraMessage,
             in ReadOnlyMemory<byte> messageBody,T bufferReceiver)
-            where T:IPID,IToken
+            where T:IRemoteID,IUID
         {
             return true;
         }
@@ -203,7 +203,7 @@ namespace Megumin.Message
         /// <returns></returns>
         public virtual bool PostDeserialize<T>(int messageID,in ReadOnlyMemory<byte> extraMessage,
             in ReadOnlyMemory<byte> messageBody,T bufferReceiver)
-            where T:IPID
+            where T:IRemoteID
         {
             return true;
         }

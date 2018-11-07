@@ -10,6 +10,7 @@ namespace Megumin.Remote
 
     /// <summary>
     /// Rpc回调注册池
+    /// 每个session大约每秒30个包，超时时间默认为30秒；
     /// </summary>
     public class RpcCallbackPool : Dictionary<int, (DateTime startTime, RpcCallback rpcCallback)>, IRpcCallbackPool
     {
@@ -174,7 +175,7 @@ namespace Megumin.Remote
                     await Task.Delay(RpcTimeOutMilliseconds);
                     if (TryDequeue(rpcID, out var rpc))
                     {
-                        MainThreadScheduler.Invoke(() =>
+                        ThreadScheduler.Invoke(() =>
                         {
                             rpc.rpcCallback?.Invoke(null, new TimeoutException());
                         });

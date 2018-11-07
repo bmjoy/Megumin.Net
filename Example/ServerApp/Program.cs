@@ -27,7 +27,7 @@ namespace ServerApp
             {
                 while (true)
                 {
-                    MainThreadScheduler.Update(0);
+                    ThreadScheduler.Update(0);
                     Thread.Yield();
                 }
 

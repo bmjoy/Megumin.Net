@@ -13,7 +13,7 @@ namespace Megumin.Remote
     /// <summary>
     /// 不支持多播地址 每包大小最好不要大于 537（548 - 框架报头11）
     /// </summary>
-    public partial class UDPRemote : RemoteBase, IRemote, ISuperRemote
+    public partial class UDPRemote : RemoteBase, IRemote
     {
         public Socket Client => udpClient?.Client;
         public UdpClient udpClient;

@@ -10,13 +10,13 @@ namespace Megumin.Message
 {
     /// <summary>
     /// 接收消息池
-    /// 调用<seealso cref="MainThreadScheduler.Update(double)"/>刷新
+    /// 调用<seealso cref="ThreadScheduler.Update(double)"/>刷新
     /// </summary>
-    public partial class MessageThreadTransducer
+    internal partial class MessageThreadTransducer
     {
         static MessageThreadTransducer()
         {
-            MainThreadScheduler.Add(Update);
+            ThreadScheduler.Add(Update);
         }
 
         static MessageQueue receivePool = new MessageQueue();

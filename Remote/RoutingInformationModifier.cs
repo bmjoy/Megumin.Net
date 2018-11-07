@@ -105,7 +105,7 @@ namespace Megumin.Remote
             deepCopy?.Dispose();
         }
 
-        public void AddNode(IPID receiver, IPID sender)
+        public void AddNode(IRemoteID receiver, IRemoteID sender)
         {
             if (Mode == RouteMode.Find)
             {
@@ -115,8 +115,8 @@ namespace Megumin.Remote
                 }
 
                 int position = 6 + 8 * Cursor;
-                receiver.PID.WriteTo(deepCopy.Memory.Span.Slice(position));
-                sender.PID.WriteTo(deepCopy.Memory.Span.Slice(position + 4));
+                receiver.ID.WriteTo(deepCopy.Memory.Span.Slice(position));
+                sender.ID.WriteTo(deepCopy.Memory.Span.Slice(position + 4));
                 Cursor += 1;
                 Length += 8;
             }

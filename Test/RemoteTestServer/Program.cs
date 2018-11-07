@@ -39,7 +39,7 @@ namespace RemoteTest
                 CoolDownTime coolDown = new CoolDownTime() {  MinDelta = TimeSpan.FromSeconds(30) };
                 while (true)
                 {
-                    MainThreadScheduler.Update(0);
+                    ThreadScheduler.Update(0);
                     //Thread.Sleep(1);
                     //if (coolDown)
                     //{
@@ -65,10 +65,10 @@ namespace RemoteTest
 
         private static void TestConnect(IRemote re)
         {
-            re.UserToken = connectCount;
+            re.UID = connectCount;
             re.OnDisConnect += (er) =>
             {
-                Console.WriteLine($"连接断开{re.UserToken}");
+                Console.WriteLine($"连接断开{re.UID}");
             };
         }
     }

@@ -7,6 +7,9 @@
 
 ## [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
 
+# 它是开箱即用的么？
+是的。但是注意，序列化库可能有额外的要求。
+
 # 核心方法2个
 
 设计原则：最常用的代码最简化，复杂的地方都封装起来。  
@@ -44,8 +47,27 @@
         Console.WriteLine(testPacket1);
     }
 
+# 重要
+- **线程调度**  
+  Remote 使用MessagePipeline.Post2ThreadScheduler标志决定消息回调函数在哪个线程执行，true时所有消息被汇总到Megumin.ThreadScheduler.Update。  
+  你需要轮询此函数来处理接收回调，它保证了按接收消息顺序触发回调（如果出现乱序，请提交一个BUG）。false时接收消息回调使用Task执行，不保证有序。  
+  
+  你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。
+
+        ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
+        ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
+        ThreadPool.QueueUserWorkItem((A) =>
+        {
+            while (true)
+            {
+                ThreadScheduler.Update(0);
+                Thread.Yield();
+            }
+
+        });
+
 # MessagePipeline是什么？
-MessagePipeline 是 Megumin.Remote.dll 的一部分功能，MessagePipeline 不包含在NetRemoteStandard.dll中。  
+MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包含在NetRemoteStandard中。  
 它决定了消息收发具体经过了那些流程，可以自定义MessagePipeline并注入到Remote,用来满足一些特殊需求。  
 如，消息反序列化前转发；使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。
 

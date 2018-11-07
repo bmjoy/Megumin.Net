@@ -14,9 +14,9 @@ namespace Megumin
     /// 主线程调度器
     /// <para>Unity中请使用Unity的主线程轮询</para>
     /// </summary>
-    public class MainThreadScheduler
+    public class ThreadScheduler
     {
-        private MainThreadScheduler() { }
+        private ThreadScheduler() { }
 
         static readonly List<Update> updates = new List<Update>();
 

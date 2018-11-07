@@ -131,7 +131,7 @@ namespace UnitFunc
             {
                 while (true)
                 {
-                    MainThreadScheduler.Update(0);
+                    ThreadScheduler.Update(0);
                     Thread.Yield();
                 }
             },cancellation.Token, TaskCreationOptions.LongRunning,TaskScheduler.Default);
@@ -193,7 +193,7 @@ namespace UnitFunc
             //await Task.Delay(-1);
         }
 
-        private static async Task TestLazySendAsync(ISuperRemote remote)
+        private static async Task TestLazySendAsync(IRemote remote)
         {
             await SafeRpcSendAsync(remote);
             await SafeRpcSendAsyncTimeOut(remote);
@@ -201,14 +201,14 @@ namespace UnitFunc
             //await Task.Delay(-1);
         }
 
-        private static async Task SafeRpcSendAsync(ISuperRemote remote)
+        private static async Task SafeRpcSendAsync(IRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             var res = await remote.SendAsyncSafeAwait<TestPacket2>(packet2);
             Assert.AreEqual(packet2.Value, res.Value);
         }
 
-        private static async Task SafeRpcSendAsyncTypeError(ISuperRemote remote)
+        private static async Task SafeRpcSendAsyncTypeError(IRemote remote)
         {
             TestPacket2 packet2 = new TestPacket2() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();
@@ -222,7 +222,7 @@ namespace UnitFunc
             Assert.AreEqual(typeof(InvalidCastException), result.GetType());
         }
 
-        private static async Task SafeRpcSendAsyncTimeOut(ISuperRemote remote)
+        private static async Task SafeRpcSendAsyncTimeOut(IRemote remote)
         {
             TestPacket1 packet2 = new TestPacket1() { Value = new Random().Next() };
             TaskCompletionSource<Exception> source = new TaskCompletionSource<Exception>();

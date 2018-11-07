@@ -11,13 +11,13 @@ using Net.Remote;
 
 namespace Megumin.Remote
 {
-    public abstract partial class RemoteBase:IToken
+    public abstract partial class RemoteBase:IUID
     {
-        public int PID { get; } = InterlockedID<IRemote>.NewID();
+        public int ID { get; } = InterlockedID<IRemote>.NewID();
         /// <summary>
         /// 这是留给用户赋值的
         /// </summary>
-        public int UserToken { get; set; }
+        public virtual int UID { get; set; }
         public bool IsVaild { get; protected set; } = true;
         public IPEndPoint ConnectIPEndPoint { get; set; }
         public DateTime LastReceiveTime { get; protected set; } = DateTime.Now;
@@ -34,7 +34,7 @@ namespace Megumin.Remote
     }
 
     /// 发送
-    partial class RemoteBase : ISendMessage, IRpcSendMessage, ISafeAwaitSendMessage
+    partial class RemoteBase : ISendMessage,IAsyncSendMessage
     {
         /// <summary>
         /// 异步发送

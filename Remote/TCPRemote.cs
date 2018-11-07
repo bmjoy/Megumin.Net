@@ -18,7 +18,7 @@ namespace Megumin.Remote
     /// <para>发送内存开销 对于TcpChannel实例 动态内存开销，取决于发送速度，内存实时占用为发送数据的1~2倍</para>
     /// <para>                  接收的常驻开销8kb*2,随着接收压力动态调整</para>
     /// </summary>
-    public partial class TCPRemote : RemoteBase,  IRemote,ISuperRemote
+    public partial class TCPRemote : RemoteBase,  IRemote
     {
         public Socket Client { get; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
