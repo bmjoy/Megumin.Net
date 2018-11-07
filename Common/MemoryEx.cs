@@ -39,28 +39,27 @@ namespace System.Buffers
                 throw new ArgumentNullException();
             }
 
-
-            //   T:System.ObjectDisposedException:
-            //     Methods were called after the stream was closed.
-
-            if (buffer.Length - offset <= count)
-            {
-                //   T:System.ArgumentException:
-                //     The sum of offset and count is larger than the buffer length.
-                throw new ArgumentException();
-            }
-
             var curCount = Length - Position;
             if (curCount <= 0)
             {
                 return 0;
             }
 
+            //   T:System.ObjectDisposedException:
+            //     Methods were called after the stream was closed.
+
+            if (buffer.Length - offset < count)
+            {
+                //   T:System.ArgumentException:
+                //     The sum of offset and count is larger than the buffer length.
+                throw new ArgumentException();
+            }
+
             int copyCount = curCount >= count ? count : (int)curCount;
 
             memory.Span.Slice((int)Position, copyCount).CopyTo(buffer.AsSpan(offset, copyCount));
             Position += copyCount;
-            return count;
+            return copyCount;
         }
 
         public override long Seek(long offset, SeekOrigin origin)
