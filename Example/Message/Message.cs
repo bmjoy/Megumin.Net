@@ -1,40 +1,57 @@
 ﻿using System;
 using MessagePack;
 using Megumin.Message;
+using ProtoBuf;
 
 namespace Message
 {
-    [MessagePackObject, MSGID(1000)]
+
+    [MSGID(1000)]
+    [ProtoContract]
+    [MessagePackObject]
     public class Message
     {
     }
 
-    [MessagePackObject, MSGID(1001)]
+    [MSGID(1001)]
+    [ProtoContract]
+    [MessagePackObject]
     public class Login
     {
+        [ProtoMember(1)]
         [Key(0)]
         public string IP { get; set; }
     }
 
-    [MessagePackObject, MSGID(1002)]
+    [MSGID(1002)]
+    [ProtoContract]
+    [MessagePackObject]
     public class LoginResult
     {
+        [ProtoMember(1)]
         [Key(0)]
         public string TempKey { get; set; }
     }
 
-    [MessagePackObject, MSGID(1003)]
+    [MSGID(1003)]
+    [ProtoContract]
+    [MessagePackObject]
     public class Login2Gate
     {
+        [ProtoMember(1)]
         [Key(0)]
         public string Account { get; set; }
+        [ProtoMember(2)]
         [Key(1)]
         public string Password { get; set; }
     }
 
-    [MessagePackObject, MSGID(1004)]
+    [MSGID(1004)]
+    [ProtoContract]
+    [MessagePackObject]
     public class Login2GateResult
     {
+        [ProtoMember(1)]
         [Key(0)]
         public bool IsSuccess { get; set; }
     }
