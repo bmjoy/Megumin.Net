@@ -43,6 +43,26 @@ namespace Megumin.Message
                 }
             }
         }
+
+        /// <summary>
+        /// 注册消息类型
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="key"></param>
+        public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        {
+            var type = typeof(T);
+            var attribute = type.GetFirstCustomAttribute<ProtoContractAttribute>();
+            if (attribute != null)
+            {
+                var MSGID = type.GetFirstCustomAttribute<MSGID>();
+                if (MSGID != null)
+                {
+                    AddFormatter(type, MSGID.ID,
+                        new Seiralizer<T>(Protobuf_netSerializerEx.Serialize), Protobuf_netSerializerEx.MakeD(type), key);
+                }
+            }
+        }
     }
 
     static class Protobuf_netSerializerEx

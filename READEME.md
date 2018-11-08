@@ -78,6 +78,22 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 - 发送过程数据拷贝了1次，接收过程数据无拷贝。
 - 内置内存池在初始状态就会分配一些内存，所起即使很小的示例程序也会占用较多内存，目前没有提供设置选项。
 
+# 支持的序列化库
+每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
+由于各个序列化库对Span\<byte>的支持不同，所以中间层可能会有轻微的性能损失.
+
+## [protobuf-net](https://github.com/mgravell/protobuf-net)
+- IL2CPP 请使用[.NET Standard 1.0](https://github.com/mgravell/protobuf-net#supported-runtimes)，其他运行时可能无法构建。
+
+## [protobuf](https://github.com/protocolbuffers/protobuf)
+
+## [MessagePack](https://github.com/neuecc/MessagePack-CSharp)
+
 # 效率
 没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单测试和个人经验判断可以支持WOW级别的MMORPG游戏。
 本机测试维持了15000 + Tcp连接。
+
+# 其他信息
+写框架途中总结到的知识或者猜测。
+- public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments);  
+  在IL2CPP下可用，但是不能创造新方法。如果这个泛型方法在编译期间确定，那么此方法可用。否则找不到方法。
