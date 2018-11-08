@@ -101,6 +101,10 @@
       <Project>{BFE44004-0D60-458B-9F0C-889EF37392D0}</Project>
       <Name>NetRemoteStandard</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Protobuf-netLUT\Protobuf-netLUT.csproj">
+      <Project>{89F3A08C-19C0-4747-90F7-B5CC295C8E51}</Project>
+      <Name>Protobuf-netLUT</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Remote\Remote.csproj">
       <Project>{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}</Project>
       <Name>Remote</Name>

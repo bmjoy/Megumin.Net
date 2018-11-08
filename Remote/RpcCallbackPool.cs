@@ -66,7 +66,7 @@ namespace Megumin.Remote
             if (TryDequeue(key, out var callback))
             {
                 ///如果出现RpcID冲突，认为前一个已经超时。
-                callback.rpcCallback?.Invoke(null, new TimeoutException());
+                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID 重叠，对前一个回调进行超时处理"));
             }
 
             lock (dequeueLock)
@@ -118,7 +118,7 @@ namespace Megumin.Remote
             if (TryDequeue(key, out var callback))
             {
                 ///如果出现RpcID冲突，认为前一个已经超时。
-                callback.rpcCallback?.Invoke(null, new TimeoutException());
+                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID 重叠，对前一个回调进行超时处理"));
             }
 
             lock (dequeueLock)
@@ -177,7 +177,7 @@ namespace Megumin.Remote
                     {
                         ThreadScheduler.Invoke(() =>
                         {
-                            rpc.rpcCallback?.Invoke(null, new TimeoutException());
+                            rpc.rpcCallback?.Invoke(null, new TimeoutException($"RPC {rpcID} 回调超时，没有得到远端响应。"));
                         });
                     }
                 }

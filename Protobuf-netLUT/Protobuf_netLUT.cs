@@ -47,12 +47,15 @@ namespace Megumin.Message
 
     static class Protobuf_netSerializerEx
     {
-        public static ushort Serialize<T>(T obj, byte[] buffer)
+        public static ushort Serialize<T>(T obj, Span<byte> buffer)
         {
             using (Stream s = new MemoryStream())
             {
                 Serializer.Serialize(s, obj);
-                int lenght = s.Read(buffer, 0, buffer.Length);
+                byte[] temp = new byte[16384];
+                s.Seek(0,SeekOrigin.Begin);
+                int lenght = s.Read(temp, 0, buffer.Length);
+                temp.AsSpan().Slice(0,lenght).CopyTo(buffer);
                 return (ushort)lenght;
             }
         }

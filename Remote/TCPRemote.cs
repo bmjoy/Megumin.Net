@@ -23,12 +23,31 @@ namespace Megumin.Remote
         public Socket Client { get; }
         public EndPoint RemappedEndPoint => Client.RemoteEndPoint;
 
+        /// <summary>
+        /// Mono/IL2CPP 请使用中使用<see cref="TCPRemote.TCPRemote(AddressFamily)"/>
+        /// </summary>
         public TCPRemote() : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
         {
 
         }
 
+        /// <remarks>
+        /// <para>SocketException: Protocol option not supported</para>
+        /// http://www.schrankmonster.de/2006/04/26/system-net-sockets-socketexception-protocol-not-supported/
+        /// </remarks>
+        public TCPRemote(AddressFamily addressFamily) 
+            : this(new Socket(addressFamily,SocketType.Stream, ProtocolType.Tcp))
+        {
+
+        }
+
         public TCPRemote(IMessagePipeline messagePipeline) : this(new Socket(SocketType.Stream, ProtocolType.Tcp))
+        {
+            MessagePipeline = messagePipeline;
+        }
+
+        public TCPRemote(IMessagePipeline messagePipeline, AddressFamily addressFamily)
+            : this(new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp))
         {
             MessagePipeline = messagePipeline;
         }
