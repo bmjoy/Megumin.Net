@@ -32,45 +32,103 @@ namespace Megumin.Message
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
-        public static void Regist(Type type, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        protected internal static void Regist(Type type, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
+            if (type.IsSubclassOf(typeof(IMessage<>)))
+            {
+                var MSGID = type.GetFirstCustomAttribute<MSGID>();
+                if (MSGID != null)
+                {
+                    Regist(type, MSGID.ID,
+                        ProtobufLUTSerializerEx.MakeS(type), ProtobufLUTSerializerEx.MakeD(type), key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 注册消息类型
+        /// </summary>
+        /// <param name="key"></param>
+        public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+            where T:IMessage<T>
+        {
+            var type = typeof(T);
             var MSGID = type.GetFirstCustomAttribute<MSGID>();
             if (MSGID != null)
             {
-                AddFormatter(type, MSGID.ID,
-                    ProtobufLUTSerializerEx.MakeS(type), ProtobufLUTSerializerEx.MakeD(type), key);
+                Regist<T>(MSGID.ID,
+                    ProtobufLUTSerializerEx.Serialize, ProtobufLUTSerializerEx.MakeD(type), key);
             }
-            
         }
     }
 
     static class ProtobufLUTSerializerEx
     {
-        public static ushort Serialize<T>(IMessage<T> obj, byte[] buffer)
-            where T:IMessage<T>
-        {
-            using (CodedOutputStream co = new CodedOutputStream(buffer))
-            {
-                obj.WriteTo(co);
-            }
+        [ThreadStatic]
+        static byte[] cacheBuffer;
 
-            return (ushort)obj.CalculateSize();
+        public static byte[] CacheBuffer
+        {
+            get
+            {
+                if (cacheBuffer == null)
+                {
+                    cacheBuffer = new byte[16384];
+                }
+                return cacheBuffer;
+            }
         }
 
-        public static Delegate MakeS(Type type)
+
+        public static ushort Serialize<T>(T obj, Span<byte> buffer)
+            where T:IMessage<T>
         {
-            var methodInfo = typeof(ProtobufLUTSerializerEx).GetMethod(nameof(Serialize),
+            using (CodedOutputStream co = new CodedOutputStream(CacheBuffer))
+            {
+                obj.WriteTo(co);
+                var lenght = (ushort)co.Position;
+                CacheBuffer.AsSpan().Slice(0, lenght).CopyTo(buffer);
+                return lenght;
+            }
+        }
+
+        public static Serialize MakeS2<T>() where T:IMessage<T>
+            => MessageLUT.Convert<T>(Serialize);
+
+        public static Serialize MakeS(Type type)
+        {
+            var methodInfo = typeof(ProtobufLUTSerializerEx).GetMethod(nameof(MakeS2),
                 BindingFlags.Static | BindingFlags.Public);
 
             var method = methodInfo.MakeGenericMethod(type);
 
-            return method.CreateDelegate(typeof(Seiralizer<>).MakeGenericType(type));
+            return method.Invoke(null,null) as Serialize;
         }
 
-        public static Deserilizer MakeD(Type type)
+        public static Deserialize Deserialize<T>()
+            where T:IMessage<T>
         {
-            var parsertype = typeof(Google.Protobuf.MessageParser<>).MakeGenericType(type);
-            dynamic dformatter = Activator.CreateInstance(parsertype);
+            MessageParser<T> parser = 
+                typeof(T).GetProperty("Parser", BindingFlags.Public|BindingFlags.Static)?.GetValue(null) as MessageParser<T>;
+            if (parser == null)
+            {
+                //todo
+                throw new Exception();
+            }
+
+            return (buffer) =>
+                   {
+                       using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))
+                       {
+                           IMessage message = parser.ParseFrom(stream);
+                           return message;
+                       }
+                   };
+        }
+
+        internal static Deserialize MakeD(Type type)
+        {
+            dynamic dformatter = type.GetProperty("Parser", BindingFlags.Public|BindingFlags.Static)?.GetValue(null);
             return  (buffer) =>
                     {
                         using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))

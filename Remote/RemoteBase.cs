@@ -42,7 +42,7 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         public void SendAsync(object message)
         {
-            SendAsync(0, message as dynamic);
+            SendAsync(0, message);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Megumin.Remote
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal protected virtual void SendAsync<T>(int rpcID, T message)
+        internal protected virtual void SendAsync(int rpcID, object message)
             =>SendAsync(MessagePipeline.Packet(rpcID, message));
         
         /// <summary>
@@ -69,7 +69,7 @@ namespace Megumin.Remote
 
             try
             {
-                SendAsync(rpcID, message as dynamic);
+                SendAsync(rpcID, message);
                 return source;
             }
             catch (Exception e)
@@ -87,7 +87,7 @@ namespace Megumin.Remote
 
             try
             {
-                SendAsync(rpcID, message as dynamic);
+                SendAsync(rpcID, message);
                 return source;
             }
             catch (Exception e)
@@ -189,7 +189,7 @@ namespace Megumin.Remote
 
             try
             {
-                SendAsync(rpcID, message as dynamic,identifier);
+                SendAsync(rpcID, message,identifier);
                 return source;
             }
             catch (Exception e)
@@ -207,7 +207,7 @@ namespace Megumin.Remote
 
             try
             {
-                SendAsync(rpcID, message as dynamic, identifier);
+                SendAsync(rpcID, message, identifier);
                 return source;
             }
             catch (Exception e)

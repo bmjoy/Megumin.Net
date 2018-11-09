@@ -154,7 +154,6 @@ namespace Net.Remote
     /// <summary>
     /// 
     /// <para></para>
-    /// 为什么使用object 关键字而不是泛型？1.为了函数调用过程中更优雅。2.在序列化过程中，使用一次dynamic还原参数真实类型。
     /// <para>object导致值类型装箱是可以妥协的。</para>
     /// </summary>
     public interface IAsyncSendMessage

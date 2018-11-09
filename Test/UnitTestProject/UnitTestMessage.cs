@@ -37,7 +37,7 @@ namespace UnitFunc
                     Assert.AreEqual(login2Gate.Password, res.Password);
                 }
 
-                Protobuf_netLUT.Regist(typeof(Login2Gate));
+                Protobuf_netLUT.Regist(typeof(Login2Gate).Assembly);
                 using (var buffer = BufferPool.Rent(1024))
                 {
                     var length = MessageLUT.Serialize(login2Gate, buffer.Memory.Span);

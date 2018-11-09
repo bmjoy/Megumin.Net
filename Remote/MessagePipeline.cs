@@ -135,7 +135,7 @@ namespace Megumin.Message
             {
                 RoutingInformationModifier routeTableWriter = new RoutingInformationModifier(extraMessage);
                 routeTableWriter.ReverseDirection();
-                var b = Packet(rpcID * -1, resp as dynamic, routeTableWriter);
+                var b = Packet(rpcID * -1, resp, routeTableWriter);
                 bufferReceiver.SendAsync(b);
                 routeTableWriter.Dispose();
             }
@@ -169,7 +169,7 @@ namespace Megumin.Message
                 modifier.MoveCursorNext();
             }
 
-            forwarder.SendAsync(Packet(messageID, modifier, messageBody.Span));
+            forwarder.SendAsync(Packet(messageID, extraMessage: modifier, messageBody.Span));
             modifier.Dispose();
         }
     }
@@ -219,7 +219,7 @@ namespace Megumin.Message
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public virtual IMemoryOwner<byte> Packet<T>(int rpcID, T message)
+        public virtual IMemoryOwner<byte> Packet(int rpcID, object message)
         {
             ///序列化用buffer,使用内存池
             using (var memoryOwner = BufferPool.Rent(16384))
@@ -242,7 +242,7 @@ namespace Megumin.Message
         /// <param name="message"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        public virtual IMemoryOwner<byte> Packet<T>(int rpcID, T message, int identifier)
+        public virtual IMemoryOwner<byte> Packet(int rpcID, object message, int identifier)
         {
             ///序列化用buffer,使用内存池
             using (var memoryOwner = BufferPool.Rent(16384))
@@ -266,7 +266,7 @@ namespace Megumin.Message
         /// <param name="message"></param>
         /// <param name="extraMessage"></param>
         /// <returns></returns>
-        public virtual IMemoryOwner<byte> Packet<T>(int rpcID, T message, ReadOnlySpan<byte> extraMessage)
+        public virtual IMemoryOwner<byte> Packet(int rpcID, object message, ReadOnlySpan<byte> extraMessage)
         {
             ///序列化用buffer,使用内存池
             using (var memoryOwner = BufferPool.Rent(16384))
@@ -370,7 +370,7 @@ namespace Megumin.Message
         /// <param name="rpcID"></param>
         /// <returns></returns>
         public virtual (int messageID, ushort length)
-            SerializeMessage<T>(T message, int rpcID, Span<byte> span)
+            SerializeMessage(object message, int rpcID, Span<byte> span)
         {
             ///rpcID直接附加值消息正文前4位。
             rpcID.WriteTo(span);

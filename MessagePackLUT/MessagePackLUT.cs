@@ -31,7 +31,7 @@ namespace Megumin.Message
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
-        public static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        protected internal static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             var attribute = type.GetFirstCustomAttribute<MessagePackObjectAttribute>();
             if (attribute != null)
@@ -39,8 +39,27 @@ namespace Megumin.Message
                 var MSGID = type.GetFirstCustomAttribute<MSGID>();
                 if (MSGID != null)
                 {
-                    AddFormatter(type, MSGID.ID,
+                    Regist(type, MSGID.ID,
                         MessagePackSerializerEx.MakeS(type), MessagePackSerializerEx.MakeD(type), key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 注册消息类型
+        /// </summary>
+        /// <param name="key"></param>
+        public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        {
+            var type = typeof(T);
+            var attribute = type.GetFirstCustomAttribute<MessagePackObjectAttribute>();
+            if (attribute != null)
+            {
+                var MSGID = type.GetFirstCustomAttribute<MSGID>();
+                if (MSGID != null)
+                {
+                    Regist<T>(MSGID.ID,
+                        MessagePackSerializerEx.Serialize, MessagePackSerializerEx.MakeD(type), key);
                 }
             }
         }
@@ -55,14 +74,16 @@ namespace Megumin.Message
             return (ushort)sbuffer.Count;
         }
 
-        public static Delegate MakeS(Type type)
+        public static Serialize MaskS2<T>() => MessageLUT.Convert<T>(Serialize);
+
+        public static Serialize MakeS(Type type)
         {
-            var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(Serialize),
+            var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(MaskS2),
                 BindingFlags.Static | BindingFlags.Public);
 
             var method = methodInfo.MakeGenericMethod(type);
 
-            return method.CreateDelegate(typeof(Seiralizer<>).MakeGenericType(type));
+            return method.Invoke(null,null) as Serialize;
         }
 
         public static T Deserilizer<T>(ReadOnlyMemory<byte> buffer)
@@ -73,14 +94,14 @@ namespace Megumin.Message
             }
         }
 
-        public static Deserilizer MakeD(Type type)
+        public static Deserialize MakeD(Type type)
         {
             var methodInfo = typeof(MessagePackSerializerEx).GetMethod(nameof(Deserilizer),
                 BindingFlags.Static | BindingFlags.Public);
 
             var method = methodInfo.MakeGenericMethod(type);
 
-            return method.CreateDelegate(typeof(Deserilizer)) as Deserilizer;
+            return method.CreateDelegate(typeof(Deserialize)) as Deserialize;
         }
     }
 }

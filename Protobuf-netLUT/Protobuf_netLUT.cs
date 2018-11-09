@@ -30,7 +30,7 @@ namespace Megumin.Message
         /// </summary>
         /// <param name="type"></param>
         /// <param name="key"></param>
-        public static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        protected internal static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             var attribute = type.GetFirstCustomAttribute<ProtoContractAttribute>();
             if (attribute != null)
@@ -38,7 +38,7 @@ namespace Megumin.Message
                 var MSGID = type.GetFirstCustomAttribute<MSGID>();
                 if (MSGID != null)
                 {
-                    AddFormatter(type, MSGID.ID,
+                    Regist(type, MSGID.ID,
                         Protobuf_netSerializerEx.MakeS(type), Protobuf_netSerializerEx.MakeD(type), key);
                 }
             }
@@ -47,7 +47,6 @@ namespace Megumin.Message
         /// <summary>
         /// 注册消息类型
         /// </summary>
-        /// <param name="type"></param>
         /// <param name="key"></param>
         public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
@@ -58,8 +57,10 @@ namespace Megumin.Message
                 var MSGID = type.GetFirstCustomAttribute<MSGID>();
                 if (MSGID != null)
                 {
-                    AddFormatter(type, MSGID.ID,
-                        new Seiralizer<T>(Protobuf_netSerializerEx.Serialize), Protobuf_netSerializerEx.MakeD(type), key);
+                    Regist<T>(MSGID.ID,
+                        Protobuf_netSerializerEx.Serialize,
+                        Protobuf_netSerializerEx.MakeD(type), 
+                        key);
                 }
             }
         }
@@ -80,17 +81,20 @@ namespace Megumin.Message
             }
         }
 
-        public static Delegate MakeS(Type type)
+        public static Serialize MakeS2<T>() => MessageLUT.Convert<T>(Serialize);
+
+        public static Serialize MakeS(Type type)
         {
-            var methodInfo = typeof(Protobuf_netSerializerEx).GetMethod(nameof(Serialize),
+            var methodInfo = typeof(Protobuf_netSerializerEx).GetMethod(nameof(MakeS2),
                 BindingFlags.Static | BindingFlags.Public);
 
             var method = methodInfo.MakeGenericMethod(type);
+            var res = method.Invoke(null, null);
 
-            return method.CreateDelegate(typeof(Seiralizer<>).MakeGenericType(type));
+            return res as Serialize;
         }
 
-        public static Deserilizer MakeD(Type type)
+        public static Deserialize MakeD(Type type)
         {
             return (buffer) =>
             {
