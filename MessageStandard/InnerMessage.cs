@@ -70,19 +70,20 @@ namespace Megumin.Message
             using (var mo = BufferPool.Rent(message.Length * 2))
             {
                 MemoryMarshal.TryGetArray<byte>(mo.Memory, out var bs);
-                Encoding.UTF8.GetBytes(message,0,message.Length,bs.Array,bs.Offset);
-                mo.Memory.Span.CopyTo(bf);
-                return (ushort)(message.Length * 2);
+                var length = Encoding.UTF8.GetBytes(message,0,message.Length,bs.Array,bs.Offset);
+                mo.Memory.Span.Slice(0,length).CopyTo(bf);
+                return (ushort)length;
             }
         }
 
         internal static string StringDeserialize(ReadOnlyMemory<byte> bf)
         {
-            using (var mo = BufferPool.Rent(bf.Length))
+            var length = bf.Length;
+            using (var mo = BufferPool.Rent(length))
             {
                 MemoryMarshal.TryGetArray<byte>(mo.Memory, out var bs);
                 bf.Span.CopyTo(mo.Memory.Span);
-                return Encoding.UTF8.GetString(bs.Array);
+                return Encoding.UTF8.GetString(bs.Array,0, length);
             }
         }
 

@@ -29,6 +29,8 @@ namespace ServerApp
         {
             switch (message)
             {
+                case string str:
+                    return $"{str} world";
                 case Login2Gate login:
 
                     Console.WriteLine($"客户端登陆请求：{login.Account}-----{login.Password}");
