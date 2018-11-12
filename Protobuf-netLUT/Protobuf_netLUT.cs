@@ -68,15 +68,30 @@ namespace Megumin.Message
 
     static class Protobuf_netSerializerEx
     {
+        [ThreadStatic]
+        static byte[] cacheBuffer;
+
+        public static byte[] CacheBuffer
+        {
+            get
+            {
+                if (cacheBuffer == null)
+                {
+                    cacheBuffer = new byte[16384];
+                }
+                return cacheBuffer;
+            }
+        }
+
         public static ushort Serialize<T>(T obj, Span<byte> buffer)
         {
+            ///等待序列化类库支持Span.
             using (Stream s = new MemoryStream())
             {
                 Serializer.Serialize(s, obj);
-                byte[] temp = new byte[16384];
                 s.Seek(0,SeekOrigin.Begin);
-                int lenght = s.Read(temp, 0, buffer.Length);
-                temp.AsSpan().Slice(0,lenght).CopyTo(buffer);
+                int lenght = s.Read(CacheBuffer, 0, buffer.Length);
+                CacheBuffer.AsSpan().Slice(0,lenght).CopyTo(buffer);
                 return (ushort)lenght;
             }
         }

@@ -83,6 +83,7 @@ namespace Megumin.Message
         public static ushort Serialize<T>(T obj, Span<byte> buffer)
             where T:IMessage<T>
         {
+            ///等待序列化类库支持Span.
             using (CodedOutputStream co = new CodedOutputStream(CacheBuffer))
             {
                 obj.WriteTo(co);

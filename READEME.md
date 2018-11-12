@@ -40,7 +40,7 @@
     public async void TestSend()
     {
         Person person = new Person() { Name = "LiLei", Age = 10 };
-        ISuperRemote remote = new TCPRemote();
+        IRemote remote = new TCPRemote();
         ///省略连接代码
         var testPacket1 = await remote.SendAsyncSafeAwait<TestPacket1>(person);
         ///后续代码 不用任何判断，也不用担心异常。
@@ -89,8 +89,17 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
 由于各个序列化库对Span\<byte>的支持不同，所以中间层可能会有轻微的性能损失.
 
+对于序列化函数有三种形式：
+1. 代码生成器生成代码   
+   { protobuf ，[MessagePack mpc.exe](https://github.com/neuecc/MessagePack-CSharp#pre-code-generationunityxamarin-supports) }
+2. 通过反射每个字段组合   
+   { protobuf-net .NET Standard 1.0 }
+3. JIT 生成  
+   { protobuf-net ， MessagePack}
+
 ## [protobuf-net](https://github.com/mgravell/protobuf-net)
-- IL2CPP 请使用[.NET Standard 1.0](https://github.com/mgravell/protobuf-net#supported-runtimes)，其他运行时可能无法构建。
+- IL2CPP 请使用[.NET Standard 1.0](https://github.com/mgravell/protobuf-net#supported-runtimes)，其他运行时可能无法构建。虽然是反射模式，但是对于客户端来说并没有性能问题，于此同时服务器可以使用 .NET Standard 2.0。  
+  unity无头模式服务器应该考虑其他库。
 
 ## [protobuf](https://github.com/protocolbuffers/protobuf)
 
@@ -98,7 +107,7 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 
 # 效率
 没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单测试和个人经验判断可以支持WOW级别的MMORPG游戏。
-本机测试维持了15000 + Tcp连接。
+本机测试单进程维持了15000 + Tcp连接。
 
 # 其他信息
 写框架途中总结到的知识或者猜测。
