@@ -5,13 +5,13 @@ using Net.Remote;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
-namespace Megumin.Remote
+namespace System.Threading.Tasks
 {
     /// <summary>
     /// 一个异步任务实现，特点是可以取消任务不会触发异常和后续方法。
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class MiniTask<T> : IMiniAwaitable<T>,IPoolElement
+    public class MiniTask<T> : IMiniAwaitable<T>
     {
         enum State
         {
@@ -125,7 +125,7 @@ namespace Megumin.Remote
                 }
 
                 ///处理后续方法结束，归还到池中
-                ((IPoolElement)this).Return();
+                this.Return();
             }
         }
 
@@ -148,7 +148,7 @@ namespace Megumin.Remote
         int lastThreadID;
 #endif
 
-        void IPoolElement.Return()
+        void Return()
         {
             Reset();
 

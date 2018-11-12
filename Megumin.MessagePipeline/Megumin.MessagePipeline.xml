@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Megumin.MessagePipeline</name>
+    </assembly>
+    <members>
+        <member name="T:Megumin.Message.MessagePipeline">
+            处理路由转发过程
+            打包封包
+            消息正文处理
+        </member>
+        <member name="F:Megumin.Message.MessagePipeline.MessageLengthByteCount">
+            <summary>
+            描述消息包长度字节所占的字节数
+            <para>长度类型ushort，所以一个包理论最大长度不能超过65535字节，框架要求一个包不能大于8192 - 25 个 字节</para>
+            
+            按照千兆网卡计算，一个玩家每秒10~30包，大约10~30KB，大约能负载3000玩家。
+            </summary>
+        </member>
+        <member name="F:Megumin.Message.MessagePipeline.MessageIDByteCount">
+            <summary>
+            消息包类型ID 字节长度
+            </summary>
+        </member>
+        <member name="F:Megumin.Message.MessagePipeline.RpcIDByteCount">
+            <summary>
+            消息包类型ID 字节长度
+            </summary>
+        </member>
+        <member name="F:Megumin.Message.MessagePipeline.HeaderOffset">
+            <summary>
+            报头初始偏移6, rpcID贴合在消息正文，不算报头。
+            </summary>
+        </member>
+        <member name="P:Megumin.Message.MessagePipeline.Post2ThreadScheduler">
+            <summary>
+            默认开启线程转换
+            </summary>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.CutOff(System.ReadOnlySpan{System.Byte},System.Collections.Generic.IList{System.Buffers.IMemoryOwner{System.Byte}})">
+            <summary>
+            分离粘包
+            <para> <see cref="!:Packet(short, object, IRemote)"/> 对应 </para>
+            </summary>
+            <param name="source"></param>
+            <param name="pushCompleteMessage"></param>
+            <returns>剩余的半包。</returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.Forward``1(``0,System.Int32,System.ReadOnlyMemory{System.Byte},System.ReadOnlyMemory{System.Byte},Net.Remote.IForwarder)">
+            <summary>
+            转发
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="remote"></param>
+            <param name="messageID"></param>
+            <param name="extraMessage"></param>
+            <param name="messageBody"></param>
+            <param name="forwarder"></param>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.PreDeserialize``1(System.Int32,System.ReadOnlyMemory{System.Byte}@,System.ReadOnlyMemory{System.Byte}@,``0)">
+            <summary>
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="messageID"></param>
+            <param name="routeTable"></param>
+            <param name="messageBody"></param>
+            <param name="bufferReceiver"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.PostDeserialize``1(System.Int32,System.ReadOnlyMemory{System.Byte}@,System.ReadOnlyMemory{System.Byte}@,``0)">
+            <summary>
+            
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="messageID"></param>
+            <param name="routeTable"></param>
+            <param name="messageBody"></param>
+            <param name="bufferReceiver"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.Packet(System.Int32,System.Object)">
+            <summary>
+            普通打包
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="rpcID"></param>
+            <param name="message"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.Packet(System.Int32,System.Object,System.Int32)">
+            <summary>
+            转发打包
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="rpcID"></param>
+            <param name="message"></param>
+            <param name="identifier"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.Packet(System.Int32,System.Object,System.ReadOnlySpan{System.Byte})">
+            <summary>
+            返回消息打包
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="rpcID"></param>
+            <param name="message"></param>
+            <param name="extraMessage"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.Packet(System.Int32,System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Byte})">
+            <summary>
+            封装将要发送的字节消息,这个方法控制消息字节的布局
+            <para>框架使用的字节布局 2总长度 + 4消息ID +  extraMessage + messageBody</para>
+            </summary>
+            <param name="messageID"></param>
+            <param name="extraMessage"></param>
+            <param name="messageBody"></param>
+            <returns>框架使用BigEndian</returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.ParsePacketHeader(System.ReadOnlySpan{System.Byte})">
+            <summary>
+            解析报头 (长度至少要大于6（6个字节也就是一个报头长度）)
+            </summary>
+            <param name="buffer"></param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">数据长度小于报头长度</exception>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.UnPacket(System.ReadOnlyMemory{System.Byte})">
+            <summary>
+            解包。 这个方法解析消息字节的布局
+            <para> 和 <see cref="M:Megumin.Message.MessagePipeline.Packet(System.Int32,System.ReadOnlySpan{System.Byte},System.ReadOnlySpan{System.Byte})"/> 对应</para>
+            </summary>
+            <param name="buffer"></param>
+            <returns></returns>
+            <remarks>分离消息是使用报头描述的长度而不能依赖于Span长度</remarks>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.SerializeMessage(System.Object,System.Int32,System.Span{System.Byte})">
+            <summary>
+            序列化消息阶段
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="span"></param>
+            <param name="message"></param>
+            <param name="rpcID"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Megumin.Message.MessagePipeline.DeserializeMessage(System.Int32,System.ReadOnlyMemory{System.Byte}@)">
+            <summary>
+            反序列化消息阶段
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Megumin.Message.MessageThreadTransducer">
+            <summary>
+            接收消息池
+            调用<seealso cref="M:Megumin.ThreadScheduler.Update(System.Double)"/>刷新
+            </summary>
+        </member>
+        <member name="M:Megumin.Message.MessageThreadTransducer.Update(System.Double)">
+            <summary>
+            在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
+            </summary>
+            <param name="delta"></param>
+        </member>
+        <member name="T:Megumin.Remote.RoutingInformationModifier">
+            <summary>
+            不懂别动，这里有坑
+            <para></para>
+            如果没有修改，可以不用释放，因为没有创建防御性副本。如果修改值，会创建防御性副本，内存来自内存池，需要手动释放。
+            </summary>
+        </member>
+        <member name="P:Megumin.Remote.RoutingInformationModifier.Mode">
+            一个byte掰成两半用，也是醉了 枚举最多支持8个选项
+        </member>
+        <member name="P:Megumin.Remote.RoutingInformationModifier.Cursor">
+            <summary>
+            指针范围 0-31
+            </summary>
+        </member>
+        <member name="M:Megumin.Remote.RoutingInformationModifier.ReverseDirection">
+            <summary>
+            反转路由表流向
+            </summary>
+        </member>
+        <member name="T:Megumin.Remote.RouteMode">
+            <summary>
+            路由模式，最多支持8个选项
+            </summary>
+        </member>
+    </members>
+</doc>

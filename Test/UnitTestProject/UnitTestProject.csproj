@@ -93,6 +93,10 @@
       <Project>{21C71580-7261-4FB3-B8C8-DFF702042C11}</Project>
       <Name>Message</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Megumin.MessagePipeline\Megumin.MessagePipeline.csproj">
+      <Project>{e53fafbd-ac71-4773-bcce-9b9686e671f8}</Project>
+      <Name>Megumin.MessagePipeline</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\MessageStandard\MessageStandard.csproj">
       <Project>{9AC83E99-E45B-4966-A7B5-866DC8E83D8B}</Project>
       <Name>MessageStandard</Name>
@@ -105,9 +109,9 @@
       <Project>{89F3A08C-19C0-4747-90F7-B5CC295C8E51}</Project>
       <Name>Protobuf-netLUT</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Remote\Remote.csproj">
+    <ProjectReference Include="..\..\Megumin.Remote\Megumin.Remote.csproj">
       <Project>{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}</Project>
-      <Name>Remote</Name>
+      <Name>Megumin.Remote</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

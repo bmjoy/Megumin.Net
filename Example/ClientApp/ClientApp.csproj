@@ -18,8 +18,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Megumin.Remote\Megumin.Remote.csproj" />
     <ProjectReference Include="..\..\MessagePackLUT\MessagePackLUT.csproj" />
-    <ProjectReference Include="..\..\Remote\Remote.csproj" />
     <ProjectReference Include="..\Message\Message.csproj" />
   </ItemGroup>
 

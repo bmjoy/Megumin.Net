@@ -66,6 +66,13 @@
 
         });
 
+- **``Message.dll``**  
+  **（AOT/IL2CPP）**当序列化类以dll的形式导入unity时，必须加入link文件，防止序列化类属性的get,set方法被il2cpp剪裁。**``重中之重，因为缺失get,set函数不会显示报错，错误通常会被定位到序列化库的多个不同位置（我在这里花费了16个小时）。``** 
+
+        <linker>
+            <assembly fullname="Message" preserve="all"/>
+        </linker>
+
 # MessagePipeline是什么？
 MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包含在NetRemoteStandard中。  
 它决定了消息收发具体经过了那些流程，可以自定义MessagePipeline并注入到Remote,用来满足一些特殊需求。  
