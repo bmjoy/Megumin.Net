@@ -42,6 +42,7 @@
         Person person = new Person() { Name = "LiLei", Age = 10 };
         IRemote remote = new TCPRemote();
         ///省略连接代码
+        ///                                         泛型类型为期待返回的类型
         var testPacket1 = await remote.SendAsyncSafeAwait<TestPacket1>(person);
         ///后续代码 不用任何判断，也不用担心异常。
         Console.WriteLine(testPacket1);
@@ -84,8 +85,10 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 - 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
 - 发送过程数据拷贝了1次，接收过程数据无拷贝。
 - 内置内存池在初始状态就会分配一些内存，所起即使很小的示例程序也会占用较多内存，目前没有提供设置选项。
+- 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
+- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你可以使用MessageLUT.Regist<T>函数添加其他类型。
 
-# 支持的序列化库
+# 支持的序列化库(陆续添加中)
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
 由于各个序列化库对Span\<byte>的支持不同，所以中间层可能会有轻微的性能损失.
 

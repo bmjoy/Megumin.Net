@@ -54,9 +54,9 @@ namespace Megumin.Message
             ///5个基础类型
             Regist<string>(MSGID.StringID, BaseType.Serialize, BaseType.StringDeserialize);
             Regist<int>(MSGID.IntID, BaseType.Serialize,BaseType.IntDeserialize);
-            Regist<long>(MSGID.IntID, BaseType.Serialize,BaseType.LongDeserialize);
-            Regist<float>(MSGID.IntID, BaseType.Serialize,BaseType.FloatDeserialize);
-            Regist<double>(MSGID.IntID, BaseType.Serialize,BaseType.DoubleDeserialize);
+            Regist<long>(MSGID.LongID, BaseType.Serialize,BaseType.LongDeserialize);
+            Regist<float>(MSGID.FloatID, BaseType.Serialize,BaseType.FloatDeserialize);
+            Regist<double>(MSGID.DoubleID, BaseType.Serialize,BaseType.DoubleDeserialize);
 
 
             ///框架用类型
