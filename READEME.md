@@ -8,9 +8,9 @@
 ## [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
 
 # 它是开箱即用的么？
-是的。但是注意，序列化库可能有额外的要求。
+是的。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。
 
-# 核心方法2个
+# 核心方法3个
 
 设计原则：最常用的代码最简化，复杂的地方都封装起来。  
 发送一个消息，等待一个消息返回。
@@ -48,13 +48,30 @@
         Console.WriteLine(testPacket1);
     }
 
+## ``public delegate ValueTask<object> ReceiveCallback (object message,IReceiveMessage receiver);``
+接收端回调函数
+
+    public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
+    {
+        switch (message)
+        {
+            case TestPacket1 packet1:
+                Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}"); 
+                return null;
+            case TestPacket2 packet2:
+                Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
+                return new TestPacket2 { Value = packet2.Value };
+            default:
+                break;
+        }
+        return null;
+    }
+
 # 重要
 - **线程调度**  
   Remote 使用MessagePipeline.Post2ThreadScheduler标志决定消息回调函数在哪个线程执行，true时所有消息被汇总到Megumin.ThreadScheduler.Update。  
   你需要轮询此函数来处理接收回调，它保证了按接收消息顺序触发回调（如果出现乱序，请提交一个BUG）。false时接收消息回调使用Task执行，不保证有序。  
   
-  你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。
-
         ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
         ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
         ThreadPool.QueueUserWorkItem((A) =>
@@ -64,11 +81,10 @@
                 ThreadScheduler.Update(0);
                 Thread.Yield();
             }
-
         });
 
 - **``Message.dll``**  
-  **（AOT/IL2CPP）**当序列化类以dll的形式导入unity时，必须加入link文件，防止序列化类属性的get,set方法被il2cpp剪裁。**``重中之重，因为缺失get,set函数不会显示报错，错误通常会被定位到序列化库的多个不同位置（我在这里花费了16个小时）。``** 
+  [（AOT/IL2CPP）当序列化类以dll的形式导入unity时，必须加入link文件，防止序列化类属性的get,set方法被il2cpp剪裁。](https://docs.unity3d.com/Manual/IL2CPP-BytecodeStripping.html)**``重中之重，因为缺失get,set函数不会显示报错，错误通常会被定位到序列化库的多个不同位置（我在这里花费了16个小时）。``** 
 
         <linker>
             <assembly fullname="Message" preserve="all"/>
@@ -78,13 +94,14 @@
 MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包含在NetRemoteStandard中。  
 它决定了消息收发具体经过了那些流程，可以自定义MessagePipeline并注入到Remote,用来满足一些特殊需求。  
 如，消息反序列化前转发；使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。
+``你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。``
 
 # 一些细节
 - Megumin只是个前缀，没有含义。
 - 内置了RPC功能，保证了请求和返回消息一对一匹配。
 - 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
 - 发送过程数据拷贝了1次，接收过程数据无拷贝。
-- 内置内存池在初始状态就会分配一些内存，所起即使很小的示例程序也会占用较多内存，目前没有提供设置选项。
+- 内置内存池在初始状态就会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
 - 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
 - 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你可以使用MessageLUT.Regist<T>函数添加其他类型。
 
