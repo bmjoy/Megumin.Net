@@ -90,9 +90,14 @@ namespace Megumin.Message
             {
                 Serializer.Serialize(s, obj);
                 s.Seek(0,SeekOrigin.Begin);
-                int lenght = s.Read(CacheBuffer, 0, buffer.Length);
-                CacheBuffer.AsSpan().Slice(0,lenght).CopyTo(buffer);
-                return (ushort)lenght;
+                int length = 0;
+                int cur;
+                while ((cur = s.Read(CacheBuffer, length, buffer.Length - length)) > 0)
+                {
+                    length += cur;
+                }
+                CacheBuffer.AsSpan().Slice(0,length).CopyTo(buffer);
+                return (ushort)length;
             }
         }
 
