@@ -20,14 +20,14 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>G:\MeguminNet\Megumin.MessagePipeline\Megumin.MessagePipeline.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\\Megumin.MessagePipeline.xml</DocumentationFile>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>G:\MeguminNet\Megumin.MessagePipeline\Megumin.MessagePipeline.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\Megumin.MessagePipeline.xml</DocumentationFile>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>

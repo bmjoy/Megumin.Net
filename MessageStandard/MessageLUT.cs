@@ -141,16 +141,16 @@ namespace Megumin.Message
             }
         }
 
-        public static void Regist(Type type, int messageID, Serialize seiralize, Deserialize deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        public static void Regist(Type type, int messageID, Serialize seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             AddSFormatter(type, messageID, seiralize, key);
-            AddDFormatter(messageID,type, deserilizer, key);
+            AddDFormatter(messageID,type, deserilize, key);
         }
 
-        public static void Regist<T>(int messageID, RegistSerialize<T> seiralize, Deserialize deserilizer, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        public static void Regist<T>(int messageID, RegistSerialize<T> seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             AddSFormatter(typeof(T), messageID, Convert(seiralize), key);
-            AddDFormatter(messageID,typeof(T), deserilizer, key);
+            AddDFormatter(messageID,typeof(T), deserilize, key);
         }
 
         /// <summary>

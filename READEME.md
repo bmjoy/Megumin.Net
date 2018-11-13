@@ -3,12 +3,12 @@
 
   **简单来说：NetRemoteStandard是标准，Megumin.Remote是实现。类比于dotnetStandard和dotnetCore的关系。**
 
-  **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG可能不是最佳选择。** 在遥远的未来也许会针对不用游戏类型写出NetRemoteStandard的不同实现。
+  **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
 ## [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
 
 # 它是开箱即用的么？
-是的。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。
+是的，现在也支持IL2CPP。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。
 
 # 核心方法3个
 
@@ -20,15 +20,15 @@
     ///实际使用中的例子
     public async void TestSend()
     {
-        Person person = new Person() { Name = "LiLei", Age = 10 };
+        Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
         IRemote remote = new TCPRemote();
-        ///省略连接代码
+        ///省略连接代码……
         ///                                         泛型类型为期待返回的类型
-        var (result, exception) = await remote.SendAsync<TestPacket1>(person);
+        var (result, exception) = await remote.SendAsync<LoginResult>(login);
         ///如果没有遇到异常，那么我们可以得到远端发回的返回值
         if (exception == null)
         {
-            Console.WriteLine(result);
+            Console.WriteLine(result.IsSuccess);
         }
     }
 
@@ -39,13 +39,13 @@
 
     public async void TestSend()
     {
-        Person person = new Person() { Name = "LiLei", Age = 10 };
+        Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
         IRemote remote = new TCPRemote();
-        ///省略连接代码
+        ///省略连接代码……
         ///                                         泛型类型为期待返回的类型
-        var testPacket1 = await remote.SendAsyncSafeAwait<TestPacket1>(person);
+        var result = await remote.SendAsyncSafeAwait<LoginResult>(login);
         ///后续代码 不用任何判断，也不用担心异常。
-        Console.WriteLine(testPacket1);
+        Console.WriteLine(result.IsSuccess);
     }
 
 ## ``public delegate ValueTask<object> ReceiveCallback (object message,IReceiveMessage receiver);``
@@ -58,9 +58,9 @@
             case TestPacket1 packet1:
                 Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}"); 
                 return null;
-            case TestPacket2 packet2:
-                Console.WriteLine($"接收消息{nameof(TestPacket2)}--{packet2.Value}");
-                return new TestPacket2 { Value = packet2.Value };
+            case Login login:
+                Console.WriteLine($"接收消息{nameof(Login)}--{login.Account}");
+                return new LoginResult { IsSuccess = true };
             default:
                 break;
         }
@@ -70,7 +70,10 @@
 # 重要
 - **线程调度**  
   Remote 使用MessagePipeline.Post2ThreadScheduler标志决定消息回调函数在哪个线程执行，true时所有消息被汇总到Megumin.ThreadScheduler.Update。  
-  你需要轮询此函数来处理接收回调，它保证了按接收消息顺序触发回调（如果出现乱序，请提交一个BUG）。false时接收消息回调使用Task执行，不保证有序。  
+  你需要轮询此函数来处理接收回调，它保证了按接收消息顺序触发回调（如果出现乱序，请提交一个BUG）。  
+  ``如果你的消息在分布式服务器之间传递，你可能希望消息在中转进程中尽快传递，那么`` false时接收消息回调使用Task执行，不必在轮询中等待，但无法保证有序，鱼和熊掌不可兼得。   
+  
+  **你也可以重写MessagePipeline.Push精确控制每个消息的行为**
   
         ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
         ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
@@ -93,17 +96,74 @@
 # MessagePipeline是什么？
 MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包含在NetRemoteStandard中。  
 它决定了消息收发具体经过了那些流程，可以自定义MessagePipeline并注入到Remote,用来满足一些特殊需求。  
-如，消息反序列化前转发；使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。
+如，消息反序列化前转发；使用返回消息池来实现接收过程构造返回消息实例无Alloc（这需要序列化类库的支持和明确的生命周期管理）。  
 ``你可以为每个Remote指定一个MessagePipeline实例，如果没有指定，默认使用MessagePipeline.Default。``
 
-# 一些细节
-- Megumin只是个前缀，没有含义。
-- 内置了RPC功能，保证了请求和返回消息一对一匹配。
-- 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
-- 发送过程数据拷贝了1次，接收过程数据无拷贝。
-- 内置内存池在初始状态就会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
-- 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
-- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你可以使用MessageLUT.Regist<T>函数添加其他类型。
+# MessageLUT是什么？
+MessageLUT（Message Serialize Deserialize callback look-up table）是MessageStandard的核心类。MessagePipeline 通过查找MessageLUT中注册的函数进行序列化。**``因此在程序最开始你需要进行函数注册``**。  
+
+通用注册函数：  
+public static void Regist(Type type, int messageID, Serialize seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip);  
+public static void Regist\<T>(int messageID, RegistSerialize\<T> seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip);  
+
+    Regist<TestPacket1>(MSGID.TestPacket1ID, TestPacket1.S, TestPacket1.D);
+    Regist<TestPacket2>(MSGID.TestPacket2ID, TestPacket2.S, TestPacket2.D);
+    ///5个基础类型
+    Regist<string>(11, BaseType.Serialize, BaseType.StringDeserialize);
+    Regist<int>(12, BaseType.Serialize,BaseType.IntDeserialize);
+
+序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。你需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。
+
+    namespace Message
+    {
+        [MSGID(1001)]
+        [ProtoContract]
+        [MessagePackObject]
+        public class Login  //同时使用多个序列化类库的特性标记，但同时只能有一个生效
+        {
+            [ProtoMember(1)]
+            [Key(0)]
+            public string Account { get; set; }
+            [ProtoMember(2)]
+            [Key(1)]
+            public string Password { get; set; }
+        }
+        [MSGID(1002)]
+        [ProtoContract]
+        [MessagePackObject]
+        public class LoginResult
+        {
+            [ProtoMember(1)]
+            [Key(0)]
+            public bool IsSuccess { get; set; }
+        }
+    }
+
+- JIT环境下可以直接注册一个程序集  
+
+        private static async void InitServer()
+        {
+            //MessagePackLUT.Regist(typeof(Login).Assembly);
+            Protobuf_netLUT.Regist(typeof(Login).Assembly);
+            ThreadPool.QueueUserWorkItem((A) =>
+            {
+                while (true)
+                {
+                    ThreadScheduler.Update(0);
+                    Thread.Yield();
+                }
+
+            });
+        }
+
+- AOT/IL2CPP 环境下需要显示通过泛型函数注册每一个协议类，以确保在编译器在静态分析时生成对应的泛型函数。    
+  
+        public async void TestConnect()
+        {
+            Protobuf_netLUT.Regist<Login>();
+            Protobuf_netLUT.Regist<LoginResult>();
+        }
+
 
 # 支持的序列化库(陆续添加中)
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
@@ -115,7 +175,7 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 2. 通过反射每个字段组合   
    { protobuf-net .NET Standard 1.0 }
 3. JIT 生成  
-   { protobuf-net ， MessagePack}
+   { protobuf-net ， MessagePack }
 
 ## [protobuf-net](https://github.com/mgravell/protobuf-net)
 - IL2CPP 请使用[.NET Standard 1.0](https://github.com/mgravell/protobuf-net#supported-runtimes)，其他运行时可能无法构建。虽然是反射模式，但是对于客户端来说并没有性能问题，于此同时服务器可以使用 .NET Standard 2.0。  
@@ -125,6 +185,16 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 
 ## [MessagePack](https://github.com/neuecc/MessagePack-CSharp)
 
+
+# 一些细节
+- Megumin只是个前缀，没有含义。
+- 内置了RPC功能，保证了请求和返回消息一对一匹配。
+- 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
+- 发送过程数据拷贝了1次，接收过程数据无拷贝(各个序列化类库不同)。
+- 内置内存池在初始状态就会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
+- 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
+- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你可以使用MessageLUT.Regist<T>函数添加其他类型。
+
 # 效率
 没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单测试和个人经验判断可以支持WOW级别的MMORPG游戏。
 本机测试单进程维持了15000 + Tcp连接。
@@ -133,3 +203,5 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 写框架途中总结到的知识或者猜测。
 - public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments);  
   在IL2CPP下可用，但是不能创造新方法。如果这个泛型方法在编译期间确定，那么此方法可用。否则找不到方法。
+
+## 在1.0.0版本前API可能会有破坏性的改变。
