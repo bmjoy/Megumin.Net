@@ -1,14 +1,24 @@
 # 这是什么？  
-  这是一个dotnetStandard2.0的网络库。设计目的为应用程序网络层提供统一的简单的接口。NetRemoteStandard.dll提供了API定义，Megumin.Remote.dll是它的具体实现。应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll里的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
+  这是一个简单易用的网络库。设计目的为应用程序网络层提供统一的接口。  
 
-  **简单来说：NetRemoteStandard是标准，Megumin.Remote是实现。类比于dotnetStandard和dotnetCore的关系。**
+  **简单来说：NetRemoteStandard是标准，Megumin.Remote是实现。类比于dotnetStandard和dotnetCore的关系。** 
 
   **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
-## [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
+# [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
 
 # 它是开箱即用的么？
-是的，现在也支持IL2CPP。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。
+是的。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。
+
+# 优势
+- 使用内存池和多线程高效收发，无需担心网络层效率问题
+- 高度封装，无需关心通讯协议、RPC、序列化（你需要选择一个库）
+- 可以搭配不同的序列化类库
+- **AOT/IL2CPP可用。** Unity玩家的福音。
+- .NET Standard 2.0 兼容性更好
+- 高度可配置的消息管线，专业程序员可以针对具体功能进一步优化。
+- 接口分离。应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
+- 清晰的架构设计
 
 # 核心方法3个
 
@@ -17,55 +27,65 @@
 
 ## IRpcSendMessage.SendAsync
 
-    ///实际使用中的例子
-    public async void TestSend()
+```CS
+///实际使用中的例子
+public async void TestSend()
+{
+    Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
+    IRemote remote = new TCPRemote();
+    ///省略连接代码……
+    ///                                         泛型类型为期待返回的类型
+    var (result, exception) = await remote.SendAsync<LoginResult>(login);
+    ///如果没有遇到异常，那么我们可以得到远端发回的返回值
+    if (exception == null)
     {
-        Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
-        IRemote remote = new TCPRemote();
-        ///省略连接代码……
-        ///                                         泛型类型为期待返回的类型
-        var (result, exception) = await remote.SendAsync<LoginResult>(login);
-        ///如果没有遇到异常，那么我们可以得到远端发回的返回值
-        if (exception == null)
-        {
-            Console.WriteLine(result.IsSuccess);
-        }
+        Console.WriteLine(result.IsSuccess);
     }
+}
+```
 
 ## ISafeAwaitSendMessage.SendAsyncSafeAwait
 方法签名： IMiniAwaitable<RpcResult> SendAsyncSafeAwait<RpcResult>(object message, Action<Exception> OnException = null);  
 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。异步方法的后续部分不会触发，所以后续部分可以省去空检查。  
 （注意：这依赖于具体Remote实现）
 
-    public async void TestSend()
-    {
-        Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
-        IRemote remote = new TCPRemote();
-        ///省略连接代码……
-        ///                                         泛型类型为期待返回的类型
-        var result = await remote.SendAsyncSafeAwait<LoginResult>(login);
-        ///后续代码 不用任何判断，也不用担心异常。
-        Console.WriteLine(result.IsSuccess);
-    }
+```C#
+public async void TestSend()
+{
+    Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
+    IRemote remote = new TCPRemote();
+    ///省略连接代码……
+    ///                                         泛型类型为期待返回的类型
+    var result = await remote.SendAsyncSafeAwait<LoginResult>(login);
+    ///后续代码 不用任何判断，也不用担心异常。
+    Console.WriteLine(result.IsSuccess);
+}
+```
 
 ## ``public delegate ValueTask<object> ReceiveCallback (object message,IReceiveMessage receiver);``
 接收端回调函数
 
-    public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
+```CS
+public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
+{
+    switch (message)
     {
-        switch (message)
-        {
-            case TestPacket1 packet1:
-                Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}"); 
-                return null;
-            case Login login:
-                Console.WriteLine($"接收消息{nameof(Login)}--{login.Account}");
-                return new LoginResult { IsSuccess = true };
-            default:
-                break;
-        }
-        return null;
+        case TestPacket1 packet1:
+            Console.WriteLine($"接收消息{nameof(TestPacket1)}--{packet1.Value}"); 
+            return null;
+        case Login login:
+            Console.WriteLine($"接收消息{nameof(Login)}--{login.Account}");
+            return new LoginResult { IsSuccess = true };
+        default:
+            break;
     }
+    return null;
+}
+```
+
+### 注意：  
+异步发送方法等待的返回值虽然也是接收到的消息，但是会被直接发送到异步函数回调中，不会触发本函数。即使异步发送方法没有使用await关键字而导致被同步调用，返回消息也不会触发本函数，返回消息将被忽略。 *（事实上，很难实现同步调用，并且不持有返回的Task引用时，将消息转送到本回调函数，需要对MiniTask增加额外的标记，生命周期难以控制，控制流会变得更难以理解。详细情况参阅源码RpcCallbackPool.CreateCheckTimeout）*
+
 
 # 重要
 - **线程调度**  
@@ -74,17 +94,18 @@
   ``如果你的消息在分布式服务器之间传递，你可能希望消息在中转进程中尽快传递，那么`` false时接收消息回调使用Task执行，不必在轮询中等待，但无法保证有序，鱼和熊掌不可兼得。   
   
   **你也可以重写MessagePipeline.Push精确控制每个消息的行为**
-  
-        ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
-        ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
-        ThreadPool.QueueUserWorkItem((A) =>
+    ```CS
+    ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
+    ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
+    ThreadPool.QueueUserWorkItem((A) =>
+    {
+        while (true)
         {
-            while (true)
-            {
-                ThreadScheduler.Update(0);
-                Thread.Yield();
-            }
-        });
+            ThreadScheduler.Update(0);
+            Thread.Yield();
+        }
+    });
+    ```
 
 - **``Message.dll``**  
   [（AOT/IL2CPP）当序列化类以dll的形式导入unity时，必须加入link文件，防止序列化类属性的get,set方法被il2cpp剪裁。](https://docs.unity3d.com/Manual/IL2CPP-BytecodeStripping.html)**``重中之重，因为缺失get,set函数不会显示报错，错误通常会被定位到序列化库的多个不同位置（我在这里花费了16个小时）。``** 
@@ -103,67 +124,74 @@ MessagePipeline 是 Megumin.Remote 的一部分功能，MessagePipeline 不包�
 MessageLUT（Message Serialize Deserialize callback look-up table）是MessageStandard的核心类。MessagePipeline 通过查找MessageLUT中注册的函数进行序列化。**``因此在程序最开始你需要进行函数注册``**。  
 
 通用注册函数：  
+```CS
 public static void Regist(Type type, int messageID, Serialize seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip);  
-public static void Regist\<T>(int messageID, RegistSerialize\<T> seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip);  
+public static void Regist<T>(int messageID, RegistSerialize<T> seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip);  
+```
 
-    Regist<TestPacket1>(MSGID.TestPacket1ID, TestPacket1.S, TestPacket1.D);
-    Regist<TestPacket2>(MSGID.TestPacket2ID, TestPacket2.S, TestPacket2.D);
-    ///5个基础类型
-    Regist<string>(11, BaseType.Serialize, BaseType.StringDeserialize);
-    Regist<int>(12, BaseType.Serialize,BaseType.IntDeserialize);
+```CS
+Regist<TestPacket1>(MSGID.TestPacket1ID, TestPacket1.S, TestPacket1.D);
+Regist<TestPacket2>(MSGID.TestPacket2ID, TestPacket2.S, TestPacket2.D);
+///5个基础类型
+Regist<string>(11, BaseType.Serialize, BaseType.StringDeserialize);
+Regist<int>(12, BaseType.Serialize,BaseType.IntDeserialize);
+```
 
-序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。你需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。
+序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。你需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。  
 
-    namespace Message
+```CS
+namespace Message
+{
+    [MSGID(1001)]       //MSGID 是框架定义的一个特性，注册函数通过反射它取得ID
+    [ProtoContract]     //ProtoContract     是protobuf-net 序列化库的标志
+    [MessagePackObject] //MessagePackObject 是MessagePack  序列化库的标志
+    public class Login  //同时使用多个序列化类库的特性标记，但同时只能有一个生效
     {
-        [MSGID(1001)]
-        [ProtoContract]
-        [MessagePackObject]
-        public class Login  //同时使用多个序列化类库的特性标记，但同时只能有一个生效
-        {
-            [ProtoMember(1)]
-            [Key(0)]
-            public string Account { get; set; }
-            [ProtoMember(2)]
-            [Key(1)]
-            public string Password { get; set; }
-        }
-        [MSGID(1002)]
-        [ProtoContract]
-        [MessagePackObject]
-        public class LoginResult
-        {
-            [ProtoMember(1)]
-            [Key(0)]
-            public bool IsSuccess { get; set; }
-        }
+        [ProtoMember(1)]    //protobuf-net  从 1 开始
+        [Key(0)]            //MessagePack   从 0 开始
+        public string Account { get; set; }
+        [ProtoMember(2)]
+        [Key(1)]
+        public string Password { get; set; }
     }
+    [MSGID(1002)]
+    [ProtoContract]
+    [MessagePackObject]
+    public class LoginResult
+    {
+        [ProtoMember(1)]
+        [Key(0)]
+        public bool IsSuccess { get; set; }
+    }
+}
+```
 
 - JIT环境下可以直接注册一个程序集  
-
-        private static async void InitServer()
+    
+    ```CS
+    private static async void InitServer()
+    {
+        //MessagePackLUT.Regist(typeof(Login).Assembly);
+        Protobuf_netLUT.Regist(typeof(Login).Assembly);
+        ThreadPool.QueueUserWorkItem((A) =>
         {
-            //MessagePackLUT.Regist(typeof(Login).Assembly);
-            Protobuf_netLUT.Regist(typeof(Login).Assembly);
-            ThreadPool.QueueUserWorkItem((A) =>
+            while (true)
             {
-                while (true)
-                {
-                    ThreadScheduler.Update(0);
-                    Thread.Yield();
-                }
+                ThreadScheduler.Update(0);
+                Thread.Yield();
+            }
 
-            });
-        }
-
+        });
+    }
+    ```
 - AOT/IL2CPP 环境下需要显示通过泛型函数注册每一个协议类，以确保在编译器在静态分析时生成对应的泛型函数。    
-  
-        public async void TestConnect()
-        {
-            Protobuf_netLUT.Regist<Login>();
-            Protobuf_netLUT.Regist<LoginResult>();
-        }
-
+    ```CS
+    public void TestDefine()
+    {
+        Protobuf_netLUT.Regist<Login>();
+        Protobuf_netLUT.Regist<LoginResult>();
+    }
+    ```
 
 # 支持的序列化库(陆续添加中)
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
@@ -185,9 +213,11 @@ public static void Regist\<T>(int messageID, RegistSerialize\<T> seiralize, Dese
 
 ## [MessagePack](https://github.com/neuecc/MessagePack-CSharp)
 
+---
+---
 
 # 一些细节
-- Megumin只是个前缀，没有含义。
+- >*Megumin是我老婆的名字。*
 - 内置了RPC功能，保证了请求和返回消息一对一匹配。
 - 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
 - 发送过程数据拷贝了1次，接收过程数据无拷贝(各个序列化类库不同)。

@@ -167,6 +167,11 @@ namespace Megumin.Remote
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void CreateCheckTimeout(short rpcID)
         {
+            ///备注：即使异步发送被同步调用，此处也不会发生错误。
+            ///同步调用，当返回消息返回时，会从回调池移除，
+            ///那么计时器结束时将不会找到Task。如果调用出没有保持Task引用，
+            ///那么Task会成为孤岛，被GC回收。
+
             ///超时检查
             Task.Run(async () =>
             {
