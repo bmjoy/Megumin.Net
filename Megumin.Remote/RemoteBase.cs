@@ -61,7 +61,7 @@ namespace Megumin.Remote
         /// </summary>
         public abstract void SendAsync(IMemoryOwner<byte> memoryOwner);
 
-        public Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message)
+        public IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message)
         {
             ReceiveStart();
 
@@ -74,8 +74,8 @@ namespace Megumin.Remote
             }
             catch (Exception e)
             {
-                RpcCallbackPool.Remove(rpcID);
-                return Task.FromResult<(RpcResult result, Exception exception)>((default, e));
+                RpcCallbackPool.TrySetException(rpcID * -1 ,e);
+                return source;
             }
         }
 
@@ -121,7 +121,7 @@ namespace Megumin.Remote
         {
             if (rpcID < 0)
             {
-                ///这个消息是rpc返回（回复的RpcID为-1~-32767）
+                ///这个消息是rpc返回（回复的RpcID为负数）
                 RpcCallbackPool?.TrySetResult(rpcID, message);
                 return new ValueTask<object>(result: null);
             }
@@ -181,7 +181,7 @@ namespace Megumin.Remote
         internal protected virtual void SendAsync<T>(int rpcID, T message, int identifier)
             => SendAsync(MessagePipeline.Packet(0,message,identifier));
 
-        public Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message, int identifier)
+        public IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message, int identifier)
         {
             ReceiveStart();
 
@@ -194,8 +194,8 @@ namespace Megumin.Remote
             }
             catch (Exception e)
             {
-                RpcCallbackPool.Remove(rpcID);
-                return Task.FromResult<(RpcResult result, Exception exception)>((default, e));
+                RpcCallbackPool.TrySetException(rpcID * -1, e);
+                return source;
             }
         }
 

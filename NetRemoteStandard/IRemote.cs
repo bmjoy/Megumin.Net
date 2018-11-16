@@ -108,7 +108,7 @@ namespace Net.Remote
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <returns></returns>
-        (int rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
+        (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>();
         /// <summary>
         /// 注册一个rpc过程，并返回一个rpcID，后续可通过rpcID完成回调
         /// </summary>
@@ -167,7 +167,7 @@ namespace Net.Remote
         /// <exception cref="NullReferenceException">返回值是空的</exception>
         /// <exception cref="TimeoutException">超时，等待指定时间内没有收到回复</exception>
         /// <exception cref="InvalidCastException">收到返回的消息，但类型不是<typeparamref name="RpcResult"/></exception>
-        Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message);
+        IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message);
 
         /// <summary>
         /// 异步发送消息，封装Rpc过程
@@ -284,7 +284,7 @@ namespace Net.Remote
         /// <param name="message"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        Task<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message,int identifier);
+        IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message,int identifier);
         /// <summary>
         /// 转发发送
         /// </summary>

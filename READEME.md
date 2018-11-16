@@ -19,6 +19,7 @@
 - 高度可配置的消息管线，专业程序员可以针对具体功能进一步优化。
 - 接口分离。应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
 - 清晰的架构设计
+- 纯CSHARP实现，这是学习网络功能一个好的起点
 
 # 核心方法3个
 
@@ -27,7 +28,7 @@
 
 ## IRpcSendMessage.SendAsync
 
-```CS
+```cs
 ///实际使用中的例子
 public async void TestSend()
 {
@@ -49,7 +50,7 @@ public async void TestSend()
 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。异步方法的后续部分不会触发，所以后续部分可以省去空检查。  
 （注意：这依赖于具体Remote实现）
 
-```C#
+```cs
 public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
@@ -65,7 +66,7 @@ public async void TestSend()
 ## ``public delegate ValueTask<object> ReceiveCallback (object message,IReceiveMessage receiver);``
 接收端回调函数
 
-```CS
+```cs
 public static async ValueTask<object> DealMessage(object message,IReceiveMessage receiver)
 {
     switch (message)
@@ -94,7 +95,7 @@ public static async ValueTask<object> DealMessage(object message,IReceiveMessage
   ``如果你的消息在分布式服务器之间传递，你可能希望消息在中转进程中尽快传递，那么`` false时接收消息回调使用Task执行，不必在轮询中等待，但无法保证有序，鱼和熊掌不可兼得。   
   
   **你也可以重写MessagePipeline.Push精确控制每个消息的行为**
-    ```CS
+    ```cs
     ///建立主线程 或指定的任何线程 轮询。（确保在unity中使用主线程轮询）
     ///ThreadScheduler保证网络底层的各种回调函数切换到主线程执行以保证执行顺序。
     ThreadPool.QueueUserWorkItem((A) =>
@@ -129,7 +130,7 @@ public static void Regist(Type type, int messageID, Serialize seiralize, Deseria
 public static void Regist<T>(int messageID, RegistSerialize<T> seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip);  
 ```
 
-```CS
+```cs
 Regist<TestPacket1>(MSGID.TestPacket1ID, TestPacket1.S, TestPacket1.D);
 Regist<TestPacket2>(MSGID.TestPacket2ID, TestPacket2.S, TestPacket2.D);
 ///5个基础类型
@@ -139,7 +140,7 @@ Regist<int>(12, BaseType.Serialize,BaseType.IntDeserialize);
 
 序列化类库的中间件基于MessageLUT提供多个简单易用的API，自动生成序列化和反序列化函数。你需要为协议类添加一个MSGIDAttribute来提供查找表使用的ID。因为一个ID只能对应一组序列化函数，因此每一个协议类同时只能使用一个序列化库。  
 
-```CS
+```cs
 namespace Message
 {
     [MSGID(1001)]       //MSGID 是框架定义的一个特性，注册函数通过反射它取得ID
@@ -168,7 +169,7 @@ namespace Message
 
 - JIT环境下可以直接注册一个程序集  
     
-    ```CS
+    ```cs
     private static async void InitServer()
     {
         //MessagePackLUT.Regist(typeof(Login).Assembly);
@@ -185,7 +186,7 @@ namespace Message
     }
     ```
 - AOT/IL2CPP 环境下需要显示通过泛型函数注册每一个协议类，以确保在编译器在静态分析时生成对应的泛型函数。    
-    ```CS
+    ```cs
     public void TestDefine()
     {
         Protobuf_netLUT.Regist<Login>();
@@ -226,8 +227,7 @@ namespace Message
 - 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你可以使用MessageLUT.Regist<T>函数添加其他类型。
 
 # 效率
-没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单测试和个人经验判断可以支持WOW级别的MMORPG游戏。
-本机测试单进程维持了15000 + Tcp连接。
+没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000 + Tcp连接。
 
 # 其他信息
 写框架途中总结到的知识或者猜测。

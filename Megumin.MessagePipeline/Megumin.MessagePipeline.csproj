@@ -33,7 +33,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
     <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>

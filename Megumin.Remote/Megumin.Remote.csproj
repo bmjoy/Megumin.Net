@@ -36,9 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj" />
     <ProjectReference Include="..\Megumin.MessagePipeline\Megumin.MessagePipeline.csproj" />
-    <ProjectReference Include="..\MessageStandard\MessageStandard.csproj" />
     <ProjectReference Include="..\NetRemoteStandard\NetRemoteStandard.csproj" />
   </ItemGroup>
 

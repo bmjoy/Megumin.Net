@@ -32,9 +32,9 @@ namespace Megumin.Remote
         public int RpcTimeOutMilliseconds { get; set; } = 30000;
         delegate void RpcCallback(object message, Exception exception);
         /// <summary>
-        /// 原子操作 取得RpcId,发送方的的RpcID为1~32767，回复的RpcID为-1~-32767，正负一一对应
-        /// <para>0,-32768 为无效值</para>
-        /// 最多同时维持32767个Rpc调用
+        /// 原子操作 取得RpcId,发送方的的RpcID为正数，回复的RpcID为负数，正负一一对应
+        /// <para>0,int.MinValue 为无效值</para> 
+        /// <seealso cref="RemoteBase.Deal(int, object)"/>
         /// </summary>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,7 +42,7 @@ namespace Megumin.Remote
         {
             lock (rpcCursorLock)
             {
-                if (rpcCursor <= 0 || rpcCursor == int.MaxValue)
+                if (rpcCursor == int.MaxValue)
                 {
                     rpcCursor = 1;
                 }
@@ -55,19 +55,14 @@ namespace Megumin.Remote
             }
         }
 
-        public (int rpcID, Task<(RpcResult result, Exception exception)> source) Regist<RpcResult>()
+        public (int rpcID, IMiniAwaitable<(RpcResult result, Exception exception)> source) Regist<RpcResult>()
         {
             int rpcID = GetRpcID();
 
-            TaskCompletionSource<(RpcResult Result, Exception Excption)> source
-                = new TaskCompletionSource<(RpcResult Result, Exception Excption)>();
-            short key = (short)(rpcID * -1);
+            IMiniAwaitable<(RpcResult result, Exception exception)> source = MiniTask<(RpcResult result, Exception exception)>.Rent();
+            var key = rpcID * -1;
 
-            if (TryDequeue(key, out var callback))
-            {
-                ///如果出现RpcID冲突，认为前一个已经超时。
-                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID 重叠，对前一个回调进行超时处理"));
-            }
+            CheckKeyConflict(key);
 
             lock (dequeueLock)
             {
@@ -107,19 +102,25 @@ namespace Megumin.Remote
 
             CreateCheckTimeout(key);
 
-            return (rpcID, source.Task);
+            return (rpcID, source);
+        }
+
+        void CheckKeyConflict(int key)
+        {
+            if (TryDequeue(key, out var callback))
+            {
+                ///如果出现RpcID冲突，认为前一个已经超时。
+                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID 重叠，对前一个回调进行超时处理"));
+            }
         }
 
         public (int rpcID, IMiniAwaitable<RpcResult> source) Regist<RpcResult>(Action<Exception> OnException)
         {
             int rpcID = GetRpcID();
             IMiniAwaitable<RpcResult> source = MiniTask<RpcResult>.Rent();
-            short key = (short)(rpcID * -1);
-            if (TryDequeue(key, out var callback))
-            {
-                ///如果出现RpcID冲突，认为前一个已经超时。
-                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID 重叠，对前一个回调进行超时处理"));
-            }
+            var key = rpcID * -1;
+
+            CheckKeyConflict(key);
 
             lock (dequeueLock)
             {
@@ -165,7 +166,7 @@ namespace Megumin.Remote
         /// </summary>
         /// <param name="rpcID"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void CreateCheckTimeout(short rpcID)
+        void CreateCheckTimeout(int rpcID)
         {
             ///备注：即使异步发送被同步调用，此处也不会发生错误。
             ///同步调用，当返回消息返回时，会从回调池移除，
