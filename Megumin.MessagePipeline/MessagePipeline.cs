@@ -84,7 +84,7 @@ namespace Megumin.Message
         }
 
         public async void Push<T>(IMemoryOwner<byte> packet, T bufferReceiver)
-            where T:ISendMessage,IRemoteID,IUID,IObjectMessageReceiver
+            where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
         {
             try
             {
@@ -92,11 +92,11 @@ namespace Megumin.Message
 
                 var (messageID, extraMessage, messageBody) = UnPacket(memory);
 
-                if (PreDeserialize(messageID, extraMessage, messageBody, bufferReceiver))
+                if (await PreDeserialize(messageID, extraMessage, messageBody, bufferReceiver))
                 {
                     var (rpcID, message) = DeserializeMessage(messageID, messageBody);
 
-                    if (PostDeserialize(messageID, extraMessage, messageBody, bufferReceiver))
+                    if (await PostDeserialize(messageID, extraMessage, rpcID, message, bufferReceiver))
                     {
                         if (Post2ThreadScheduler)
                         {
@@ -129,7 +129,8 @@ namespace Megumin.Message
             }
         }
 
-        private void Reply<T>(T bufferReceiver, ReadOnlyMemory<byte> extraMessage, int rpcID, object resp) where T : ISendMessage, IRemoteID, IUID, IObjectMessageReceiver
+        protected virtual void Reply<T>(T bufferReceiver, ReadOnlyMemory<byte> extraMessage, int rpcID, object resp)
+            where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
         {
             if (resp != null)
             {
@@ -151,7 +152,7 @@ namespace Megumin.Message
         /// <param name="messageBody"></param>
         /// <param name="forwarder"></param>
         public virtual void Forward<T>(T bufferReceiver, int messageID, ReadOnlyMemory<byte> extraMessage, ReadOnlyMemory<byte> messageBody, IForwarder forwarder) 
-            where T : IRemoteID,IUID
+            where T : IRemoteID,IUID<int>
         {
             RoutingInformationModifier modifier = extraMessage;
             if (modifier.Mode == RouteMode.Null)
@@ -185,11 +186,11 @@ namespace Megumin.Message
         /// <param name="messageBody"></param>
         /// <param name="bufferReceiver"></param>
         /// <returns></returns>
-        public virtual bool PreDeserialize<T>(int messageID,in ReadOnlyMemory<byte> extraMessage,
-            in ReadOnlyMemory<byte> messageBody,T bufferReceiver)
-            where T:IRemoteID,IUID
+        public virtual ValueTask<bool> PreDeserialize<T>(int messageID,ReadOnlyMemory<byte> extraMessage,
+            ReadOnlyMemory<byte> messageBody,T bufferReceiver)
+            where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver
         {
-            return true;
+            return new ValueTask<bool>(true);
         }
 
         /// <summary>
@@ -197,15 +198,17 @@ namespace Megumin.Message
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="messageID"></param>
+        /// <param name="extraMessage"></param>
+        /// <param name="rpcID"></param>
         /// <param name="routeTable"></param>
-        /// <param name="messageBody"></param>
+        /// <param name="message"></param>
         /// <param name="bufferReceiver"></param>
         /// <returns></returns>
-        public virtual bool PostDeserialize<T>(int messageID,in ReadOnlyMemory<byte> extraMessage,
-            in ReadOnlyMemory<byte> messageBody,T bufferReceiver)
-            where T:IRemoteID
+        public virtual ValueTask<bool> PostDeserialize<T>(int messageID,ReadOnlyMemory<byte> extraMessage,
+            int rpcID, object message,T bufferReceiver)
+            where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver
         {
-            return true;
+            return new ValueTask<bool>(true);
         }
     }
 
@@ -392,8 +395,8 @@ namespace Megumin.Message
 
     internal class GateServerMessagePipeline:MessagePipeline
     {
-
-        public override bool PreDeserialize<T>(int messageID,in ReadOnlyMemory<byte> extraMessage,in ReadOnlyMemory<byte> messageBody, T bufferReceiver)
+        ///这是如何使用转发的例子
+        public override ValueTask<bool> PreDeserialize<T>(int messageID,ReadOnlyMemory<byte> extraMessage,ReadOnlyMemory<byte> messageBody, T bufferReceiver)
         {
             RoutingInformationModifier information = extraMessage;
             if (information.Mode == RouteMode.Backward || information.Mode == RouteMode.Forward)
@@ -402,15 +405,64 @@ namespace Megumin.Message
                 if (forwarder != null)
                 {
                     Forward(bufferReceiver, messageID, extraMessage, messageBody, forwarder);
-                    return false;
+                    return new ValueTask<bool>(false);
                 }
             }
-            return true;
+            return new ValueTask<bool>(true);
         }
 
         private IForwarder GetForward(int? next)
         {
             throw new NotImplementedException();
+        }
+
+        private object GetNewReceiver(int identifier)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override async ValueTask<bool> PostDeserialize<T>(int messageID, ReadOnlyMemory<byte> extraMessage, int rpcID, object message, T bufferReceiver)
+        {
+            RoutingInformationModifier information = extraMessage;
+            ///当转发到路由表末尾时，寻找消息接收者，可能时Remote本身，也可能能是其他任意符合接口的对象。
+            if (information.Identifier == bufferReceiver.ID)
+            {
+                return true;
+            }
+            else
+            {
+                ///指定新的消息接收者
+                bufferReceiver = (T)GetNewReceiver(information.Identifier);
+                if (bufferReceiver != null)
+                {
+                    if (Post2ThreadScheduler)
+                    {
+                        var resp = await MessageThreadTransducer.Push(rpcID, message, bufferReceiver);
+
+                        Reply(bufferReceiver, extraMessage, rpcID, resp);
+                    }
+                    else
+                    {
+                        var resp = await bufferReceiver.Deal(rpcID, message);
+
+                        if (resp is Task<object> task)
+                        {
+                            resp = await task;
+                        }
+
+                        if (resp is ValueTask<object> vtask)
+                        {
+                            resp = await vtask;
+                        }
+
+                        Reply(bufferReceiver, extraMessage, rpcID, resp);
+                    }
+                    return false;
+                }
+                return true;
+            }
+
+
         }
     }
 

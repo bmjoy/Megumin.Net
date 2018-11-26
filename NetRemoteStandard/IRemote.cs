@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 namespace Net.Remote
 {
     /// <summary>
-    /// 
+    /// 事实上 无论UID是Int,long,还是string,都无法满足全部需求。当你需要其他类型是，请修改源码。
     /// </summary>
-    public interface IUID
+    public interface IUID<T>
     {
         /// <summary>
         /// 预留给用户使用的ID，（用户自己赋值ID，自己管理引用，框架不做处理）
         /// </summary>
-        int UID { get; set; }
+        T UID { get; set; }
     }
 
     /// <summary>
@@ -251,7 +251,7 @@ namespace Net.Remote
     /// 应用网络层API封装
     /// </summary>
     public interface IRemote : IRemoteEndPoint, ISendMessage, IReceiveMessage,
-        IConnectable, IBroadCastSend, IDisposable,IUID,IRemoteID
+        IConnectable, IBroadCastSend, IDisposable,IUID<int>,IRemoteID
         ,IAsyncSendMessage
     {
 

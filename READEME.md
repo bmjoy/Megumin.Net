@@ -8,18 +8,27 @@
 # [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
 
 # 它是开箱即用的么？
-是的。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。
+是的。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。  
+由于使用了C# 7.3语法，在unity中如果使用源码至少需要2018.3。
 
 # 优势
-- 使用内存池和多线程高效收发，无需担心网络层效率问题
+- 使用内存池和多线程高效收发，可配置线程调度，无需担心网络层效率问题
 - 高度封装，无需关心通讯协议、RPC、序列化（你需要选择一个库）
-- 可以搭配不同的序列化类库
+- 可以搭配不同的序列化类库，甚至不用序列化库。
 - **AOT/IL2CPP可用。** Unity玩家的福音。
 - .NET Standard 2.0 兼容性更好
 - 高度可配置的消息管线，专业程序员可以针对具体功能进一步优化。
-- 接口分离。应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
-- 清晰的架构设计
-- 纯CSHARP实现，这是学习网络功能一个好的起点
+- 接口分离。[[IOC]](https://zh.wikipedia.org/wiki/依赖注入) 应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
+- 方便的异常处理
+- 高并发分布式模式中，IOCP性能和消息调度转发延迟之间有很好的平衡
+- 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，alloc非常低。
+- 支持`Span<T>`
+- 纯C#实现，这是学习网络功能一个好的起点
+  
+# 劣势
+- 目前为止类库还很年青，没有经过足够的测试
+- 对于非程序人员仍然需要一些学习成本
+- API设计仍待生产环境验证
 
 # 核心方法3个
 
@@ -27,6 +36,7 @@
 发送一个消息，等待一个消息返回。
 
 ## IRpcSendMessage.SendAsync
+从结果值返回异常是有意义的：1.省去了try catch ,写法更简单（注意，没有提高处理异常的性能）2.用来支持异常在分布式服务器中传递，避免try catch 控制流。
 
 ```cs
 ///实际使用中的例子
@@ -91,7 +101,7 @@ public static async ValueTask<object> DealMessage(object message,IReceiveMessage
 # 重要
 - **线程调度**  
   Remote 使用MessagePipeline.Post2ThreadScheduler标志决定消息回调函数在哪个线程执行，true时所有消息被汇总到Megumin.ThreadScheduler.Update。  
-  你需要轮询此函数来处理接收回调，它保证了按接收消息顺序触发回调（如果出现乱序，请提交一个BUG）。  
+  你需要轮询此函数来处理接收回调，它保证了按接收消息顺序触发回调（如果出现乱序，请提交一个BUG）。Unity中通常应该使用FixedUpdate。  
   ``如果你的消息在分布式服务器之间传递，你可能希望消息在中转进程中尽快传递，那么`` false时接收消息回调使用Task执行，不必在轮询中等待，但无法保证有序，鱼和熊掌不可兼得。   
   
   **你也可以重写MessagePipeline.Push精确控制每个消息的行为**
@@ -146,7 +156,7 @@ namespace Message
     [MSGID(1001)]       //MSGID 是框架定义的一个特性，注册函数通过反射它取得ID
     [ProtoContract]     //ProtoContract     是protobuf-net 序列化库的标志
     [MessagePackObject] //MessagePackObject 是MessagePack  序列化库的标志
-    public class Login  //同时使用多个序列化类库的特性标记，但同时只能有一个生效
+    public class Login  //同时使用多个序列化类库的特性标记，但程序中每个消息同时只能使用一个序列化库
     {
         [ProtoMember(1)]    //protobuf-net  从 1 开始
         [Key(0)]            //MessagePack   从 0 开始
@@ -196,7 +206,7 @@ namespace Message
 
 # 支持的序列化库(陆续添加中)
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
-由于各个序列化库对Span\<byte>的支持不同，所以中间层可能会有轻微的性能损失.
+由于各个序列化库对`Span<byte>`的支持不同，所以中间层可能会有轻微的性能损失.
 
 对于序列化函数有三种形式：
 1. 代码生成器生成代码   
@@ -218,16 +228,16 @@ namespace Message
 ---
 
 # 一些细节
-- >*Megumin是我老婆的名字。*
 - 内置了RPC功能，保证了请求和返回消息一对一匹配。
 - 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
 - 发送过程数据拷贝了1次，接收过程数据无拷贝(各个序列化类库不同)。
 - 内置内存池在初始状态就会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
 - 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
-- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你可以使用MessageLUT.Regist<T>函数添加其他类型。
+- 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你也可以使用MessageLUT.Regist<T>函数手动添加其他类型。  
+  如果不想用序列化库，也可以使用Json通过string发送。
 
 # 效率
-没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000 + Tcp连接。
+没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000+ Tcp连接。
 
 # 其他信息
 写框架途中总结到的知识或者猜测。

@@ -56,7 +56,7 @@ namespace Megumin.Remote
             Identifier = identifier;
         }
 
-        ///一个byte掰成两半用，也是醉了 枚举最多支持8个选项
+        ///一个byte分成2部分使用， 枚举最多支持8个选项
         public RouteMode Mode
         {
             get
@@ -195,7 +195,7 @@ namespace Megumin.Remote
     }
 
     /// <summary>
-    /// 路由模式，最多支持8个选项
+    /// 路由模式，最多支持8个选项，将来如果需要更多选项，要重写整个路由表格式
     /// </summary>
     public enum RouteMode
     {

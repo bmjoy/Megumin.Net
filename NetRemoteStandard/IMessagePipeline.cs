@@ -23,7 +23,7 @@ namespace Megumin.Message
     public interface IMessagePipeline:ITcpPacker
     {
         void Push<T>(IMemoryOwner<byte> byteMessage, T remote)
-            where T:ISendMessage,IRemoteID,IUID,IObjectMessageReceiver;
+            where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver;
         IMemoryOwner<byte> Packet(int rpcID, object message);
         IMemoryOwner<byte> Packet(int rpcID, object message, int identifier);
         IMemoryOwner<byte> Packet(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
