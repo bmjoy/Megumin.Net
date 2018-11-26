@@ -294,7 +294,7 @@ namespace Megumin.Message
         {
             if (extraMessage.IsEmpty)
             {
-                throw new ArgumentNullException($"额外消息部分至少长度为1");
+                throw new ArgumentNullException($"The extra message part is at least 1 in length/额外消息部分至少长度为1");
             }
             ushort totolLength = (ushort)(HeaderOffset + extraMessage.Length + messageBody.Length);
 
@@ -334,7 +334,7 @@ namespace Megumin.Message
             }
             else
             {
-                throw new ArgumentOutOfRangeException("数据长度小于报头长度");
+                throw new ArgumentOutOfRangeException("The data length is less than the header length/数据长度小于报头长度");
             }
         }
 

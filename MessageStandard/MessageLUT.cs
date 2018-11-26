@@ -183,7 +183,10 @@ namespace Megumin.Message
                 {
                     //BufferPool.Push16384(buffer16384);
                     ///消息过长
-                    throw new ArgumentOutOfRangeException($"消息长度大于{8192 - 25}," +
+                    throw new ArgumentOutOfRangeException(
+                        $"The message length is greater than {8192 - 25}," +
+                        $" Please split to send./" +
+                        $"消息长度大于{8192 - 25}," +
                         $"请拆分发送。");
                 }
 

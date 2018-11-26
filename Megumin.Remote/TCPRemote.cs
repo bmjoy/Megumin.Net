@@ -155,7 +155,7 @@ namespace Megumin.Remote
         {
             if (isConnecting)
             {
-                return new Exception("连接正在进行中");
+                return new Exception("Connection in progress/连接正在进行中");
             }
             isConnecting = true;
             this.ConnectIPEndPoint = endPoint;

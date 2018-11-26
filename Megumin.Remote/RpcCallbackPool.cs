@@ -84,7 +84,9 @@ namespace Megumin.Remote
                                 else
                                 {
                                     ///转换类型错误
-                                    source.SetResult((default, new InvalidCastException($"返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}")));
+                                    source.SetResult((default, 
+                                        new InvalidCastException($"Return {resp.GetType()} type, cannot be converted to {typeof(RpcResult)}" +
+                                        $"/返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}")));
                                 }
 
                             }
@@ -110,7 +112,7 @@ namespace Megumin.Remote
             if (TryDequeue(key, out var callback))
             {
                 ///如果出现RpcID冲突，认为前一个已经超时。
-                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID 重叠，对前一个回调进行超时处理"));
+                callback.rpcCallback?.Invoke(null, new TimeoutException("RpcID overlaps and timeouts the previous callback/RpcID 重叠，对前一个回调进行超时处理"));
             }
         }
 
@@ -143,7 +145,8 @@ namespace Megumin.Remote
                                 else
                                 {
                                     ///转换类型错误
-                                    OnException?.Invoke(new InvalidCastException($"返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}"));
+                                    OnException?.Invoke(new InvalidCastException($"Return {resp.GetType()} type, cannot be converted to {typeof(RpcResult)}" +
+                                        $"/返回{resp.GetType()}类型，无法转换为{typeof(RpcResult)}"));
                                 }
                             }
                         }
@@ -183,7 +186,7 @@ namespace Megumin.Remote
                     {
                         ThreadScheduler.Invoke(() =>
                         {
-                            rpc.rpcCallback?.Invoke(null, new TimeoutException($"RPC {rpcID} 回调超时，没有得到远端响应。"));
+                            rpc.rpcCallback?.Invoke(null, new TimeoutException($"The RPC {rpcID} callback timed out and did not get a remote response./RPC {rpcID} 回调超时，没有得到远端响应。"));
                         });
                     }
                 }

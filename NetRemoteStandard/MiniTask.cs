@@ -69,7 +69,8 @@ namespace System.Threading.Tasks
                 if (state == State.InPool)
                 {
                     ///这里被触发一定是是类库BUG。
-                    throw new ArgumentException($"{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者");
+                    throw new ArgumentException($"{nameof(MiniTask<T>)} task conflict, underlying error, please contact the framework author." +
+                        $"/{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者。");
                 }
 
                 alreadyEnterAsync = true;
@@ -86,7 +87,8 @@ namespace System.Threading.Tasks
                 if (state == State.InPool)
                 {
                     ///这里被触发一定是是类库BUG。
-                    throw new ArgumentException($"{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者");
+                    throw new ArgumentException($"{nameof(MiniTask<T>)} task conflict, underlying error, please contact the framework author." +
+                        $"/{nameof(MiniTask<T>)}任务冲突，底层错误，请联系框架作者。");
                 }
 
                 alreadyEnterAsync = true;
@@ -102,7 +104,7 @@ namespace System.Threading.Tasks
             {
                 if (state == State.InPool)
                 {
-                    throw new InvalidOperationException($"任务不存在");
+                    throw new InvalidOperationException($"Task does not exist/任务不存在");
                 }
                 this.Result = result;
                 state = State.Success;
@@ -135,7 +137,7 @@ namespace System.Threading.Tasks
             {
                 if (state == State.InPool)
                 {
-                    throw new InvalidOperationException($"任务不存在");
+                    throw new InvalidOperationException($"Task does not exist/任务不存在");
                 }
 
                 Result = default;
