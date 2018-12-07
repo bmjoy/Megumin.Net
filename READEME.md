@@ -12,14 +12,12 @@
 由于使用了C# 7.3语法，在unity中如果使用源码至少需要2018.3。
 
 # 优势
-- 使用内存池和多线程高效收发，可配置线程调度，无需担心网络层效率问题
-- 高度封装，无需关心通讯协议、RPC、序列化（你需要选择一个库）
+- 使用内存池和多线程高效收发，可配置线程调度，无需担心网络层效率问题。
+- 高度封装，无需关心通讯协议、RPC。
 - 可以搭配不同的序列化类库，甚至不用序列化库。
 - **AOT/IL2CPP可用。** Unity玩家的福音。
-- .NET Standard 2.0 兼容性更好
 - 高度可配置的消息管线，专业程序员可以针对具体功能进一步优化。
 - 接口分离。[[IOC]](https://zh.wikipedia.org/wiki/依赖注入) 应用程序可以使用NetRemoteStandard.dll编码，然后使用Megumin.Remote.dll的具体实现类注入，当需要切换协议或者序列化类库时，应用程序逻辑无需改动。
-- 方便的异常处理
 - 高并发分布式模式中，IOCP性能和消息调度转发延迟之间有很好的平衡
 - 自定义MiniTask池,针对网络功能对Task重新实现，性能更高，alloc非常低。
 - 支持`Span<T>`
@@ -195,7 +193,7 @@ namespace Message
         });
     }
     ```
-- AOT/IL2CPP 环境下需要显示通过泛型函数注册每一个协议类，以确保在编译器在静态分析时生成对应的泛型函数。    
+- `AOT/IL2CPP` 环境下需要`显示`通过泛型函数注册每一个协议类，以确保在`AOT/IL2CPP编译器`在静态分析时生成对应的泛型函数。    
     ```cs
     public void TestDefine()
     {
@@ -203,6 +201,10 @@ namespace Message
         Protobuf_netLUT.Regist<LoginResult>();
     }
     ```
+    注意：这是为了静态分析时生成序列化类库通用API的泛型函数。   
+    > 例如：```ProtoBuf.Serializer.Serialize<T>()``` 生成为```ProtoBuf.Serializer.Serialize<Login>()```   
+    
+    `序列化库`使用`代码生成器生成代码`,是生成类型实际的序列化函数。
 
 # 支持的序列化库(陆续添加中)
 每个库有各自的限制，对IL2CPP支持也不同。框架会为每个支持的库写一个兼容于MessageStandard/MessageLUT的dll.  
@@ -228,13 +230,14 @@ namespace Message
 ---
 
 # 一些细节
-- 内置了RPC功能，保证了请求和返回消息一对一匹配。
+- 内置了RPC功能，保证了请求和返回消息一对一匹配。发送时RPCID为正数，返回时RPCID*-1，用正负区分上下行。0和int.minValue为RPCID无效值。
 - 内置了内存池，发送过程是全程无Alloc的，接收过程构造返回消息实例需要Alloc。
 - 发送过程数据拷贝了1次，接收过程数据无拷贝(各个序列化类库不同)。
 - 内置内存池在初始状态就会分配一些内存（大约150KB）。随着使用继续扩大，最大到3MB左右，详细情况参考源码。目前不支持配置大小。
 - 序列化时使用type做Key查找函数，反序列化时使用MSGID(int)做Key查找函数。
 - 内置了string,int,long,float,double 5个内置类型，即使不使用序列化类库，也可以直接发送它们。你也可以使用MessageLUT.Regist<T>函数手动添加其他类型。  
   如果不想用序列化库，也可以使用Json通过string发送。
+- .NET Standard 2.0 运行时。我还没有弄清楚2.0和2.1意味着什么。如果未来unity支持2.1，那么很可能运行时将切换为2.1，或者同时支持两个运行时。
 
 # 效率
 没有精确测试，Task的使用确实影响了一部分性能，但是是值得的。经过简单本机测试单进程维持了15000+ Tcp连接。
@@ -243,5 +246,10 @@ namespace Message
 写框架途中总结到的知识或者猜测。
 - public virtual MethodInfo MakeGenericMethod(params Type[] typeArguments);  
   在IL2CPP下可用，但是不能创造新方法。如果这个泛型方法在编译期间确定，那么此方法可用。否则找不到方法。
+- IL2CPP不能使用dynamic关键字。
 
-## 在1.0.0版本前API可能会有破坏性的改变。
+## **``在1.0.0版本前API可能会有破坏性的改变。``**
+
+# 友情链接
+- [Megumin.Explosion]() Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
+- [Megumin.MemoryExtention]() Sytem.Memory.dll `Span<T>`系列的扩展库。

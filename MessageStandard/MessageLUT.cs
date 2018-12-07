@@ -173,7 +173,7 @@ namespace Megumin.Message
 
                 if (Seiralize == null)
                 {
-                    OnMissSeiralizer?.Invoke(type);
+                    OnMissSeiralize?.Invoke(type);
                     return (-1, default);
                 }
 
@@ -194,7 +194,7 @@ namespace Megumin.Message
             }
             else
             {
-                OnMissSeiralizer?.Invoke(type);
+                OnMissSeiralize?.Invoke(type);
                 return (-1, default);
             }
         }
@@ -214,14 +214,14 @@ namespace Megumin.Message
             }
             else
             {
-                OnMissDeserializer?.Invoke(messageID);
+                OnMissDeserialize?.Invoke(messageID);
                 return null;
             }
         }
 
 
-        public static event Action<int> OnMissDeserializer;
-        public static event Action<Type> OnMissSeiralizer;
+        public static event Action<int> OnMissDeserialize;
+        public static event Action<Type> OnMissSeiralize;
 
         public static Type GetMessageType(int messageID)
         {

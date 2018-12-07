@@ -14,6 +14,7 @@
     <PackageProjectUrl>https://github.com/KumoKyaku/MeguminNet</PackageProjectUrl>
     <PackageTags>net</PackageTags>
     <SignAssembly>true</SignAssembly>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
     <AssemblyOriginatorKeyFile>..\OpenSource.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 

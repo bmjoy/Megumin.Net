@@ -22,11 +22,37 @@ namespace Megumin.Message
 
     public interface IMessagePipeline:ITcpPacker
     {
-        void Push<T>(IMemoryOwner<byte> byteMessage, T remote)
+        /// <summary>
+        /// byte[] -> object
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="byteMessage"></param>
+        /// <param name="remote"></param>
+        void Unpack<T>(IMemoryOwner<byte> byteMessage, T remote)
             where T:ISendMessage,IRemoteID,IUID<int>,IObjectMessageReceiver;
-        IMemoryOwner<byte> Packet(int rpcID, object message);
-        IMemoryOwner<byte> Packet(int rpcID, object message, int identifier);
-        IMemoryOwner<byte> Packet(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
+        /// <summary>
+        /// object -> byte[]
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        IMemoryOwner<byte> Pack(int rpcID, object message);
+        /// <summary>
+        /// object -> byte[]
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        IMemoryOwner<byte> Pack(int rpcID, object message, int identifier);
+        /// <summary>
+        /// object -> byte[]
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <param name="extraMessage"></param>
+        /// <returns></returns>
+        IMemoryOwner<byte> Pack(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
     }
 
     public interface IObjectMessageReceiver
@@ -34,8 +60,9 @@ namespace Megumin.Message
         ValueTask<object> Deal(int rpcID, object message);
     }
 
-    public interface IDeserializeHandle
+    public interface IFormater
     {
-        (int rpcID, object message) DeserializeMessage(int messageID,in ReadOnlyMemory<byte> messageBody);
+        (int rpcID, object message) Deserialize(int messageID,in ReadOnlyMemory<byte> messageBody);
+        (int messageID, ushort length) Serialize(object message, int rpcID, Span<byte> span);
     }
 }

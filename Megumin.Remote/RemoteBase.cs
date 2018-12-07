@@ -53,7 +53,7 @@ namespace Megumin.Remote
         /// <param name="message"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal protected virtual void SendAsync(int rpcID, object message)
-            =>SendAsync(MessagePipeline.Packet(rpcID, message));
+            =>SendAsync(MessagePipeline.Pack(rpcID, message));
         
         /// <summary>
         /// 注意，发送完成时内部回收了buffer。
@@ -111,7 +111,7 @@ namespace Megumin.Remote
 
         protected virtual void ReceiveByteMessage(IMemoryOwner<byte> byteMessage)
         {
-            MessagePipeline.Push(byteMessage, this);
+            MessagePipeline.Unpack(byteMessage, this);
         }
     }
 
@@ -179,7 +179,7 @@ namespace Megumin.Remote
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal protected virtual void SendAsync<T>(int rpcID, T message, int identifier)
-            => SendAsync(MessagePipeline.Packet(0,message,identifier));
+            => SendAsync(MessagePipeline.Pack(0,message,identifier));
 
         public IMiniAwaitable<(RpcResult result, Exception exception)> SendAsync<RpcResult>(object message, int identifier)
         {

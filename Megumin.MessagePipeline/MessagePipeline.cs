@@ -83,18 +83,18 @@ namespace Megumin.Message
             return source.Slice(offset, length - offset);
         }
 
-        public async void Push<T>(IMemoryOwner<byte> packet, T bufferReceiver)
+        public async void Unpack<T>(IMemoryOwner<byte> packet, T bufferReceiver)
             where T : ISendMessage, IRemoteID, IUID<int>, IObjectMessageReceiver
         {
             try
             {
                 var memory = packet.Memory;
 
-                var (messageID, extraMessage, messageBody) = UnPacket(memory);
+                var (messageID, extraMessage, messageBody) = UnPack(memory);
 
                 if (await PreDeserialize(messageID, extraMessage, messageBody, bufferReceiver))
                 {
-                    var (rpcID, message) = DeserializeMessage(messageID, messageBody);
+                    var (rpcID, message) = Deserialize(messageID, messageBody);
 
                     if (await PostDeserialize(messageID, extraMessage, rpcID, message, bufferReceiver))
                     {
@@ -136,7 +136,7 @@ namespace Megumin.Message
             {
                 RoutingInformationModifier routeTableWriter = new RoutingInformationModifier(extraMessage);
                 routeTableWriter.ReverseDirection();
-                var b = Packet(rpcID * -1, resp, routeTableWriter);
+                var b = Pack(rpcID * -1, resp, routeTableWriter);
                 bufferReceiver.SendAsync(b);
                 routeTableWriter.Dispose();
             }
@@ -170,7 +170,7 @@ namespace Megumin.Message
                 modifier.MoveCursorNext();
             }
 
-            forwarder.SendAsync(Packet(messageID, extraMessage: modifier, messageBody.Span));
+            forwarder.SendAsync(Pack(messageID, extraMessage: modifier, messageBody.Span));
             modifier.Dispose();
         }
     }
@@ -222,17 +222,17 @@ namespace Megumin.Message
         /// <param name="rpcID"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public virtual IMemoryOwner<byte> Packet(int rpcID, object message)
+        public virtual IMemoryOwner<byte> Pack(int rpcID, object message)
         {
             ///序列化用buffer,使用内存池
             using (var memoryOwner = BufferPool.Rent(16384))
             {
                 Span<byte> span = memoryOwner.Memory.Span;
 
-                var (messageID, length) = SerializeMessage(message, rpcID, span);
+                var (messageID, length) = Serialize(message, rpcID, span);
 
                 ///省略了额外消息
-                var sendbuffer = Packet(messageID, extraMessage:RoutingInformationModifier.Empty, span.Slice(0, length));
+                var sendbuffer = Pack(messageID, extraMessage:RoutingInformationModifier.Empty, span.Slice(0, length));
                 return sendbuffer;
             }
         }
@@ -245,17 +245,17 @@ namespace Megumin.Message
         /// <param name="message"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        public virtual IMemoryOwner<byte> Packet(int rpcID, object message, int identifier)
+        public virtual IMemoryOwner<byte> Pack(int rpcID, object message, int identifier)
         {
             ///序列化用buffer,使用内存池
             using (var memoryOwner = BufferPool.Rent(16384))
             {
                 Span<byte> span = memoryOwner.Memory.Span;
 
-                var (messageID, length) = SerializeMessage(message, rpcID, span);
+                var (messageID, length) = Serialize(message, rpcID, span);
 
                 var routeTable = new RoutingInformationModifier(identifier);
-                var res = Packet(messageID, extraMessage:routeTable, span.Slice(0, length));
+                var res = Pack(messageID, extraMessage:routeTable, span.Slice(0, length));
                 routeTable.Dispose();
                 return res;
             }
@@ -269,16 +269,16 @@ namespace Megumin.Message
         /// <param name="message"></param>
         /// <param name="extraMessage"></param>
         /// <returns></returns>
-        public virtual IMemoryOwner<byte> Packet(int rpcID, object message, ReadOnlySpan<byte> extraMessage)
+        public virtual IMemoryOwner<byte> Pack(int rpcID, object message, ReadOnlySpan<byte> extraMessage)
         {
             ///序列化用buffer,使用内存池
             using (var memoryOwner = BufferPool.Rent(16384))
             {
                 Span<byte> span = memoryOwner.Memory.Span;
 
-                var (messageID, length) = SerializeMessage(message, rpcID, span);
+                var (messageID, length) = Serialize(message, rpcID, span);
 
-                return Packet(messageID, extraMessage, span.Slice(0, length));
+                return Pack(messageID, extraMessage, span.Slice(0, length));
             }
         }
 
@@ -290,7 +290,7 @@ namespace Megumin.Message
         /// <param name="extraMessage"></param>
         /// <param name="messageBody"></param>
         /// <returns>框架使用BigEndian</returns>
-        public virtual IMemoryOwner<byte> Packet(int messageID, ReadOnlySpan<byte> extraMessage, ReadOnlySpan<byte> messageBody)
+        public virtual IMemoryOwner<byte> Pack(int messageID, ReadOnlySpan<byte> extraMessage, ReadOnlySpan<byte> messageBody)
         {
             if (extraMessage.IsEmpty)
             {
@@ -340,13 +340,13 @@ namespace Megumin.Message
 
         /// <summary>
         /// 解包。 这个方法解析消息字节的布局
-        /// <para> 和 <see cref="Packet(int, ReadOnlySpan{byte}, ReadOnlySpan{byte})"/> 对应</para>
+        /// <para> 和 <see cref="Pack(int, ReadOnlySpan{byte}, ReadOnlySpan{byte})"/> 对应</para>
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
         /// <remarks>分离消息是使用报头描述的长度而不能依赖于Span长度</remarks>
         public virtual (int messageID, ReadOnlyMemory<byte> extraMessage, ReadOnlyMemory<byte> messageBody)
-            UnPacket(ReadOnlyMemory<byte> buffer)
+            UnPack(ReadOnlyMemory<byte> buffer)
         {
             ReadOnlySpan<byte> span = buffer.Span;
             var (totalLenght, messageID) = ParsePacketHeader(span);
@@ -362,7 +362,7 @@ namespace Megumin.Message
     }
 
     ///消息正文处理
-    partial class MessagePipeline:IDeserializeHandle
+    partial class MessagePipeline:IFormater
     {
         /// <summary>
         /// 序列化消息阶段
@@ -373,7 +373,7 @@ namespace Megumin.Message
         /// <param name="rpcID"></param>
         /// <returns></returns>
         public virtual (int messageID, ushort length)
-            SerializeMessage(object message, int rpcID, Span<byte> span)
+            Serialize(object message, int rpcID, Span<byte> span)
         {
             ///rpcID直接附加值消息正文前4位。
             rpcID.WriteTo(span);
@@ -385,7 +385,7 @@ namespace Megumin.Message
         /// 反序列化消息阶段
         /// </summary>
         /// <returns></returns>
-        public virtual (int rpcID,object message) DeserializeMessage(int messageID,in ReadOnlyMemory<byte> messageBody)
+        public virtual (int rpcID,object message) Deserialize(int messageID,in ReadOnlyMemory<byte> messageBody)
         {
             var rpcID = messageBody.Span.ReadInt();
             var message = MessageLUT.Deserialize(messageID, messageBody.Slice(4));
