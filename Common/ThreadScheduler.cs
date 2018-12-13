@@ -14,6 +14,7 @@ namespace Megumin
     /// 主线程调度器
     /// <para>Unity中请使用Unity的主线程轮询</para>
     /// </summary>
+    [Obsolete("每个独立模块应该有自己的Update,不应该放在一起，应该放在应用层整合")]
     public class ThreadScheduler
     {
         private ThreadScheduler() { }
@@ -81,7 +82,8 @@ namespace Megumin
                 item?.Invoke(delta);
             }
 
-            while (actions.TryDequeue(out var callback))
+            ///                                       双检查（这里使用Count和IsEmpty有不同含义）
+            while (actions.TryDequeue(out var callback) || actions.Count != 0)
             {
                 callback?.Invoke();
             }

@@ -231,10 +231,11 @@ namespace Megumin.Message
 
                 var (messageID, length) = Serialize(message, rpcID, span);
 
-                ///省略了额外消息
+                ///             这里进行拷贝并得到新的发送用buffer             此处省略了额外消息  
                 var sendbuffer = Pack(messageID, extraMessage:RoutingInformationModifier.Empty, span.Slice(0, length));
                 return sendbuffer;
             }
+            ///释放 序列化用buffer
         }
 
         /// <summary>

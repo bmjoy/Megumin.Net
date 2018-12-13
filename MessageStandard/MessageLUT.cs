@@ -37,6 +37,7 @@ namespace Megumin.Message
     /// <param name="buffer">给定的buffer,长度为16384</param>
     /// <returns>序列化消息的长度</returns>
     public delegate ushort RegistSerialize<in T>(T message, Span<byte> buffer);
+    public delegate ushort ValueRegistSerialize<T>(in T message, Span<byte> buffer);
 
     public delegate ushort Serialize(object message, Span<byte> buffer);
 
@@ -68,6 +69,7 @@ namespace Megumin.Message
                 UdpConnectMessage.Serialize, UdpConnectMessage.Deserialize);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Serialize Convert<T>(RegistSerialize<T> registSerialize)
         {
             return (obj, buffer) =>
@@ -75,6 +77,19 @@ namespace Megumin.Message
                 if (obj is T message)
                 {
                     return registSerialize(message, buffer);
+                }
+                throw new InvalidCastException(typeof(T).FullName);
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Serialize Convert<T>(ValueRegistSerialize<T> registSerialize)
+        {
+            return (obj, buffer) =>
+            {
+                if (obj is T message)
+                {
+                    return registSerialize(in message, buffer);
                 }
                 throw new InvalidCastException(typeof(T).FullName);
             };
@@ -151,6 +166,12 @@ namespace Megumin.Message
         {
             AddSFormatter(typeof(T), messageID, Convert(seiralize), key);
             AddDFormatter(messageID,typeof(T), deserilize, key);
+        }
+
+        public static void Regist<T>(int messageID, ValueRegistSerialize<T> seiralize, Deserialize deserilize, KeyAlreadyHave key = KeyAlreadyHave.Skip)
+        {
+            AddSFormatter(typeof(T), messageID, Convert(seiralize), key);
+            AddDFormatter(messageID, typeof(T), deserilize, key);
         }
 
         /// <summary>
