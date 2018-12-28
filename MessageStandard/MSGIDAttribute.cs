@@ -39,6 +39,10 @@ namespace Megumin.Message
 
         public const int TestPacket1ID = -101;
         public const int TestPacket2ID = -102;
+        /// <summary>
+        /// 错误的类型，表示框架未记录的类型。不是void，也不是任何异常ErrorType。
+        /// </summary>
+        public const int ErrorType = -1;
         public const int StringID = 11;
         public const int IntID = 12;
         public const int FloatID = 13;

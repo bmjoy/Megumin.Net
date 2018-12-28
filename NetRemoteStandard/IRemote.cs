@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Megumin.Message;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Net;
@@ -40,6 +41,7 @@ namespace Net.Remote
         IPEndPoint ConnectIPEndPoint { get; set; }
         /// <summary>
         /// 连接后重映射的地址
+        /// <para>如果没有重映射, 返回<see cref="ConnectIPEndPoint"/> </para>
         /// </summary>
         EndPoint RemappedEndPoint { get; }
     }
@@ -173,7 +175,8 @@ namespace Net.Remote
         /// 异步发送消息，封装Rpc过程
         /// 结果值是保证有值的，如果结果值为空或其他异常,触发异常回调函数，不会抛出异常，所以不用try catch。
         /// 异步方法的后续部分不会触发，所以后续部分可以省去空检查。
-        /// <para>****千万注意，只有在RpcResult有返回值的情况下，后续异步方法才会执行*****</para>
+        /// <para>****千万注意，只有在RpcResult有返回值的情况下，后续异步方法才会执行。
+        /// 这不是语言特性，也不是语法特性。这由具体实现的类库保证。*****</para>
         /// </summary>
         /// <typeparam name="RpcResult"></typeparam>
         /// <param name="message"></param>
@@ -192,7 +195,8 @@ namespace Net.Remote
     public interface IBroadCastSend
     {
         /// <summary>
-        /// 用于广播方式的发送
+        /// 用于广播方式的发送,用于对多个远端发送相同信息。
+        /// <para>msgBuffer 必须符合<see cref="IMessagePipeline"/>中对应的消息格式，否则接收端无法解析。</para>
         /// </summary>
         /// <param name="msgBuffer"></param>
         /// <returns></returns>
@@ -267,7 +271,7 @@ namespace Net.Remote
     }
 
     /// <summary>
-    /// 转发器
+    /// 转发器，用于分布式服务器中消息转发
     /// </summary>
     public interface IForwarder:IRemoteID,ISendMessage
     {

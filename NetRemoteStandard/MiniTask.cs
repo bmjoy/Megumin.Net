@@ -21,6 +21,9 @@ namespace System.Threading.Tasks
             Faild,
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public static int MaxCount { get; set; } = 512;
 
         static ConcurrentQueue<MiniTask<T>> pool = new ConcurrentQueue<MiniTask<T>>();

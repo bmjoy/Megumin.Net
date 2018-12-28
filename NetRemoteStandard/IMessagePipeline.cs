@@ -9,6 +9,9 @@ using Net.Remote;
 
 namespace Megumin.Message
 {
+    /// <summary>
+    /// Tcp打包接口
+    /// </summary>
     public interface ITcpPacker
     {
         /// <summary>
@@ -20,6 +23,9 @@ namespace Megumin.Message
         ReadOnlySpan<byte> CutOff(ReadOnlySpan<byte> source, IList<IMemoryOwner<byte>> pushCompleteMessage);
     }
 
+    /// <summary>
+    /// 消息处理管线
+    /// </summary>
     public interface IMessagePipeline:ITcpPacker
     {
         /// <summary>
@@ -55,14 +61,39 @@ namespace Megumin.Message
         IMemoryOwner<byte> Pack(int rpcID, object message, ReadOnlySpan<byte> extraMessage);
     }
 
+    /// <summary>
+    /// object消息 消费者接口
+    /// </summary>
     public interface IObjectMessageReceiver
     {
+        /// <summary>
+        /// 处理消息实例
+        /// </summary>
+        /// <param name="rpcID"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
         ValueTask<object> Deal(int rpcID, object message);
     }
 
+    /// <summary>
+    /// 串行器接口
+    /// </summary>
     public interface IFormater
     {
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <param name="messageBody"></param>
+        /// <returns></returns>
         (int rpcID, object message) Deserialize(int messageID,in ReadOnlyMemory<byte> messageBody);
+        /// <summary>
+        /// 序列化
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="rpcID"></param>
+        /// <param name="span"></param>
+        /// <returns></returns>
         (int messageID, ushort length) Serialize(object message, int rpcID, Span<byte> span);
     }
 }

@@ -37,13 +37,21 @@ namespace Megumin.Message
     /// <param name="buffer">给定的buffer,长度为16384</param>
     /// <returns>序列化消息的长度</returns>
     public delegate ushort RegistSerialize<in T>(T message, Span<byte> buffer);
+
+    /// <summary>
+    /// 值类型使用这个委托注册，相比值类型使用RegistSerialize注册，可以省一点点性能，但是仍然不建议用值类型消息。
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="message"></param>
+    /// <param name="buffer"></param>
+    /// <returns></returns>
     public delegate ushort ValueRegistSerialize<T>(in T message, Span<byte> buffer);
 
     public delegate ushort Serialize(object message, Span<byte> buffer);
 
     /// <summary>
     /// 消息查找表
-    /// <seealso cref="Seiralizer{T}"/><seealso cref="Message.Deserialize"/>
+    /// <seealso cref="Message.Serialize"/>  <seealso cref="Message.Deserialize"/>
     /// </summary>
     public class MessageLUT
     {
@@ -175,7 +183,6 @@ namespace Megumin.Message
         }
 
         /// <summary>
-        /// 长度不能大于8192
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="buffer16384"></param>
@@ -200,16 +207,16 @@ namespace Megumin.Message
 
                 ushort length = Seiralize(message, buffer16384);
 
-                if (length > 8192 - 25)
-                {
-                    //BufferPool.Push16384(buffer16384);
-                    ///消息过长
-                    throw new ArgumentOutOfRangeException(
-                        $"The message length is greater than {8192 - 25}," +
-                        $" Please split to send./" +
-                        $"消息长度大于{8192 - 25}," +
-                        $"请拆分发送。");
-                }
+                //if (length > 8192 - 25)
+                //{
+                //    //BufferPool.Push16384(buffer16384);
+                //    ///消息过长
+                //    throw new ArgumentOutOfRangeException(
+                //        $"The message length is greater than {8192 - 25}," +
+                //        $" Please split to send./" +
+                //        $"消息长度大于{8192 - 25}," +
+                //        $"请拆分发送。");
+                //}
 
                 return (MessageID, length);
             }
@@ -244,7 +251,12 @@ namespace Megumin.Message
         public static event Action<int> OnMissDeserialize;
         public static event Action<Type> OnMissSeiralize;
 
-        public static Type GetMessageType(int messageID)
+        /// <summary>
+        /// 查找消息类型
+        /// </summary>
+        /// <param name="messageID"></param>
+        /// <returns></returns>
+        public static Type GetType(int messageID)
         {
             if (dFormatter.TryGetValue(messageID,out var res))
             {
@@ -256,13 +268,44 @@ namespace Megumin.Message
             }
         }
 
-        public static int? GetMsgID<T>()
+        public static bool TryGetType(int messageID,out Type type)
+        {
+            if (dFormatter.TryGetValue(messageID, out var res))
+            {
+                type = res.type;
+                return true;
+            }
+            else
+            {
+                type = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 查找消息ID
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static int? GetID<T>()
         {
             if (sFormatter.TryGetValue(typeof(T),out var res))
             {
                 return res.MessageID;
             }
             return null;
+        }
+
+        public static bool TryGetID<T>(out int ID)
+        {
+            if (sFormatter.TryGetValue(typeof(T), out var res))
+            {
+                ID = res.MessageID;
+                return true;
+            }
+
+            ID = -1;
+            return false;
         }
     }
 
