@@ -9,7 +9,7 @@
     <Description>MeguminNet中的消息序列化部分。</Description>
     <Product>MeguminNet</Product>
     <Authors>云却</Authors>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RootNamespace>Megumin.Message</RootNamespace>
     <PackageTags>net</PackageTags>

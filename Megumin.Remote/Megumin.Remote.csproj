@@ -6,7 +6,7 @@
     <RootNamespace>Megumin.Remote</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>云却</Authors>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <Product>MeguminNet</Product>
     <Description>NetRemoteStandard的一个实现。</Description>
     <Copyright>Copyright (c) 2019 云却</Copyright>

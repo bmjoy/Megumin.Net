@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Megumin.ProtobufLUT</AssemblyName>
     <RootNamespace>Megumin.Message</RootNamespace>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>云却</Authors>
     <Product>MeguminNet</Product>
