@@ -6,7 +6,7 @@
 
   **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
-# [``路线图``](https://trello.com/b/KkikpHim/meguminnet)
+# [``路线图``](https://trello.com/b/s84Jn7hW/meguminnet)
 
 # 它是开箱即用的么？
 是的，使用Nuget获取Megumin.Remote。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。  
