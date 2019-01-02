@@ -9,7 +9,7 @@
     <Authors>云却</Authors>
     <Company></Company>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Copyright>Copyright (c) 2018 云却不是雀</Copyright>
+    <Copyright>Copyright (c) 2019 云却</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseUrl>https://github.com/KumoKyaku/MeguminNet/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/KumoKyaku/MeguminNet</PackageProjectUrl>

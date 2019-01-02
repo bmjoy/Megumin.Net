@@ -29,7 +29,7 @@ namespace RemoteTestClient
             {
                 while (true)
                 {
-                    ThreadScheduler.Update(0);
+                    MessageThreadTransducer.Update(0);
                     //Thread.Yield();
                 }
 

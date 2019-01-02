@@ -239,6 +239,9 @@ namespace Message
 
 ## [MessagePack](https://github.com/neuecc/MessagePack-CSharp)
 
+# [依赖关系](Image/dependencies.jpg)
+![依赖关系](Image/dependencies.jpg)
+
 ---
 ---
 
@@ -272,5 +275,5 @@ namespace Message
 UDP,KCP存在一些问题,将在今后一段时间完成，但可能是6个月也可能是一年，我有一个需要加班的全职工作，因此我不确定。
 
 # 友情链接
-- [Megumin.Explosion]() Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
-- [Megumin.MemoryExtention]() Sytem.Memory.dll `Span<T>`系列的扩展库。
+- [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。
+- [Megumin.MemoryExtention](https://github.com/KumoKyaku/Megumin.Explosion) Sytem.Memory.dll `Span<T>`系列的扩展库。

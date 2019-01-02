@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Megumin;
 using Megumin.Remote;
+using System.Buffers;
 
 namespace UnitFunc
 {

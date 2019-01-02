@@ -33,10 +33,10 @@ namespace Megumin.Message
         /// <param name="key"></param>
         protected internal static void Regist(Type type,KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
-            var attribute = type.GetFirstCustomAttribute<MessagePackObjectAttribute>();
+            var attribute = type.FirstAttribute<MessagePackObjectAttribute>();
             if (attribute != null)
             {
-                var MSGID = type.GetFirstCustomAttribute<MSGID>();
+                var MSGID = type.FirstAttribute<MSGID>();
                 if (MSGID != null)
                 {
                     Regist(type, MSGID.ID,
@@ -52,10 +52,10 @@ namespace Megumin.Message
         public static void Regist<T>(KeyAlreadyHave key = KeyAlreadyHave.Skip)
         {
             var type = typeof(T);
-            var attribute = type.GetFirstCustomAttribute<MessagePackObjectAttribute>();
+            var attribute = type.FirstAttribute<MessagePackObjectAttribute>();
             if (attribute != null)
             {
-                var MSGID = type.GetFirstCustomAttribute<MSGID>();
+                var MSGID = type.FirstAttribute<MSGID>();
                 if (MSGID != null)
                 {
                     Regist<T>(MSGID.ID,
@@ -88,7 +88,7 @@ namespace Megumin.Message
 
         public static T Deserilizer<T>(ReadOnlyMemory<byte> buffer)
         {
-            using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))
+            using (var stream = new SpanStream(buffer))
             {
                 return MessagePackSerializer.Deserialize<T>(stream);
             }

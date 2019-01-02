@@ -39,7 +39,7 @@ namespace RemoteTest
                 CoolDownTime coolDown = new CoolDownTime() {  MinDelta = TimeSpan.FromSeconds(30) };
                 while (true)
                 {
-                    ThreadScheduler.Update(0);
+                    MessageThreadTransducer.Update(0);
                     //Thread.Sleep(1);
                     //if (coolDown)
                     //{

@@ -1,4 +1,5 @@
-﻿using Net.Remote;
+﻿using Megumin.Message;
+using Net.Remote;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -184,7 +185,7 @@ namespace Megumin.Remote
                     await Task.Delay(RpcTimeOutMilliseconds);
                     if (TryDequeue(rpcID, out var rpc))
                     {
-                        ThreadScheduler.Invoke(() =>
+                        MessageThreadTransducer.Invoke(() =>
                         {
                             rpc.rpcCallback?.Invoke(null, new TimeoutException($"The RPC {rpcID} callback timed out and did not get a remote response./RPC {rpcID} 回调超时，没有得到远端响应。"));
                         });

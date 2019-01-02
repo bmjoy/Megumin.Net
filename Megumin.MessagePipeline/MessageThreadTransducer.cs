@@ -3,6 +3,7 @@ using Megumin.Remote;
 using Net.Remote;
 using System;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using MessageQueue = System.Collections.Concurrent.ConcurrentQueue<System.Action>;
 
@@ -10,26 +11,26 @@ namespace Megumin.Message
 {
     /// <summary>
     /// 接收消息池
-    /// 调用<seealso cref="ThreadScheduler.Update(double)"/>刷新
     /// </summary>
-    internal partial class MessageThreadTransducer
+    public partial class MessageThreadTransducer
     {
-        static MessageThreadTransducer()
-        {
-            ThreadScheduler.Add(Update);
-        }
-
         static MessageQueue receivePool = new MessageQueue();
 
         /// <summary>
         /// 在控制执行顺序的线程中刷新，所有异步方法的后续部分都在这个方法中执行
         /// </summary>
         /// <param name="delta"></param>
-        static void Update(double delta)
+        public static void Update(double delta)
         {
             while (receivePool.TryDequeue(out var res))
             {
                 res?.Invoke();
+            }
+
+            ///                                       双检查（这里使用Count和IsEmpty有不同含义）
+            while (actions.TryDequeue(out var callback) || !actions.IsEmpty)
+            {
+                callback?.Invoke();
             }
         }
 
@@ -58,6 +59,17 @@ namespace Megumin.Message
             receivePool.Enqueue(action);
 
             return task1;
+        }
+
+        static readonly ConcurrentQueue<Action> actions = new ConcurrentQueue<Action>();
+
+        /// <summary>
+        /// 切换执行线程
+        /// </summary>
+        /// <param name="action"></param>
+        public static void Invoke(Action action)
+        {
+            actions.Enqueue(action);
         }
     }
 }

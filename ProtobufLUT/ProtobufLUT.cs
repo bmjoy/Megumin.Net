@@ -36,7 +36,7 @@ namespace Megumin.Message
         {
             if (type.IsSubclassOf(typeof(IMessage<>)))
             {
-                var MSGID = type.GetFirstCustomAttribute<MSGID>();
+                var MSGID = type.FirstAttribute<MSGID>();
                 if (MSGID != null)
                 {
                     Regist(type, MSGID.ID,
@@ -53,7 +53,7 @@ namespace Megumin.Message
             where T:IMessage<T>
         {
             var type = typeof(T);
-            var MSGID = type.GetFirstCustomAttribute<MSGID>();
+            var MSGID = type.FirstAttribute<MSGID>();
             if (MSGID != null)
             {
                 Regist<T>(MSGID.ID,
@@ -119,7 +119,7 @@ namespace Megumin.Message
 
             return (buffer) =>
                    {
-                       using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))
+                       using (var stream = new SpanStream(buffer))
                        {
                            IMessage message = parser.ParseFrom(stream);
                            return message;
@@ -132,7 +132,7 @@ namespace Megumin.Message
             dynamic dformatter = type.GetProperty("Parser", BindingFlags.Public|BindingFlags.Static)?.GetValue(null);
             return  (buffer) =>
                     {
-                        using (ReadOnlyMemrotyStream stream = new ReadOnlyMemrotyStream(buffer))
+                        using (var stream = new SpanStream(buffer))
                         {
                             IMessage message = dformatter.ParseFrom(stream);
                             return message;

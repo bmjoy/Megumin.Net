@@ -3,10 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{DF9BDBF1-FCB1-491C-BC9F-FE975CBB895E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{57C73E23-8887-4518-BAB2-6BB6C04E44B2}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Megumin.Remote", "Megumin.Remote\Megumin.Remote.csproj", "{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetRemoteStandard", "NetRemoteStandard\NetRemoteStandard.csproj", "{BFE44004-0D60-458B-9F0C-889EF37392D0}"
@@ -53,10 +49,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{57C73E23-8887-4518-BAB2-6BB6C04E44B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{57C73E23-8887-4518-BAB2-6BB6C04E44B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{57C73E23-8887-4518-BAB2-6BB6C04E44B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{57C73E23-8887-4518-BAB2-6BB6C04E44B2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91932506-F6C9-481A-B6CF-CDE7ADF2F38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -122,7 +114,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{57C73E23-8887-4518-BAB2-6BB6C04E44B2} = {DF9BDBF1-FCB1-491C-BC9F-FE975CBB895E}
 		{91932506-F6C9-481A-B6CF-CDE7ADF2F38B} = {11023560-B423-48FB-AFF2-844A97AB0EE0}
 		{BFE44004-0D60-458B-9F0C-889EF37392D0} = {11023560-B423-48FB-AFF2-844A97AB0EE0}
 		{500CF6C1-564D-4586-866D-D7F1FB835B8B} = {2A6DEB76-A580-4336-866D-176E7E928071}

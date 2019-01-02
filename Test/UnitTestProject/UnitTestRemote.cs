@@ -131,7 +131,7 @@ namespace UnitFunc
             {
                 while (true)
                 {
-                    ThreadScheduler.Update(0);
+                    MessageThreadTransducer.Update(0);
                     Thread.Yield();
                 }
             },cancellation.Token, TaskCreationOptions.LongRunning,TaskScheduler.Default);
