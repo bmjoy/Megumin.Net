@@ -2,15 +2,21 @@
   这是一个 ~~简单易用的~~ 网络库。  
   这是一个网络层的通用解决方案。设计目的为应用程序网络层提供统一的接口。 
 
-  **简单来说：NetRemoteStandard.dll是标准，Megumin.Remote.dll是实现。类比于dotnetStandard和dotnetCore的关系。** 
+  整个类库被拆分为多个dll。**简单来说：NetRemoteStandard.dll是标准，Megumin.Remote.dll是实现。类比于dotnetStandard和dotnetCore的关系。** 
 
-  **Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
-# [``路线图``](https://trello.com/b/s84Jn7hW/meguminnet)
+# [Dll依赖关系与架构](Image/dependencies.jpg)
+![依赖关系](Image/dependencies.jpg)
+
+---
+---
+
 
 # 它是开箱即用的么？
 是的，使用Nuget获取Megumin.Remote。但是注意，需要搭配序列化库，不同的序列化库可能有额外的要求。  
 由于使用了C# 7.3语法，在unity中如果使用源码至少需要2018.3。
+
+# [``开发路线图``](https://trello.com/b/s84Jn7hW/meguminnet)
 
 # 优势
 - 使用内存池和多线程高效收发，可配置线程调度，无需担心网络层性能问题。
@@ -45,11 +51,11 @@
 
 ```cs
 ///实际使用中的例子
+
+IRemote remote = new TCPRemote(); ///省略连接代码……
 public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
-    IRemote remote = new TCPRemote();
-    ///省略连接代码……
     ///                                         泛型类型为期待返回的类型
     var (result, exception) = await remote.SendAsync<LoginResult>(login);
     ///如果没有遇到异常，那么我们可以得到远端发回的返回值
@@ -67,11 +73,10 @@ public async void TestSend()
 （``注意：这不是语言特性，也不是异步编程特性，这依赖于具体Remote的实现，这是类库的特性。如果你使用了这个接口的其他实现，要确认实现遵守了这个约定。``）
 
 ```cs
+IRemote remote = new TCPRemote(); ///省略连接代码……
 public async void TestSend()
 {
     Login login = new Login() { Account = "LiLei", Password = "HanMeiMei" };
-    IRemote remote = new TCPRemote();
-    ///省略连接代码……
     ///                                         泛型类型为期待返回的类型
     LoginResult result = await remote.SendAsyncSafeAwait<LoginResult>(login);
     ///后续代码 不用任何判断，也不用担心异常。
@@ -239,8 +244,6 @@ namespace Message
 
 ## [MessagePack](https://github.com/neuecc/MessagePack-CSharp)
 
-# [依赖关系](Image/dependencies.jpg)
-![依赖关系](Image/dependencies.jpg)
 
 ---
 ---
@@ -272,7 +275,9 @@ namespace Message
 ## **``在1.0.0版本前API可能会有破坏性的改变。``**
 
 严格来说，目前只有TCP协议可以在生产环境使用。  
-UDP,KCP存在一些问题,将在今后一段时间完成，但可能是6个月也可能是一年，我有一个需要加班的全职工作，因此我不确定。
+UDP,KCP存在一些问题,将在今后一段时间完成，但可能是6个月也可能是一年，我有一个需要加班的全职工作，因此我不确定。  
+
+**Megumin.Remote是以MMORPG为目标实现的。对于非MMORPG游戏可能不是最佳选择。** 在遥远的未来也许会针对不同游戏类型写出NetRemoteStandard的不同实现。
 
 # 友情链接
 - [Megumin.Explosion](https://github.com/KumoKyaku/Megumin.Explosion) Megumin系列类库的最底层基础库，Megumin的其他库都有可能需要引用它。

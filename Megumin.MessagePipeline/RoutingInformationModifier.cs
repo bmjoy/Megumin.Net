@@ -73,7 +73,8 @@ namespace Megumin.Remote
                 {
                     DeepCopy();
                 }
-                deepCopy.Memory.Span[1] = (byte)((int)value | deepCopy.Memory.Span[1]);
+
+                deepCopy.Memory.Span[1] = (byte)((deepCopy.Memory.Span[1] & 0b1111_1000) | (int)value);
             }
         }
 
