@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 namespace System.Threading.Tasks
 {
     /// <summary>
-    /// 一个异步任务实现，特点是可以取消任务不会触发异常和后续方法。
+    /// 一个简单异步任务实现，特点是缓存任务不构造任务实例。
+    /// todo 如果任务没有完成访问Result,会返回null而不是阻塞。以后会改为和Task一致
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class MiniTask<T> : IMiniAwaitable<T>
@@ -62,6 +63,9 @@ namespace System.Threading.Tasks
         private bool alreadyEnterAsync = false;
 
         public bool IsCompleted => state == State.Success || state == State.Faild;
+        /// <summary>
+        /// 请不要同步访问Result。即使同步完成也应该使用await 关键字。同步访问可能无法取得正确的值，或抛出异常。
+        /// </summary>
         public T Result { get; protected set; }
         readonly object innerlock = new object();
 
